@@ -1,0 +1,58 @@
+ version: '3.8'
+
+services:
+  postgres_infra:
+    image: postgres:13
+    container_name: llama_postgres_infra
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dbuser} # 从 .env 读取，或使用默认值
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dbpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-llmadataset_infra_db}
+    volumes:
+      - postgres_infra_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql # 挂载初始化脚本
+    ports:
+      - "${POSTGRES_PORT_INFRA:-5433}:5432" # 避免与主DB端口冲突
+    restart: unless-stopped
+    networks:
+      - llama_infra_network
+
+  minio_infra:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: llama_minio_infra
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER_INFRA:-minioadmininfra}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD_INFRA:-minioadmininfra}
+    ports:
+      - "${MINIO_PORT_INFRA:-9001}:9000"      # API 端口
+      - "${MINIO_CONSOLE_PORT_INFRA:-9002}:9001" # 控制台端口
+    volumes:
+      - minio_infra_data:/data
+      - ./minio/config.json:/root/.minio/config.json # (可选) MinIO 服务器配置
+      # - ./minio/policies:/root/.minio/policies # (可选) 策略配置
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - llama_infra_network
+
+  # 可以添加其他基础设施服务，例如 Redis (如果 Celery 使用)
+  redis_infra:
+    image: redis:6.2-alpine
+    container_name: llama_redis_infra
+    ports:
+      - "${REDIS_PORT_INFRA:-6380}:6379"
+    restart: unless-stopped
+    networks:
+      - llama_infra_network
+
+volumes:
+  postgres_infra_data:
+  minio_infra_data:
+
+networks:
+  llama_infra_network:
+    driver: bridge
+
+# 注意：这个 docker-compose.yml 是 infra/ 目录下的，可能用于独立的 infra 测试或管理
+# 与项目根目录的 docker-compose.yml 可能会有不同的用途和范围。
+# 环境变量 (如 ${POSTGRES_USER}) 通常在项目根目录的 .env 文件中定义。

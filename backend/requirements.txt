@@ -1,0 +1,36 @@
+# Flask and related
+Flask==2.2.2 # 固定一个版本以便复现，实际项目应根据需求选择
+SQLAlchemy==1.4.39
+psycopg2-binary # PostgreSQL 驱动
+Flask-SQLAlchemy # SQLAlchemy 的 Flask 扩展 (可选, 如果不用纯 SQLAlchemy)
+Flask-Migrate # Alembic 的 Flask 扩展 (可选, 如果使用 Alembic)
+python-dotenv # 用于加载 .env 文件
+
+# MinIO
+minio==7.1.12
+
+# Celery and Redis
+celery==5.2.7
+redis==4.3.4
+
+# Data handling
+pandas # README 中提及
+
+# API Documentation (可选, 如果 Flask 框架不自带或需要特定工具)
+# Flask-Swagger-UI or similar
+
+# Document Parsers (根据插件实现选择)
+python-docx
+python-pptx
+PyPDF2 # 或者 pdfminer.six
+
+# Linter and Formatter (开发依赖)
+# flake8
+# black
+
+# Testing (开发依赖)
+# pytest
+# pytest-flask
+
+# Gunicorn (生产环境 WSGI 服务器)
+# gunicorn 

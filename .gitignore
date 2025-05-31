@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+*/venv/
+.venv/
+ENV/
+*/ENV/
+env/
+*/env/
+
+# IDE and editor specific
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.DS_Store
+
+# Secrets and environment variables
+.env
+.env.*
+!.env.example # 允许 .env.example 文件被追踪
+
+#敏感配置
+backend/config/production.py # 通常包含敏感信息，应通过环境变量配置生产
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Celery beat schedule file
+celerybeat-schedule.*
+
+# Test output
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Frontend node_modules
+frontend/node_modules/
+frontend/build/
+frontend/.pnp.*
+
+# Docker specific (if any local Docker build contexts are ignored)
+# docker-data/
+
+# Log files
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db 
