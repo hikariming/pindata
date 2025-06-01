@@ -12,6 +12,7 @@ import {
   PresentationIcon,
   PlayIcon
 } from 'lucide-react';
+import { LibraryService } from '../../services/library.service';
 
 interface FileUploadProps {
   onUpload: (files: File[]) => void;
@@ -128,29 +129,36 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
     setUploadFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
-  const simulateUpload = (uploadFile: UploadFile) => {
-    return new Promise<void>((resolve, reject) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 20;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          setUploadFiles(prev => prev.map(f => 
-            f.id === uploadFile.id 
-              ? { ...f, status: 'success', progress: 100 }
-              : f
-          ));
-          resolve();
-        } else {
-          setUploadFiles(prev => prev.map(f => 
-            f.id === uploadFile.id 
-              ? { ...f, status: 'uploading', progress: Math.floor(progress) }
-              : f
-          ));
-        }
-      }, 200);
-    });
+  const realUpload = async (uploadFile: UploadFile) => {
+    try {
+      // 更新状态为上传中
+      setUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id 
+          ? { ...f, status: 'uploading', progress: 0 }
+          : f
+      ));
+
+      // 调用真实的上传 API
+      const result = await LibraryService.uploadFiles(libraryId, [uploadFile.file]);
+      
+      // 上传成功
+      setUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id 
+          ? { ...f, status: 'success', progress: 100 }
+          : f
+      ));
+      
+      return result;
+    } catch (error) {
+      // 上传失败
+      const errorMessage = error instanceof Error ? error.message : '上传失败';
+      setUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id 
+          ? { ...f, status: 'error', error: errorMessage }
+          : f
+      ));
+      throw error;
+    }
   };
 
   const handleUpload = async () => {
@@ -160,15 +168,27 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
     setIsProcessing(true);
 
     try {
-      // 模拟批量上传
+      // 使用真实的 API 上传
+      const uploadResults = [];
       for (const uploadFile of validFiles) {
-        await simulateUpload(uploadFile);
+        try {
+          const result = await realUpload(uploadFile);
+          uploadResults.push(...result);
+        } catch (error) {
+          console.error(`上传文件 ${uploadFile.file.name} 失败:`, error);
+        }
       }
       
-      // 调用上传回调
-      onUpload(validFiles.map(f => f.file));
+      // 调用上传回调，传递原始文件列表
+      const successFiles = validFiles.filter(uf => 
+        uploadFiles.find(f => f.id === uf.id)?.status === 'success'
+      ).map(uf => uf.file);
+      
+      if (successFiles.length > 0) {
+        onUpload(successFiles);
+      }
     } catch (error) {
-      console.error('上传失败:', error);
+      console.error('批量上传失败:', error);
     } finally {
       setIsProcessing(false);
     }

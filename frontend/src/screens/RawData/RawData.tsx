@@ -28,33 +28,17 @@ import {
   ClockIcon,
   CheckCircleIcon,
   AlertCircleIcon,
-  Settings2Icon
+  Settings2Icon,
+  Loader2Icon,
+  RefreshCwIcon
 } from 'lucide-react';
 import { CreateLibrary } from './CreateLibrary';
 import { LibraryDetails } from './LibraryDetails';
 
-interface Library {
-  id: string;
-  name: string;
-  description?: string;
-  fileCount: number;
-  lastUpdated: string;
-  totalSize: string;
-  processedCount: number;
-  processingCount: number;
-  pendingCount: number;
-  mdCount: number;
-  dataType: 'training' | 'evaluation' | 'mixed';
-  tags: string[];
-}
-
-interface DataStatistics {
-  totalLibraries: number;
-  totalFiles: number;
-  totalProcessed: number;
-  totalSize: string;
-  conversionRate: number;
-}
+// 导入API相关
+import { useLibraries, useLibraryStatistics, useLibraryActions } from '../../hooks/useLibraries';
+import { Library } from '../../types/library';
+import { dataTypeLabels } from '../../lib/config';
 
 type View = 'list' | 'create' | 'details';
 
@@ -64,73 +48,27 @@ export const RawData = (): JSX.Element => {
   const [view, setView] = useState<View>('list');
   const [selectedLibrary, setSelectedLibrary] = useState<Library | null>(null);
   
-  // 模拟数据统计
-  const [statistics] = useState<DataStatistics>({
-    totalLibraries: 4,
-    totalFiles: 85,
-    totalProcessed: 62,
-    totalSize: '2.8 GB',
-    conversionRate: 73
-  });
-
-  const [libraries] = useState<Library[]>([
-    {
-      id: '1',
-      name: '研究论文库',
-      description: '收集的AI相关研究论文，用于训练科研文档理解模型',
-      fileCount: 25,
-      lastUpdated: '2024-03-15',
-      totalSize: '156 MB',
-      processedCount: 20,
-      processingCount: 3,
-      pendingCount: 2,
-      mdCount: 20,
-      dataType: 'training',
-      tags: ['论文', 'AI', '科研']
-    },
-    {
-      id: '2',
-      name: '技术文档库',
-      description: '软件开发文档和API文档，用于代码生成模型训练',
-      fileCount: 18,
-      lastUpdated: '2024-03-14',
-      totalSize: '89 MB',
-      processedCount: 15,
-      processingCount: 2,
-      pendingCount: 1,
-      mdCount: 15,
-      dataType: 'training',
-      tags: ['文档', '开发', 'API']
-    },
-    {
-      id: '3',
-      name: '法律文件库',
-      description: '法律合同和条款文档，用于法律AI助手训练',
-      fileCount: 12,
-      lastUpdated: '2024-03-10',
-      totalSize: '234 MB',
-      processedCount: 8,
-      processingCount: 1,
-      pendingCount: 3,
-      mdCount: 8,
-      dataType: 'evaluation',
-      tags: ['法律', '合同', '条款']
-    },
-    {
-      id: '4',
-      name: '商业报告库',
-      description: '企业财报和市场分析报告，用于商业分析模型',
-      fileCount: 30,
-      lastUpdated: '2024-03-05',
-      totalSize: '445 MB',
-      processedCount: 19,
-      processingCount: 4,
-      pendingCount: 7,
-      mdCount: 19,
-      dataType: 'mixed',
-      tags: ['财报', '商业', '分析']
-    },
-  ]);
+  // 使用API Hooks
+  const { 
+    libraries, 
+    pagination, 
+    loading: librariesLoading, 
+    error: librariesError, 
+    refresh: refreshLibraries 
+  } = useLibraries();
+  
+  const { 
+    statistics, 
+    loading: statisticsLoading, 
+    error: statisticsError, 
+    refresh: refreshStatistics 
+  } = useLibraryStatistics();
+  
+  const { 
+    loading: actionLoading, 
+    error: actionError, 
+    deleteLibrary 
+  } = useLibraryActions();
 
   const handleViewLibrary = (library: Library) => {
     setSelectedLibrary(library);
@@ -141,7 +79,17 @@ export const RawData = (): JSX.Element => {
     navigate(`/rawdata/file/${file.id}`);
   };
 
-  const getDataTypeColor = (dataType: Library['dataType']) => {
+  const handleDeleteLibrary = async (library: Library) => {
+    if (window.confirm(`确定要删除文件库 "${library.name}" 吗？此操作不可撤销。`)) {
+      const success = await deleteLibrary(library.id);
+      if (success) {
+        refreshLibraries();
+        refreshStatistics();
+      }
+    }
+  };
+
+  const getDataTypeColor = (dataType: Library['data_type']) => {
     switch (dataType) {
       case 'training':
         return 'text-blue-600 bg-blue-50 border-blue-200';
@@ -149,22 +97,29 @@ export const RawData = (): JSX.Element => {
         return 'text-green-600 bg-green-50 border-green-200';
       case 'mixed':
         return 'text-purple-600 bg-purple-50 border-purple-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
-  const getDataTypeLabel = (dataType: Library['dataType']) => {
-    switch (dataType) {
-      case 'training':
-        return '训练数据';
-      case 'evaluation':
-        return '评估数据';
-      case 'mixed':
-        return '混合数据';
-    }
+  const getDataTypeLabel = (dataType: Library['data_type']) => {
+    return dataTypeLabels[dataType] || dataType;
+  };
+
+  const handleRefresh = () => {
+    refreshLibraries();
+    refreshStatistics();
   };
 
   if (view === 'create') {
-    return <CreateLibrary onBack={() => setView('list')} />;
+    return <CreateLibrary 
+      onBack={() => setView('list')} 
+      onSuccess={() => {
+        setView('list');
+        refreshLibraries();
+        refreshStatistics();
+      }}
+    />;
   }
 
   if (view === 'details' && selectedLibrary) {
@@ -188,9 +143,24 @@ export const RawData = (): JSX.Element => {
             size="sm"
             className="h-9 px-4 bg-[#1977e5] hover:bg-[#1977e5]/90"
             onClick={() => setView('create')}
+            disabled={actionLoading}
           >
             <PlusIcon className="w-4 h-4 mr-2" />
             创建数据库
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-4 border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
+            onClick={handleRefresh}
+            disabled={librariesLoading || statisticsLoading}
+          >
+            {(librariesLoading || statisticsLoading) ? (
+              <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="w-4 h-4 mr-2" />
+            )}
+            刷新数据
           </Button>
           <Button
             variant="outline"
@@ -203,6 +173,15 @@ export const RawData = (): JSX.Element => {
         </div>
       </div>
 
+      {/* 错误提示 */}
+      {(librariesError || statisticsError || actionError) && (
+        <Card className="border-red-200 bg-red-50 p-4 mb-6">
+          <div className="text-red-600">
+            {librariesError || statisticsError || actionError}
+          </div>
+        </Card>
+      )}
+
       {/* 数据统计面板 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <Card className="border-[#d1dbe8] bg-white p-4">
@@ -210,7 +189,9 @@ export const RawData = (): JSX.Element => {
             <FolderIcon className="w-8 h-8 text-[#1977e5] mr-3" />
             <div>
               <p className="text-sm text-[#4f7096]">数据库总数</p>
-              <p className="text-xl font-bold text-[#0c141c]">{statistics.totalLibraries}</p>
+              <p className="text-xl font-bold text-[#0c141c]">
+                {statisticsLoading ? '...' : (statistics?.total_libraries || 0)}
+              </p>
             </div>
           </div>
         </Card>
@@ -220,7 +201,9 @@ export const RawData = (): JSX.Element => {
             <FileTextIcon className="w-8 h-8 text-[#10b981] mr-3" />
             <div>
               <p className="text-sm text-[#4f7096]">文件总数</p>
-              <p className="text-xl font-bold text-[#0c141c]">{statistics.totalFiles}</p>
+              <p className="text-xl font-bold text-[#0c141c]">
+                {statisticsLoading ? '...' : (statistics?.total_files || 0)}
+              </p>
             </div>
           </div>
         </Card>
@@ -230,7 +213,9 @@ export const RawData = (): JSX.Element => {
             <CheckCircleIcon className="w-8 h-8 text-[#10b981] mr-3" />
             <div>
               <p className="text-sm text-[#4f7096]">已处理</p>
-              <p className="text-xl font-bold text-[#0c141c]">{statistics.totalProcessed}</p>
+              <p className="text-xl font-bold text-[#0c141c]">
+                {statisticsLoading ? '...' : (statistics?.total_processed || 0)}
+              </p>
             </div>
           </div>
         </Card>
@@ -240,7 +225,9 @@ export const RawData = (): JSX.Element => {
             <TrendingUpIcon className="w-8 h-8 text-[#8b5cf6] mr-3" />
             <div>
               <p className="text-sm text-[#4f7096]">转换率</p>
-              <p className="text-xl font-bold text-[#0c141c]">{statistics.conversionRate}%</p>
+              <p className="text-xl font-bold text-[#0c141c]">
+                {statisticsLoading ? '...' : `${statistics?.conversion_rate || 0}%`}
+              </p>
             </div>
           </div>
         </Card>
@@ -250,7 +237,9 @@ export const RawData = (): JSX.Element => {
             <AlertCircleIcon className="w-8 h-8 text-[#f59e0b] mr-3" />
             <div>
               <p className="text-sm text-[#4f7096]">总大小</p>
-              <p className="text-xl font-bold text-[#0c141c]">{statistics.totalSize}</p>
+              <p className="text-xl font-bold text-[#0c141c]">
+                {statisticsLoading ? '...' : (statistics?.total_size || '0 B')}
+              </p>
             </div>
           </div>
         </Card>
@@ -261,132 +250,156 @@ export const RawData = (): JSX.Element => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[22px] font-bold leading-7 text-[#0c141c]">数据库列表</h2>
           <div className="text-sm text-[#4f7096]">
-            共 {libraries.length} 个数据库
+            {librariesLoading ? '加载中...' : `共 ${libraries.length} 个数据库`}
           </div>
         </div>
         
         <Card className="border-[#d1dbe8] bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-[#d1dbe8] hover:bg-transparent">
-                <TableHead className="text-[#4f7096] font-medium">数据库信息</TableHead>
-                <TableHead className="text-[#4f7096] font-medium w-[120px]">数据类型</TableHead>
-                <TableHead className="text-[#4f7096] font-medium w-[140px]">处理进度</TableHead>
-                <TableHead className="text-[#4f7096] font-medium w-[100px]">文件数量</TableHead>
-                <TableHead className="text-[#4f7096] font-medium w-[100px]">总大小</TableHead>
-                <TableHead className="text-[#4f7096] font-medium w-[120px]">最后更新</TableHead>
-                <TableHead className="text-[#4f7096] font-medium w-[80px]">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {libraries.map((library) => (
-                <TableRow 
-                  key={library.id} 
-                  className="border-[#d1dbe8] hover:bg-[#f7f9fc] cursor-pointer"
-                  onClick={() => handleViewLibrary(library)}
-                >
-                  <TableCell className="py-4">
-                    <div className="flex items-start">
-                      <FolderIcon className="w-5 h-5 mr-3 text-[#1977e5] mt-0.5" />
-                      <div>
-                        <div className="font-medium text-[#0c141c] mb-1">{library.name}</div>
-                        <div className="text-sm text-[#4f7096] mb-2">{library.description}</div>
-                        <div className="flex gap-1">
-                          {library.tags.map((tag, index) => (
-                            <span 
-                              key={index}
-                              className="inline-block px-2 py-0.5 text-xs bg-[#e8edf2] text-[#4f7096] rounded"
-                            >
-                              {tag}
-                            </span>
-                          ))}
+          {librariesLoading ? (
+            <div className="p-8 text-center">
+              <Loader2Icon className="w-8 h-8 animate-spin mx-auto mb-4 text-[#1977e5]" />
+              <p className="text-[#4f7096]">加载文件库列表中...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[#d1dbe8] hover:bg-transparent">
+                  <TableHead className="text-[#4f7096] font-medium">数据库信息</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[120px]">数据类型</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[140px]">处理进度</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">文件数量</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">总大小</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[120px]">最后更新</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[80px]">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {libraries.map((library) => (
+                  <TableRow 
+                    key={library.id} 
+                    className="border-[#d1dbe8] hover:bg-[#f7f9fc] cursor-pointer"
+                    onClick={() => handleViewLibrary(library)}
+                  >
+                    <TableCell className="py-4">
+                      <div className="flex items-start">
+                        <FolderIcon className="w-5 h-5 mr-3 text-[#1977e5] mt-0.5" />
+                        <div>
+                          <div className="font-medium text-[#0c141c] mb-1">{library.name}</div>
+                          <div className="text-sm text-[#4f7096] mb-2">{library.description}</div>
+                          <div className="flex gap-1">
+                            {library.tags.map((tag, index) => (
+                              <span 
+                                key={index}
+                                className="inline-block px-2 py-0.5 text-xs bg-[#e8edf2] text-[#4f7096] rounded"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium border ${getDataTypeColor(library.dataType)}`}>
-                      {getDataTypeLabel(library.dataType)}
-                    </span>
-                  </TableCell>
-                  
-                  <TableCell className="py-4">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[#4f7096]">已完成</span>
-                        <span className="text-[#0c141c] font-medium">
-                          {Math.round((library.processedCount / library.fileCount) * 100)}%
-                        </span>
+                    </TableCell>
+                    
+                    <TableCell className="py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium border ${getDataTypeColor(library.data_type)}`}>
+                        {getDataTypeLabel(library.data_type)}
+                      </span>
+                    </TableCell>
+                    
+                    <TableCell className="py-4">
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-[#4f7096]">已完成</span>
+                          <span className="text-[#0c141c] font-medium">
+                            {library.file_count > 0 
+                              ? Math.round((library.processed_count / library.file_count) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
+                          <div 
+                            className="bg-[#10b981] h-1.5 rounded-full" 
+                            style={{ 
+                              width: `${library.file_count > 0 
+                                ? (library.processed_count / library.file_count) * 100 
+                                : 0}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-[#4f7096]">
+                          <span>已处理: {library.processed_count}</span>
+                          <span>处理中: {library.processing_count}</span>
+                        </div>
                       </div>
-                      <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
-                        <div 
-                          className="bg-[#10b981] h-1.5 rounded-full" 
-                          style={{ width: `${(library.processedCount / library.fileCount) * 100}%` }}
-                        ></div>
+                    </TableCell>
+                    
+                    <TableCell className="py-4">
+                      <div className="text-center">
+                        <div className="text-[#0c141c] font-medium">{library.file_count}</div>
+                        <div className="text-xs text-[#4f7096]">MD: {library.md_count}</div>
                       </div>
-                      <div className="flex justify-between text-xs text-[#4f7096]">
-                        <span>已处理: {library.processedCount}</span>
-                        <span>处理中: {library.processingCount}</span>
+                    </TableCell>
+                    
+                    <TableCell className="py-4 text-[#4f7096]">{library.total_size}</TableCell>
+                    
+                    <TableCell className="py-4">
+                      <div className="flex items-center text-[#4f7096]">
+                        <ClockIcon className="w-3 h-3 mr-1" />
+                        {library.last_updated}
                       </div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="py-4">
-                    <div className="text-center">
-                      <div className="text-[#0c141c] font-medium">{library.fileCount}</div>
-                      <div className="text-xs text-[#4f7096]">MD: {library.mdCount}</div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="py-4 text-[#4f7096]">{library.totalSize}</TableCell>
-                  
-                  <TableCell className="py-4">
-                    <div className="flex items-center text-[#4f7096]">
-                      <ClockIcon className="w-3 h-3 mr-1" />
-                      {library.lastUpdated}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-[#e8edf2]">
-                          <MoreVerticalIcon className="h-4 w-4 text-[#4f7096]" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[160px]">
-                        <DropdownMenuItem
-                          className="cursor-pointer text-[#0c141c]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewLibrary(library);
-                          }}
-                        >
-                          <EyeIcon className="mr-2 h-4 w-4" />
-                          <span>查看详情</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer text-[#0c141c]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Settings2Icon className="mr-2 h-4 w-4" />
-                          <span>编辑设置</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="cursor-pointer text-red-600"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <TrashIcon className="mr-2 h-4 w-4" />
-                          <span>删除</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    
+                    <TableCell className="py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-[#e8edf2]">
+                            <MoreVerticalIcon className="h-4 w-4 text-[#4f7096]" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px]">
+                          <DropdownMenuItem
+                            className="cursor-pointer text-[#0c141c]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewLibrary(library);
+                            }}
+                          >
+                            <EyeIcon className="mr-2 h-4 w-4" />
+                            <span>查看详情</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-[#0c141c]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Settings2Icon className="mr-2 h-4 w-4" />
+                            <span>编辑设置</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLibrary(library);
+                            }}
+                            disabled={actionLoading}
+                          >
+                            <TrashIcon className="mr-2 h-4 w-4" />
+                            <span>删除</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {libraries.length === 0 && !librariesLoading && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-[#4f7096]">
+                      暂无文件库数据，点击"创建数据库"开始添加
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </Card>
       </div>
     </div>

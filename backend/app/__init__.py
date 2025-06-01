@@ -5,6 +5,7 @@ from flasgger import Swagger
 
 from app.db import db
 from app.api.v1 import api_v1
+from app.api.v1.endpoints.libraries import libraries_bp
 from config.config import config
 
 def create_app(config_name='development'):
@@ -16,7 +17,11 @@ def create_app(config_name='development'):
     
     # 初始化扩展
     db.init_app(app)
-    CORS(app, origins=app.config.get('CORS_ORIGINS', []))
+    CORS(app, 
+         origins=["*"],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+         supports_credentials=True)
     JWTManager(app)
     
     # 初始化Swagger
@@ -30,6 +35,7 @@ def create_app(config_name='development'):
     
     # 注册蓝图
     app.register_blueprint(api_v1, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(libraries_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
     # 创建数据库表
     with app.app_context():

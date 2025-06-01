@@ -37,7 +37,7 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', '3600')))
     
     # CORS配置
-    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS = "*"
     
     # 文件上传配置
     MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB

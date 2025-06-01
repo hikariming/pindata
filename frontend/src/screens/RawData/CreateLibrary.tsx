@@ -13,11 +13,17 @@ import {
   BrainIcon,
   DatabaseIcon,
   SettingsIcon,
-  InfoIcon
+  InfoIcon,
+  Loader2Icon
 } from 'lucide-react';
+
+// 导入API相关
+import { useLibraryActions } from '../../hooks/useLibraries';
+import { CreateLibraryRequest, DataType } from '../../types/library';
 
 interface CreateLibraryProps {
   onBack: () => void;
+  onSuccess?: () => void;
 }
 
 interface ConversionSettings {
@@ -29,12 +35,14 @@ interface ConversionSettings {
   extractTables: boolean;
 }
 
-export const CreateLibrary = ({ onBack }: CreateLibraryProps): JSX.Element => {
+export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.Element => {
   const { t } = useTranslation();
+  const { createLibrary, loading, error } = useLibraryActions();
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    dataType: 'training' as 'training' | 'evaluation' | 'mixed',
+    data_type: 'training' as DataType,
     tags: [] as string[],
     purpose: '',
   });
@@ -93,10 +101,24 @@ export const CreateLibrary = ({ onBack }: CreateLibraryProps): JSX.Element => {
     }
   };
 
-  const handleSubmit = () => {
-    // 处理表单提交逻辑
-    console.log('创建数据库:', { formData, conversionSettings });
-    onBack();
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      alert('请输入数据库名称');
+      return;
+    }
+
+    const createData: CreateLibraryRequest = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || undefined,
+      data_type: formData.data_type,
+      tags: formData.tags,
+    };
+
+    const result = await createLibrary(createData);
+    if (result) {
+      onSuccess?.();
+      onBack();
+    }
   };
 
   return (
@@ -144,8 +166,8 @@ export const CreateLibrary = ({ onBack }: CreateLibraryProps): JSX.Element => {
                   数据类型 <span className="text-red-500">*</span>
                 </label>
                 <select 
-                  value={formData.dataType} 
-                  onChange={(e) => setFormData({ ...formData, dataType: e.target.value as any })}
+                  value={formData.data_type} 
+                  onChange={(e) => setFormData({ ...formData, data_type: e.target.value as DataType })}
                   className="w-full px-3 py-2 border border-[#d1dbe8] rounded-md focus:border-[#1977e5] focus:outline-none bg-white"
                 >
                   <option value="training">训练数据</option>
@@ -382,19 +404,38 @@ export const CreateLibrary = ({ onBack }: CreateLibraryProps): JSX.Element => {
           <Button
             variant="outline"
             onClick={onBack}
+            disabled={loading}
             className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2] hover:text-[#0c141c]"
           >
             取消
           </Button>
           <Button 
             onClick={handleSubmit}
+            disabled={loading || !formData.name.trim()}
             className="bg-[#1977e5] hover:bg-[#1977e5]/90"
-            disabled={!formData.name.trim()}
           >
-            <BrainIcon className="w-4 h-4 mr-2" />
-            创建数据库
+            {loading ? (
+              <>
+                <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                创建中...
+              </>
+            ) : (
+              <>
+                <BrainIcon className="w-4 h-4 mr-2" />
+                创建数据库
+              </>
+            )}
           </Button>
         </div>
+
+        {/* 错误提示 */}
+        {error && (
+          <Card className="border-red-200 bg-red-50 p-4 mt-4">
+            <div className="text-red-600 text-sm">
+              {error}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
