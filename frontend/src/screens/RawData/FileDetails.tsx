@@ -1,24 +1,29 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { ArrowLeftIcon, DownloadIcon, TrashIcon, FileIcon, CheckCircleIcon, ClockIcon, SettingsIcon, RefreshCwIcon } from 'lucide-react';
 
-interface FileDetailsProps {
-  onBack: () => void;
-  file: {
-    id: string;
-    name: string;
-    type: string;
-    size: string;
-    uploadDate: string;
-    status: 'pending' | 'processing' | 'processed';
-  };
-}
-
-export const FileDetails = ({ onBack, file }: FileDetailsProps): JSX.Element => {
+export const FileDetails = (): JSX.Element => {
   const { t } = useTranslation();
+  const { fileId } = useParams<{ fileId: string }>();
+  const navigate = useNavigate();
+
+  // Mock file data - in real app, you would fetch based on fileId
+  const file = {
+    id: fileId || '1',
+    name: `file_${fileId || '1'}.pdf`,
+    type: 'PDF',
+    size: '2.5MB',
+    uploadDate: '2024-03-15',
+    status: 'processed' as const
+  };
+
+  const handleBack = () => {
+    navigate('/rawdata');
+  };
 
   const processingSteps = [
     {
@@ -54,7 +59,7 @@ export const FileDetails = ({ onBack, file }: FileDetailsProps): JSX.Element => 
           <Button
             variant="ghost"
             className="text-[#4f7096] hover:text-[#0c141c] hover:bg-[#e8edf2]"
-            onClick={onBack}
+            onClick={handleBack}
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             {t('rawData.backToList')}

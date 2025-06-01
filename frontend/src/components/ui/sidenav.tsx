@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DatabaseIcon,
   HardDriveIcon,
@@ -14,14 +15,14 @@ import { Button } from './button';
 import { LanguageSwitcher } from './language-switcher';
 
 interface SidenavProps {
-  onNavigate: (page: string) => void;
-  currentPage: string;
   onCollapsedChange?: (isCollapsed: boolean) => void;
 }
 
-export const Sidenav = ({ onNavigate, currentPage, onCollapsedChange }: SidenavProps): JSX.Element => {
+export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     onCollapsedChange?.(isCollapsed);
@@ -31,36 +32,55 @@ export const Sidenav = ({ onNavigate, currentPage, onCollapsedChange }: SidenavP
     setIsCollapsed(prev => !prev);
   };
 
+  const getCurrentPage = () => {
+    const path = location.pathname;
+    if (path.startsWith('/datasets')) return 'datasets';
+    if (path.startsWith('/rawdata')) return 'rawData';
+    if (path.startsWith('/tasks')) return 'tasks';
+    if (path.startsWith('/plugins')) return 'plugins';
+    if (path.startsWith('/settings')) return 'settings';
+    if (path.startsWith('/overview')) return 'overview';
+    return 'overview';
+  };
+
+  const currentPage = getCurrentPage();
+
   const navigationItems = [
     {
       icon: <LayoutDashboardIcon size={24} />,
       label: t('navigation.overview'),
       page: 'overview',
+      path: '/overview',
     },
     {
       icon: <DatabaseIcon size={24} />,
       label: t('navigation.datasets'),
       page: 'datasets',
+      path: '/datasets',
     },
     {
       icon: <ListTodoIcon size={24} />,
       label: t('navigation.tasks'),
       page: 'tasks',
+      path: '/tasks',
     },
     {
       icon: <HardDriveIcon size={24} />,
       label: t('navigation.rawData'),
       page: 'rawData',
+      path: '/rawdata',
     },
     {
       icon: <PuzzleIcon size={24} />,
       label: t('navigation.plugins'),
       page: 'plugins',
+      path: '/plugins',
     },
     {
       icon: <SettingsIcon size={24} />,
       label: t('navigation.settings'),
       page: 'settings',
+      path: '/settings',
     },
   ];
 
@@ -89,7 +109,7 @@ export const Sidenav = ({ onNavigate, currentPage, onCollapsedChange }: SidenavP
                 className={`flex ${isCollapsed ? 'justify-center' : 'justify-start'} gap-3 px-3 py-2 h-auto w-full transition-all duration-300 ${
                   currentPage === item.page ? 'bg-[#e8edf2]' : ''
                 }`}
-                onClick={() => onNavigate(item.page)}
+                onClick={() => navigate(item.path)}
                 title={isCollapsed ? item.label : undefined}
               >
                 <span className="w-6 flex-shrink-0">{item.icon}</span>
