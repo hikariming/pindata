@@ -1,0 +1,1 @@
+export { StitchDesign } from "./StitchDesign";

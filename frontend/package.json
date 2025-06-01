@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "source": "./index.html",
+  "type": "module",
+  "name": "llama-dataset",
+  "description": "A React project for managing and analyzing datasets with LLaMA",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@tanstack/react-table": "^8.13.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "2.1.1",
+    "i18next": "^23.10.1",
+    "i18next-browser-languagedetector": "^7.2.0",
+    "lucide-react": "^0.453.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^14.1.0",
+    "react-router-dom": "^6.8.1",
+    "tailwind-merge": "2.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.0",
+    "@types/react-dom": "18.2.0",
+    "@vitejs/plugin-react": "4.3.4",
+    "esbuild": "0.24.0",
+    "globals": "15.12.0",
+    "tailwindcss": "3.4.16",
+    "vite": "6.0.4"
+  },
+  "alias": {
+    "@/*": "./src/components/ui/$1"
+  }
+}
