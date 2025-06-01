@@ -213,6 +213,14 @@ npm start
        PluginRegistry.register_distiller('my_distiller', MyCustomDistiller)
    ```
 
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python init_db.py  # 初始化数据库
+python run.py      # 启动服务
+
+
 3. 重启后端服务即可使用新插件
 
 ## 路线图

@@ -9,6 +9,7 @@ SQLAlchemy==2.0.23
 psycopg2-binary==2.9.9
 alembic==1.13.0
 redis==5.0.1
+flask_sqlalchemy
 
 # API文档
 flasgger==0.9.7.1
