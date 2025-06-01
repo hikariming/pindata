@@ -1,36 +1,41 @@
-# Flask and related
-Flask==2.2.2 # 固定一个版本以便复现，实际项目应根据需求选择
-SQLAlchemy==1.4.39
-psycopg2-binary # PostgreSQL 驱动
-Flask-SQLAlchemy # SQLAlchemy 的 Flask 扩展 (可选, 如果不用纯 SQLAlchemy)
-Flask-Migrate # Alembic 的 Flask 扩展 (可选, 如果使用 Alembic)
-python-dotenv # 用于加载 .env 文件
+# Flask核心
+Flask==3.0.0
+Flask-RESTful==0.3.10
+Flask-CORS==4.0.0
+Flask-JWT-Extended==4.5.3
 
-# MinIO
-minio==7.1.12
+# 数据库相关
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.13.0
+redis==5.0.1
 
-# Celery and Redis
-celery==5.2.7
-redis==4.3.4
+# API文档
+flasgger==0.9.7.1
 
-# Data handling
-pandas # README 中提及
+# 数据处理
+pandas==2.1.4
+numpy==1.26.2
 
-# API Documentation (可选, 如果 Flask 框架不自带或需要特定工具)
-# Flask-Swagger-UI or similar
+# 对象存储
+minio==7.2.0
 
-# Document Parsers (根据插件实现选择)
-python-docx
-python-pptx
-PyPDF2 # 或者 pdfminer.six
+# 任务队列
+celery==5.3.4
+kombu==5.3.4
 
-# Linter and Formatter (开发依赖)
-# flake8
-# black
+# 工具库
+python-dotenv==1.0.0
+marshmallow==3.20.1
+python-multipart==0.0.6
 
-# Testing (开发依赖)
-# pytest
-# pytest-flask
+# 文档解析
+python-docx==1.1.0
+python-pptx==0.6.23
+PyPDF2==3.0.1
 
-# Gunicorn (生产环境 WSGI 服务器)
-# gunicorn 
+# 开发工具
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.12.0
+flake8==6.1.0 
