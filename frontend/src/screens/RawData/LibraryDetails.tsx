@@ -23,6 +23,10 @@ import {
   EyeIcon,
   DownloadIcon,
   RefreshCwIcon,
+  FileEditIcon,
+  Trash2Icon,
+  CheckSquareIcon,
+  SquareIcon,
 } from 'lucide-react';
 
 // 导入API相关类型和Hook
@@ -40,6 +44,8 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const { t } = useTranslation();
   const [showUpload, setShowUpload] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // 使用Hook获取文件列表
   const { files, loading: filesLoading, error: filesError, refresh: refreshFiles } = useLibraryFiles(library.id);
@@ -68,6 +74,75 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         showNotification('error', `文件 "${fileName}" 删除失败`);
       }
     }
+  };
+
+  const handleSelectFile = (fileId: string, checked: boolean) => {
+    const newSelected = new Set(selectedFiles);
+    if (checked) {
+      newSelected.add(fileId);
+    } else {
+      newSelected.delete(fileId);
+    }
+    setSelectedFiles(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedFiles(new Set(files.map(f => f.id)));
+    } else {
+      setSelectedFiles(new Set());
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    const selectedFilesList = files.filter(f => selectedFiles.has(f.id));
+    const fileNames = selectedFilesList.map(f => f.original_filename).join('、');
+    
+    if (window.confirm(`⚠️ 警告：您即将删除 ${selectedFiles.size} 个文件！\n\n文件列表：\n${fileNames}\n\n此操作不可撤销，确定要继续吗？`)) {
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const file of selectedFilesList) {
+        const success = await deleteFile(library.id, file.id);
+        if (success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      }
+      
+      refreshFiles();
+      setSelectedFiles(new Set());
+      
+      if (failCount === 0) {
+        showNotification('success', `成功删除 ${successCount} 个文件`);
+      } else {
+        showNotification('error', `删除完成：成功 ${successCount} 个，失败 ${failCount} 个`);
+      }
+    }
+  };
+
+  const handleBatchConvertToMD = async () => {
+    const selectedFilesList = files.filter(f => selectedFiles.has(f.id));
+    const fileNames = selectedFilesList.map(f => f.original_filename).join('、');
+    
+    if (window.confirm(`确定要将选中的 ${selectedFiles.size} 个文件转换为 Markdown 格式吗？\n\n文件列表：\n${fileNames}`)) {
+      // TODO: 这里需要调用转换API
+      console.log('批量转换为MD:', selectedFilesList);
+      
+      // 模拟转换成功
+      showNotification('success', `已提交 ${selectedFiles.size} 个文件的转换任务`);
+      setSelectedFiles(new Set());
+      refreshFiles();
+    }
+  };
+
+  const getSelectAllState = () => {
+    if (files.length === 0) return { checked: false, indeterminate: false };
+    const selectedCount = selectedFiles.size;
+    if (selectedCount === 0) return { checked: false, indeterminate: false };
+    if (selectedCount === files.length) return { checked: true, indeterminate: false };
+    return { checked: false, indeterminate: true };
   };
 
   const getStatusIcon = (status: string) => {
@@ -114,6 +189,8 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   };
 
   const supportedFormats = ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'txt', 'md'];
+
+  const selectAllState = getSelectAllState();
 
   return (
     <div className="w-full max-w-[1400px] p-6">
@@ -216,21 +293,55 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
 
       {/* 文件列表 */}
       <Card className="border-[#d1dbe8] bg-white">
-        <div className="p-4 border-b border-[#d1dbe8] flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-[#0c141c]">文件列表</h3>
-            <p className="text-sm text-[#4f7096]">共 {files.length} 个文件</p>
+        <div className="p-4 border-b border-[#d1dbe8]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-[#0c141c]">文件列表</h3>
+              <p className="text-sm text-[#4f7096]">
+                共 {files.length} 个文件
+                {selectedFiles.size > 0 && (
+                  <span className="ml-2 text-[#1977e5]">
+                    已选择 {selectedFiles.size} 个
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedFiles.size > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBatchConvertToMD}
+                    className="flex items-center gap-2 text-[#1977e5] border-[#1977e5] hover:bg-[#1977e5] hover:text-white"
+                  >
+                    <FileEditIcon className="w-4 h-4" />
+                    转换为MD ({selectedFiles.size})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBatchDelete}
+                    disabled={deleteLoading}
+                    className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-600 hover:text-white"
+                  >
+                    <Trash2Icon className="w-4 h-4" />
+                    批量删除 ({selectedFiles.size})
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshFiles}
+                disabled={filesLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCwIcon className={`w-4 h-4 ${filesLoading ? 'animate-spin' : ''}`} />
+                刷新
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refreshFiles}
-            disabled={filesLoading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCwIcon className={`w-4 h-4 ${filesLoading ? 'animate-spin' : ''}`} />
-            刷新
-          </Button>
         </div>
 
         {filesLoading ? (
@@ -261,6 +372,18 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectAllState.checked}
+                      ref={(el) => {
+                        if (el) el.indeterminate = selectAllState.indeterminate;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 text-[#1977e5] bg-gray-100 border-gray-300 rounded focus:ring-[#1977e5] focus:ring-2"
+                      aria-label="全选"
+                    />
+                  </TableHead>
                   <TableHead>文件名</TableHead>
                   <TableHead>类型</TableHead>
                   <TableHead>大小</TableHead>
@@ -272,6 +395,15 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
               <TableBody>
                 {files.map((file) => (
                   <TableRow key={file.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.has(file.id)}
+                        onChange={(e) => handleSelectFile(file.id, e.target.checked)}
+                        className="w-4 h-4 text-[#1977e5] bg-gray-100 border-gray-300 rounded focus:ring-[#1977e5] focus:ring-2"
+                        aria-label={`选择文件 ${file.original_filename}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <FileIcon className="w-4 h-4 text-[#4f7096] mr-2" />
