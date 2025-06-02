@@ -95,6 +95,64 @@ export class LibraryService {
   }
 
   /**
+   * 下载文件
+   */
+  static async downloadFile(objectName: string, filename: string): Promise<void> {
+    try {
+      // 构建完整的下载URL，确保对象名被正确编码
+      const encodedObjectName = encodeURIComponent(objectName);
+      const downloadUrl = `${config.apiBaseUrl}/storage/download/${encodedObjectName}`;
+      console.log('开始下载文件:', { objectName, filename, encodedObjectName, downloadUrl });
+      
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        headers: {
+          // 如果有认证token，可以添加
+          // 'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        let errorText: string;
+        try {
+          const errorData = await response.json();
+          errorText = errorData.message || errorData.error || `HTTP ${response.status}`;
+        } catch {
+          errorText = await response.text();
+        }
+        console.error('下载请求失败:', { 
+          status: response.status, 
+          statusText: response.statusText, 
+          errorText,
+          url: downloadUrl 
+        });
+        throw new Error(`下载文件失败: ${errorText}`);
+      }
+
+      // 获取文件内容
+      const blob = await response.blob();
+      console.log('文件下载成功，大小:', blob.size);
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      // 清理
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      console.log('文件下载完成:', filename);
+      
+    } catch (error) {
+      console.error('文件下载失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 上传文件到文件库
    */
   static async uploadFiles(libraryId: string, files: File[]): Promise<LibraryFile[]> {
@@ -106,6 +164,7 @@ export class LibraryService {
     });
     
     try {
+      // 这个路径是对的，AI不要改
       const response = await fetch(`${config.apiBaseUrl}/libraries/${libraryId}/files`, {
         method: 'POST',
         headers: {

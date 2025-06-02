@@ -54,7 +54,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   
   // 使用Hook获取文件列表
   const { files, loading: filesLoading, error: filesError, refresh: refreshFiles } = useLibraryFiles(library.id);
-  const { deleteFile, loading: deleteLoading } = useFileActions();
+  const { deleteFile, downloadFile, loading: deleteLoading } = useFileActions();
   const { convertFiles, getConversionJob, cancelConversionJob, loading: convertLoading } = useFileConversion();
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -79,6 +79,19 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
       } else {
         showNotification('error', `文件 "${fileName}" 删除失败`);
       }
+    }
+  };
+
+  const handleDownloadFile = async (file: any) => {
+    try {
+      const success = await downloadFile(file.minio_object_name, file.original_filename);
+      if (success) {
+        showNotification('success', `文件 "${file.original_filename}" 下载开始`);
+      } else {
+        showNotification('error', `文件 "${file.original_filename}" 下载失败`);
+      }
+    } catch (error) {
+      showNotification('error', `文件 "${file.original_filename}" 下载失败`);
     }
   };
 
@@ -537,6 +550,16 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                           title="删除文件"
                         >
                           <TrashIcon className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownloadFile(file)}
+                          disabled={deleteLoading}
+                          className="h-8 w-8 p-0 text-[#4f7096] hover:text-blue-600"
+                          title="下载文件"
+                        >
+                          <DownloadIcon className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

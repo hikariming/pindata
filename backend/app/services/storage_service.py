@@ -70,8 +70,15 @@ class StorageService:
             file_content = file_data.read()
             file_size = len(file_content)
             
+            # 统一使用 raw-data bucket，确保与下载逻辑一致
+            bucket_name = 'raw-data'
+            
+            # 确保bucket存在
+            if not self._bucket_exists(bucket_name):
+                client.make_bucket(bucket_name)
+                logger.info(f"创建bucket: {bucket_name}")
+            
             # 上传到 MinIO
-            bucket_name = current_app.config['MINIO_BUCKET_NAME']
             client.put_object(
                 bucket_name,
                 object_name,
@@ -80,7 +87,7 @@ class StorageService:
                 content_type=content_type
             )
             
-            logger.info(f"文件上传成功: {object_name}, 大小: {file_size} bytes")
+            logger.info(f"文件上传成功: {object_name}, 大小: {file_size} bytes, bucket: {bucket_name}")
             return object_name, file_size
             
         except S3Error as e:
@@ -89,6 +96,15 @@ class StorageService:
         except Exception as e:
             logger.error(f"上传文件失败: {str(e)}")
             raise
+    
+    def _bucket_exists(self, bucket_name: str) -> bool:
+        """检查bucket是否存在"""
+        try:
+            client = self._get_client()
+            return client.bucket_exists(bucket_name)
+        except Exception as e:
+            logger.error(f"检查bucket是否存在时出错: {str(e)}")
+            return False
     
     def get_file(self, object_name: str) -> bytes:
         """
@@ -195,6 +211,26 @@ class StorageService:
         try:
             client = self._get_client()
             bucket_name = current_app.config['MINIO_BUCKET_NAME']
+            client.stat_object(bucket_name, object_name)
+            return True
+        except S3Error:
+            return False
+        except Exception:
+            return False
+    
+    def file_exists_in_bucket(self, bucket_name: str, object_name: str) -> bool:
+        """
+        检查文件是否存在于指定bucket中
+        
+        Args:
+            bucket_name: 存储桶名
+            object_name: 对象名
+            
+        Returns:
+            bool: 文件是否存在
+        """
+        try:
+            client = self._get_client()
             client.stat_object(bucket_name, object_name)
             return True
         except S3Error:

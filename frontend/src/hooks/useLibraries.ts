@@ -251,8 +251,22 @@ export function useFileActions() {
     }
   }, []);
 
+  const downloadFile = useCallback(async (objectName: string, filename: string): Promise<boolean> => {
+    setState({ loading: true, error: null });
+    try {
+      await LibraryService.downloadFile(objectName, filename);
+      setState({ loading: false, error: null });
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '下载文件失败';
+      setState({ loading: false, error: errorMessage });
+      return false;
+    }
+  }, []);
+
   return {
     ...state,
     deleteFile,
+    downloadFile,
   };
 } 
