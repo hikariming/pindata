@@ -6,6 +6,8 @@ from flasgger import Swagger
 from app.db import db
 from app.api.v1 import api_v1
 from app.api.v1.endpoints.libraries import libraries_bp
+from app.api.v1.endpoints.llm_configs import llm_configs_bp
+from app.api.v1.endpoints.system_logs import system_logs_bp
 from config.config import config
 
 def create_app(config_name='development'):
@@ -36,6 +38,8 @@ def create_app(config_name='development'):
     # 注册蓝图
     app.register_blueprint(api_v1, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(libraries_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(llm_configs_bp, url_prefix=f"{app.config.get('API_PREFIX', '/api/v1')}/llm")
+    app.register_blueprint(system_logs_bp, url_prefix=f"{app.config.get('API_PREFIX', '/api/v1')}/system")
     
     # 创建数据库表
     with app.app_context():

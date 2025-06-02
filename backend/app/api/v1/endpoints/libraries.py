@@ -42,6 +42,10 @@ api = Api(libraries_bp)
 class LibraryListResource(Resource):
     """文件库列表资源"""
     
+    def options(self):
+        """处理 CORS 预检请求"""
+        return {}, 200
+    
     def get(self):
         """获取文件库列表"""
         try:
@@ -107,6 +111,10 @@ class LibraryListResource(Resource):
 class LibraryDetailResource(Resource):
     """文件库详情资源"""
     
+    def options(self, library_id):
+        """处理 CORS 预检请求"""
+        return {}, 200
+    
     def get(self, library_id):
         """获取文件库详情"""
         try:
@@ -163,6 +171,10 @@ class LibraryDetailResource(Resource):
 
 class LibraryFilesResource(Resource):
     """文件库文件资源"""
+    
+    def options(self, library_id):
+        """处理 CORS 预检请求"""
+        return {}, 200
     
     def get(self, library_id):
         """获取文件库中的文件列表"""
@@ -286,6 +298,10 @@ class LibraryFilesResource(Resource):
 class LibraryFileResource(Resource):
     """单个文件资源"""
     
+    def options(self, library_id, file_id):
+        """处理 CORS 预检请求"""
+        return {}, 200
+    
     def delete(self, library_id, file_id):
         """删除文件"""
         try:
@@ -301,6 +317,10 @@ class LibraryFileResource(Resource):
 
 class LibraryStatisticsResource(Resource):
     """文件库统计资源"""
+    
+    def options(self):
+        """处理 CORS 预检请求"""
+        return {}, 200
     
     def get(self):
         """获取文件库统计信息"""
