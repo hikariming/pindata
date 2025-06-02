@@ -264,7 +264,7 @@ class LibraryFilesResource(Resource):
                         file_type=file_extension,
                         file_size=file_size,
                         minio_object_name=object_name,
-                        minio_bucket=library.name  # 使用文件库名作为存储桶的一部分
+                        minio_bucket='raw-data'  # 使用固定的bucket名称，而不是库名
                     )
                     
                     uploaded_files.append(library_file.to_dict())
@@ -301,6 +301,24 @@ class LibraryFileResource(Resource):
     def options(self, library_id, file_id):
         """处理 CORS 预检请求"""
         return {}, 200
+    
+    def get(self, library_id, file_id):
+        """获取单个文件详情"""
+        try:
+            from app.models import LibraryFile
+            file = LibraryFile.query.filter_by(
+                id=file_id,
+                library_id=library_id
+            ).first()
+            
+            if not file:
+                return error_response('文件不存在'), 404
+            
+            return success_response(data=file.to_dict()), 200
+            
+        except Exception as e:
+            logger.error(f"获取文件详情失败: {str(e)}")
+            return error_response('服务器内部错误'), 500
     
     def delete(self, library_id, file_id):
         """删除文件"""

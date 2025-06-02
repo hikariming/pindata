@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
+} from "../../../components/ui/table";
 import { 
   ArrowLeftIcon, 
   FileIcon, 
@@ -30,9 +30,12 @@ import {
 } from 'lucide-react';
 
 // 导入API相关类型和Hook
-import { Library } from '../../types/library';
-import { FileUpload } from './FileUpload';
-import { useLibraryFiles, useFileActions } from '../../hooks/useLibraries';
+import { Library } from '../../../types/library';
+import { FileUpload } from '../FileUpload';
+import { useLibraryFiles, useFileActions } from '../../../hooks/useLibraries';
+import { useFileConversion } from '../../../hooks/useFileConversion';
+import { ConvertToMarkdownDialog, ConversionConfig } from './components/ConvertToMarkdownDialog';
+import { ConversionProgress } from './components/ConversionProgress';
 
 interface LibraryDetailsProps {
   onBack: () => void;
@@ -46,10 +49,13 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [conversionJobs, setConversionJobs] = useState<any[]>([]);
   
   // 使用Hook获取文件列表
   const { files, loading: filesLoading, error: filesError, refresh: refreshFiles } = useLibraryFiles(library.id);
   const { deleteFile, loading: deleteLoading } = useFileActions();
+  const { convertFiles, getConversionJob, cancelConversionJob, loading: convertLoading } = useFileConversion();
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -122,18 +128,68 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
     }
   };
 
-  const handleBatchConvertToMD = async () => {
+  const handleBatchConvertToMD = () => {
+    setShowConvertDialog(true);
+  };
+
+  const handleConvertConfirm = async (config: ConversionConfig) => {
     const selectedFilesList = files.filter(f => selectedFiles.has(f.id));
-    const fileNames = selectedFilesList.map(f => f.original_filename).join('、');
+    const fileIds = selectedFilesList.map(f => f.id);
     
-    if (window.confirm(`确定要将选中的 ${selectedFiles.size} 个文件转换为 Markdown 格式吗？\n\n文件列表：\n${fileNames}`)) {
-      // TODO: 这里需要调用转换API
-      console.log('批量转换为MD:', selectedFilesList);
-      
-      // 模拟转换成功
+    const job = await convertFiles(library.id, fileIds, config);
+    if (job) {
       showNotification('success', `已提交 ${selectedFiles.size} 个文件的转换任务`);
       setSelectedFiles(new Set());
+      setShowConvertDialog(false);
       refreshFiles();
+      // 添加到转换任务列表
+      setConversionJobs(prev => [job, ...prev]);
+    } else {
+      showNotification('error', '转换任务提交失败');
+    }
+  };
+
+  const handleRefreshJobs = async () => {
+    // 刷新转换任务状态
+    for (const job of conversionJobs) {
+      const updatedJob = await getConversionJob(job.id);
+      if (updatedJob) {
+        setConversionJobs(prev => 
+          prev.map(j => j.id === job.id ? updatedJob : j)
+        );
+      }
+    }
+  };
+
+  const handleCancelJob = async (jobId: string) => {
+    const success = await cancelConversionJob(jobId);
+    if (success) {
+      showNotification('success', '转换任务已取消');
+      handleRefreshJobs();
+    } else {
+      showNotification('error', '取消任务失败');
+    }
+  };
+
+  const handleSingleFileConvert = (fileId: string) => {
+    setSelectedFiles(new Set([fileId]));
+    setShowConvertDialog(true);
+  };
+
+  const getFileTypeIcon = (fileType: string) => {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return '📄';
+      case 'docx':
+      case 'doc':
+        return '📝';
+      case 'pptx':
+      case 'ppt':
+        return '📊';
+      case 'txt':
+        return '📃';
+      default:
+        return '📄';
     }
   };
 
@@ -191,6 +247,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const supportedFormats = ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'txt', 'md'];
 
   const selectAllState = getSelectAllState();
+  const selectedFilesForConversion = files.filter(f => selectedFiles.has(f.id));
 
   return (
     <div className="w-full max-w-[1400px] p-6">
@@ -291,6 +348,16 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         </Card>
       </div>
 
+      {/* 转换进度 */}
+      {conversionJobs.length > 0 && (
+        <ConversionProgress
+          jobs={conversionJobs}
+          onRefresh={handleRefreshJobs}
+          onCancel={handleCancelJob}
+          className="mb-6"
+        />
+      )}
+
       {/* 文件列表 */}
       <Card className="border-[#d1dbe8] bg-white">
         <div className="p-4 border-b border-[#d1dbe8]">
@@ -313,6 +380,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                     variant="outline"
                     size="sm"
                     onClick={handleBatchConvertToMD}
+                    disabled={convertLoading}
                     className="flex items-center gap-2 text-[#1977e5] border-[#1977e5] hover:bg-[#1977e5] hover:text-white"
                   >
                     <FileEditIcon className="w-4 h-4" />
@@ -405,13 +473,18 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center">
-                        <FileIcon className="w-4 h-4 text-[#4f7096] mr-2" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{getFileTypeIcon(file.file_type)}</span>
                         <div>
-                          <p className="font-medium text-[#0c141c]">{file.original_filename}</p>
-                          {file.filename !== file.original_filename && (
-                            <p className="text-xs text-[#4f7096]">{file.filename}</p>
-                          )}
+                          <p 
+                            className="font-medium text-[#0c141c] cursor-pointer hover:text-[#1977e5] hover:underline"
+                            onClick={() => onFileSelect(file)}
+                          >
+                            {file.original_filename}
+                          </p>
+                          <p className="text-xs text-[#4f7096]">
+                            {file.file_type.toUpperCase()} • {file.file_size_human}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -436,6 +509,16 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSingleFileConvert(file.id)}
+                          disabled={convertLoading}
+                          className="h-8 w-8 p-0 text-[#4f7096] hover:text-[#1977e5]"
+                          title="转换为MD"
+                        >
+                          <FileEditIcon className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -475,6 +558,23 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         />
       )}
 
+      {/* 转换为MD弹窗 */}
+      {showConvertDialog && (
+        <ConvertToMarkdownDialog
+          open={showConvertDialog}
+          onClose={() => {
+            setShowConvertDialog(false);
+            // 如果是单文件转换，清除选择
+            if (selectedFiles.size === 1) {
+              setSelectedFiles(new Set());
+            }
+          }}
+          files={selectedFilesForConversion}
+          onConfirm={handleConvertConfirm}
+          loading={convertLoading}
+        />
+      )}
+
       {/* 通知组件 */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
@@ -494,4 +594,4 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
       )}
     </div>
   );
-};
+}; 

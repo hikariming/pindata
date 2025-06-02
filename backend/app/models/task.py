@@ -13,10 +13,11 @@ class TaskStatus(enum.Enum):
 
 class TaskType(enum.Enum):
     """任务类型枚举"""
-    PIPELINE_EXECUTION = "pipeline_execution"
-    DATA_IMPORT = "data_import"
-    DATA_EXPORT = "data_export"
-    DATA_PROCESSING = "data_processing"
+    PIPELINE_EXECUTION = "PIPELINE_EXECUTION"
+    DATA_IMPORT = "DATA_IMPORT"
+    DATA_EXPORT = "DATA_EXPORT"
+    DATA_PROCESSING = "DATA_PROCESSING"
+    DOCUMENT_CONVERSION = "DOCUMENT_CONVERSION"
 
 class Task(db.Model):
     """任务模型"""

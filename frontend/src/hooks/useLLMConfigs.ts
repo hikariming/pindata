@@ -49,6 +49,10 @@ export const useLLMConfigs = (initialParams?: LLMConfigQueryParams): UseLLMConfi
       setError(null);
       
       const queryParams = { ...currentParams, ...params };
+      // 不再根据 supports_vision 过滤，让所有配置都返回
+      if ('supports_vision' in queryParams) {
+        delete queryParams.supports_vision;
+      }
       setCurrentParams(queryParams);
       
       const response = await llmService.getConfigs(queryParams);

@@ -27,7 +27,8 @@ kombu==5.3.4
 
 # 工具库
 python-dotenv==1.0.0
-marshmallow==3.20.1
+marshmallow==3.19.0
+marshmallow-sqlalchemy==0.29.0
 python-multipart==0.0.6
 
 # 文档解析
@@ -39,4 +40,17 @@ PyPDF2==3.0.1
 pytest==7.4.3
 pytest-cov==4.1.0
 black==23.12.0
-flake8==6.1.0 
+flake8==6.1.0
+
+# Markdown
+markitdown
+
+# LLM集成
+langchain
+langchain-openai
+langchain-google-genai
+langchain-anthropic
+langchain-community
+pillow
+pdf2image
+pytesseract 

@@ -48,7 +48,7 @@ export class LibraryService {
    * 创建文件库
    */
   static async createLibrary(data: CreateLibraryRequest): Promise<Library> {
-    const response = await apiClient.post<ApiResponse<Library>>('/libraries', data);
+    const response = await apiClient.post<ApiResponse<Library>>('/api/v1/libraries', data);
     return response.data!;
   }
 
@@ -106,7 +106,7 @@ export class LibraryService {
     });
     
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/v1/libraries/${libraryId}/files`, {
+      const response = await fetch(`${config.apiBaseUrl}/libraries/${libraryId}/files`, {
         method: 'POST',
         headers: {
           // 注意：不要设置 Content-Type，让浏览器自动设置以包含 boundary

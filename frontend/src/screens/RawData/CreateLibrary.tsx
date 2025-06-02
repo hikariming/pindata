@@ -107,8 +107,27 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
       return;
     }
 
+    // 验证库名称格式
+    const name = formData.name.trim();
+    if (name.length < 3) {
+      alert('数据库名称长度不能少于3个字符');
+      return;
+    }
+    
+    if (name.length > 63) {
+      alert('数据库名称长度不能超过63个字符');
+      return;
+    }
+    
+    // 检查是否包含非法字符
+    const validNameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5][a-zA-Z0-9\u4e00-\u9fa5_-]*[a-zA-Z0-9\u4e00-\u9fa5]$/;
+    if (!validNameRegex.test(name)) {
+      alert('数据库名称只能包含中文、英文、数字、下划线和连字符，且不能以连字符开头或结尾');
+      return;
+    }
+
     const createData: CreateLibraryRequest = {
-      name: formData.name.trim(),
+      name: name,
       description: formData.description.trim() || undefined,
       data_type: formData.data_type,
       tags: formData.tags,

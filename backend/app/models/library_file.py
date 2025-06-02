@@ -29,6 +29,8 @@ class LibraryFile(db.Model):
     process_status = Column(Enum(ProcessStatus), default=ProcessStatus.PENDING)
     converted_format = Column(String(50))  # 转换后格式：markdown等
     converted_object_name = Column(String(500))  # 转换后文件的MinIO对象名
+    converted_file_size = Column(Integer)  # 转换后文件大小
+    conversion_method = Column(String(50))  # 转换方法：markitdown or vision_llm
     conversion_error = Column(Text)  # 转换错误信息
     
     # 元数据
@@ -85,6 +87,8 @@ class LibraryFile(db.Model):
             'process_status_label': self.get_status_label(),
             'converted_format': self.converted_format,
             'converted_object_name': self.converted_object_name,
+            'converted_file_size': self.converted_file_size,
+            'conversion_method': self.conversion_method,
             'conversion_error': self.conversion_error,
             'page_count': self.page_count,
             'word_count': self.word_count,

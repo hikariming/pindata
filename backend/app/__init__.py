@@ -8,6 +8,8 @@ from app.api.v1 import api_v1
 from app.api.v1.endpoints.libraries import libraries_bp
 from app.api.v1.endpoints.llm_configs import llm_configs_bp
 from app.api.v1.endpoints.system_logs import system_logs_bp
+from app.api.v1.endpoints.conversion_jobs import conversion_jobs_bp
+from app.api.v1.endpoints.storage import storage_bp
 from config.config import config
 
 def create_app(config_name='development'):
@@ -40,6 +42,8 @@ def create_app(config_name='development'):
     app.register_blueprint(libraries_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(llm_configs_bp, url_prefix=f"{app.config.get('API_PREFIX', '/api/v1')}/llm")
     app.register_blueprint(system_logs_bp, url_prefix=f"{app.config.get('API_PREFIX', '/api/v1')}/system")
+    app.register_blueprint(conversion_jobs_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(storage_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
     # 创建数据库表
     with app.app_context():

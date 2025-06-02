@@ -112,6 +112,30 @@ class StorageService:
             logger.error(f"获取文件失败: {str(e)}")
             raise
     
+    def download_file(self, bucket_name: str, object_name: str, local_file_path: str) -> bool:
+        """
+        从 MinIO 下载文件到本地路径
+        
+        Args:
+            bucket_name: 存储桶名
+            object_name: 对象名
+            local_file_path: 本地文件路径
+            
+        Returns:
+            bool: 下载是否成功
+        """
+        try:
+            client = self._get_client()
+            client.fget_object(bucket_name, object_name, local_file_path)
+            logger.info(f"文件下载成功: {object_name} -> {local_file_path}")
+            return True
+        except S3Error as e:
+            logger.error(f"MinIO 下载文件失败: {str(e)}")
+            raise Exception(f"文件下载失败: {str(e)}")
+        except Exception as e:
+            logger.error(f"下载文件失败: {str(e)}")
+            raise
+    
     def delete_file(self, object_name: str) -> bool:
         """
         从 MinIO 删除文件
@@ -177,6 +201,44 @@ class StorageService:
             return False
         except Exception:
             return False
+    
+    def upload_file_from_path(self, local_file_path: str, object_name: str, 
+                            content_type: str = None) -> int:
+        """
+        从本地文件路径上传文件到 MinIO
+        
+        Args:
+            local_file_path: 本地文件路径
+            object_name: MinIO中的对象名
+            content_type: 文件类型
+            
+        Returns:
+            int: 文件大小
+        """
+        try:
+            client = self._get_client()
+            
+            # 获取文件大小
+            file_size = os.path.getsize(local_file_path)
+            
+            # 上传到 MinIO
+            bucket_name = current_app.config['MINIO_BUCKET_NAME']
+            client.fput_object(
+                bucket_name,
+                object_name,
+                local_file_path,
+                content_type=content_type
+            )
+            
+            logger.info(f"文件上传成功: {object_name}, 大小: {file_size} bytes")
+            return file_size
+            
+        except S3Error as e:
+            logger.error(f"MinIO 上传文件失败: {str(e)}")
+            raise Exception(f"文件上传失败: {str(e)}")
+        except Exception as e:
+            logger.error(f"上传文件失败: {str(e)}")
+            raise
 
 # 创建全局存储服务实例
 storage_service = StorageService() 
