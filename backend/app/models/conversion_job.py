@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, String, Text, DateTime, Enum, JSON, Integer, ForeignKey, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 import enum
 import uuid
 from app.db import db
@@ -50,7 +50,7 @@ class ConversionJob(db.Model):
     
     # 关系
     library = relationship('Library', backref='conversion_jobs')
-    task = relationship('Task', backref='conversion_job')
+    task = relationship('Task', backref=backref('conversion_job', uselist=False))
     llm_config = relationship('LLMConfig', backref='conversion_jobs')
     
     def __init__(self, **kwargs):

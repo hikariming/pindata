@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
@@ -34,7 +34,8 @@ import {
   DownloadIcon,
   AlertTriangleIcon,
   ListIcon,
-  Layers3Icon
+  Layers3Icon,
+  LoaderIcon
 } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import {
@@ -45,36 +46,16 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { TaskQueue } from './TaskQueue';
 import { SystemMonitor } from './SystemMonitor';
+import { taskService } from '../../services/task.service';
+import { 
+  DisplayTask, 
+  TaskStatistics as ApiTaskStatistics,
+  TaskStatus as ApiTaskStatus,
+  TaskType as ApiTaskType 
+} from '../../types/task';
 
-interface Task {
-  id: string;
-  name: string;
-  type: 'file_conversion' | 'dataset_generation' | 'data_distillation' | 'batch_processing' | 'model_training' | 'data_preprocessing';
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused' | 'cancelled';
-  progress: number;
-  startTime: string;
-  endTime?: string;
-  estimatedTime?: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  libraryId?: string;
-  libraryName?: string;
-  datasetId?: string;
-  datasetName?: string;
-  details: {
-    totalItems?: number;
-    processedItems?: number;
-    currentItem?: string;
-    errorCount?: number;
-    warningCount?: number;
-  };
-  logs?: string[];
-  createdBy: string;
-  resourceUsage?: {
-    cpu: number;
-    memory: number;
-    gpu?: number;
-  };
-}
+// 兼容现有接口定义
+interface Task extends DisplayTask {}
 
 interface TaskStatistics {
   total: number;
@@ -84,7 +65,7 @@ interface TaskStatistics {
   failed: number;
 }
 
-type TaskStatus = 'all' | 'pending' | 'running' | 'completed' | 'failed' | 'paused';
+type TaskStatus = 'all' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
 type TaskType = 'all' | 'file_conversion' | 'dataset_generation' | 'data_distillation' | 'batch_processing' | 'model_training' | 'data_preprocessing';
 
 export const Tasks = (): JSX.Element => {
@@ -96,148 +77,108 @@ export const Tasks = (): JSX.Element => {
   const [typeFilter, setTypeFilter] = useState<TaskType>('all');
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('tasks');
+  const [loading, setLoading] = useState(false);
+  const [statistics, setStatistics] = useState<TaskStatistics>({
+    total: 0,
+    running: 0,
+    pending: 0,
+    completed: 0,
+    failed: 0
+  });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 20,
+    total: 0,
+    total_pages: 0,
+    has_next: false,
+    has_prev: false
+  });
 
-  // 模拟任务数据
-  useEffect(() => {
-    const mockTasks: Task[] = [
-      {
-        id: '1',
-        name: 'AI研究论文合集.pdf 转换',
-        type: 'file_conversion',
-        status: 'running',
-        progress: 75,
-        startTime: '2024-03-15 14:30:25',
-        estimatedTime: '5分钟',
-        priority: 'medium',
-        libraryId: '1',
-        libraryName: '研究论文库',
-        details: {
-          totalItems: 45,
-          processedItems: 34,
-          currentItem: '第34页 - 深度学习应用'
-        },
-        createdBy: '管理员',
-        resourceUsage: {
-          cpu: 45,
-          memory: 2048
-        }
-      },
-      {
-        id: '2',
-        name: '训练数据集生成任务',
-        type: 'dataset_generation',
-        status: 'running',
-        progress: 25,
-        startTime: '2024-03-15 13:45:10',
-        estimatedTime: '2小时30分钟',
-        priority: 'high',
-        datasetId: 'ds-001',
-        datasetName: 'LLM训练数据集v1.0',
-        details: {
-          totalItems: 50000,
-          processedItems: 12500,
-          currentItem: '处理文档: 技术规范文档.docx',
-          errorCount: 3,
-          warningCount: 15
-        },
-        createdBy: '数据工程师',
-        resourceUsage: {
-          cpu: 85,
-          memory: 8192,
-          gpu: 65
-        }
-      },
-      {
-        id: '3',
-        name: '批量文件转换 - 法律文档库',
-        type: 'batch_processing',
-        status: 'pending',
-        progress: 0,
-        startTime: '2024-03-15 15:00:00',
-        priority: 'medium',
-        libraryId: '3',
-        libraryName: '法律文件库',
-        details: {
-          totalItems: 12,
-          processedItems: 0,
-          errorCount: 0
-        },
-        createdBy: '管理员'
-      },
-      {
-        id: '4',
-        name: '数据蒸馏任务 - 对话生成模型',
-        type: 'data_distillation',
-        status: 'completed',
-        progress: 100,
-        startTime: '2024-03-15 10:20:15',
-        endTime: '2024-03-15 14:15:30',
-        priority: 'high',
-        datasetId: 'ds-002',
-        datasetName: '对话数据集',
-        details: {
-          totalItems: 100000,
-          processedItems: 100000,
-          errorCount: 0,
-          warningCount: 5
-        },
-        createdBy: '算法工程师'
-      },
-      {
-        id: '5',
-        name: '商业报告预处理',
-        type: 'data_preprocessing',
-        status: 'failed',
-        progress: 15,
-        startTime: '2024-03-15 12:30:45',
-        endTime: '2024-03-15 12:45:20',
-        priority: 'low',
-        libraryId: '4',
-        libraryName: '商业报告库',
-        details: {
-          totalItems: 30,
-          processedItems: 4,
-          currentItem: '财报分析2023Q4.xlsx',
-          errorCount: 1,
-          warningCount: 0
-        },
-        createdBy: '数据分析师',
-        logs: [
-          '2024-03-15 12:30:45 - 任务开始',
-          '2024-03-15 12:32:10 - 开始处理文件 1/30',
-          '2024-03-15 12:35:20 - 文件格式验证成功',
-          '2024-03-15 12:40:15 - 处理文件 4/30',
-          '2024-03-15 12:44:30 - 错误: 文件损坏，无法读取',
-          '2024-03-15 12:45:20 - 任务失败'
-        ]
-      },
-      {
-        id: '6',
-        name: '模型微调训练任务',
-        type: 'model_training',
-        status: 'paused',
-        progress: 60,
-        startTime: '2024-03-15 08:00:00',
-        priority: 'urgent',
-        datasetId: 'ds-003',
-        datasetName: '专业文档数据集',
-        details: {
-          totalItems: 1000000,
-          processedItems: 600000,
-          currentItem: '训练轮次 60/100',
-          warningCount: 2
-        },
-        createdBy: '机器学习工程师',
-        resourceUsage: {
-          cpu: 95,
-          memory: 16384,
-          gpu: 90
-        }
+  // 获取任务列表
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const params: any = {
+        page: pagination.page,
+        per_page: pagination.per_page
+      };
+
+      // 添加过滤参数
+      if (statusFilter !== 'all') {
+        params.status = statusFilter;
       }
-    ];
-    
-    setTasks(mockTasks);
+      
+      if (typeFilter !== 'all') {
+        // 映射前端类型到后端类型
+        const typeMapping: Record<string, string> = {
+          'file_conversion': 'DOCUMENT_CONVERSION',
+          'data_preprocessing': 'DATA_PROCESSING',
+          'dataset_generation': 'DATA_IMPORT',
+          'batch_processing': 'DATA_EXPORT',
+          'model_training': 'PIPELINE_EXECUTION'
+        };
+        params.type = typeMapping[typeFilter];
+      }
+
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      const { tasks: taskList, pagination: paginationData } = await taskService.getDisplayTasks(params);
+      
+      setTasks(taskList);
+      setPagination(paginationData);
+    } catch (error) {
+      console.error('获取任务列表失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination.page, pagination.per_page, statusFilter, typeFilter, searchTerm]);
+
+  // 获取任务统计
+  const fetchStatistics = useCallback(async () => {
+    try {
+      const stats: ApiTaskStatistics = await taskService.getTaskStatistics();
+      setStatistics({
+        total: stats.total,
+        running: stats.running,
+        pending: stats.pending,
+        completed: stats.completed,
+        failed: stats.failed
+      });
+    } catch (error) {
+      console.error('获取任务统计失败:', error);
+    }
   }, []);
+
+  // 初始化数据
+  useEffect(() => {
+    fetchTasks();
+    fetchStatistics();
+  }, [fetchTasks, fetchStatistics]);
+
+  // 搜索防抖
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (pagination.page !== 1) {
+        setPagination(prev => ({ ...prev, page: 1 }));
+      } else {
+        fetchTasks();
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // 过滤器变化时重新获取数据
+  useEffect(() => {
+    if (pagination.page !== 1) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    } else {
+      fetchTasks();
+    }
+  }, [statusFilter, typeFilter]);
 
   const getTaskTypeIcon = (type: Task['type']) => {
     switch (type) {
@@ -283,9 +224,9 @@ export const Tasks = (): JSX.Element => {
         return 'text-green-600 bg-green-50 border-green-200';
       case 'failed':
         return 'text-red-600 bg-red-50 border-red-200';
-      case 'paused':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
       case 'cancelled':
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+      default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
@@ -300,10 +241,10 @@ export const Tasks = (): JSX.Element => {
         return '已完成';
       case 'failed':
         return '失败';
-      case 'paused':
-        return '已暂停';
       case 'cancelled':
         return '已取消';
+      default:
+        return '未知';
     }
   };
 
@@ -356,14 +297,6 @@ export const Tasks = (): JSX.Element => {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const statistics: TaskStatistics = {
-    total: tasks.length,
-    running: tasks.filter(t => t.status === 'running').length,
-    pending: tasks.filter(t => t.status === 'pending').length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    failed: tasks.filter(t => t.status === 'failed').length,
-  };
-
   const toggleSelectAll = () => {
     if (selectedTasks.size === filteredTasks.length) {
       setSelectedTasks(new Set());
@@ -382,15 +315,73 @@ export const Tasks = (): JSX.Element => {
     setSelectedTasks(newSelectedTasks);
   };
 
-  const handleBatchOperation = (operation: 'pause' | 'resume' | 'cancel' | 'delete') => {
-    console.log(`批量${operation}任务:`, Array.from(selectedTasks));
-    // 这里实现批量操作逻辑
-    setSelectedTasks(new Set());
+  const handleBatchOperation = async (operation: 'pause' | 'resume' | 'cancel' | 'delete') => {
+    if (selectedTasks.size === 0) {
+      console.log('请选择要操作的任务');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const taskIds = Array.from(selectedTasks).map(id => parseInt(id));
+      
+      if (operation === 'delete') {
+        const result = await taskService.batchDeleteTasks(taskIds);
+        console.log(`成功删除 ${result.deleted_count} 个任务${result.failed_count > 0 ? `，${result.failed_count} 个任务删除失败` : ''}`);
+      } else if (operation === 'cancel') {
+        // 批量取消任务
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const taskId of taskIds) {
+          try {
+            await taskService.cancelTask(taskId);
+            successCount++;
+          } catch (error) {
+            failCount++;
+          }
+        }
+        
+        console.log(`成功取消 ${successCount} 个任务${failCount > 0 ? `，${failCount} 个任务取消失败` : ''}`);
+      }
+      
+      setSelectedTasks(new Set());
+      await fetchTasks();
+      await fetchStatistics();
+    } catch (error) {
+      console.error(`批量${operation}任务失败:`, error);
+      console.log(`批量${operation}任务失败`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleTaskOperation = (taskId: string, operation: 'pause' | 'resume' | 'cancel' | 'retry' | 'delete') => {
-    console.log(`${operation}任务:`, taskId);
-    // 这里实现单个任务操作逻辑
+  const handleTaskOperation = async (taskId: string, operation: 'pause' | 'resume' | 'cancel' | 'retry' | 'delete') => {
+    try {
+      setLoading(true);
+      const numericTaskId = parseInt(taskId);
+      
+      if (operation === 'delete') {
+        await taskService.deleteTask(numericTaskId);
+        console.log('任务删除成功');
+      } else if (operation === 'cancel') {
+        await taskService.cancelTask(numericTaskId);
+        console.log('任务取消成功');
+      }
+      
+      await fetchTasks();
+      await fetchStatistics();
+    } catch (error: any) {
+      console.error(`${operation}任务失败:`, error);
+      console.log(error.message || `${operation}任务失败`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    await fetchTasks();
+    await fetchStatistics();
   };
 
   return (
@@ -504,8 +495,14 @@ export const Tasks = (): JSX.Element => {
                 variant="outline" 
                 size="sm"
                 className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
+                onClick={handleRefresh}
+                disabled={loading}
               >
-                <RefreshCwIcon className="w-4 h-4 mr-2" />
+                {loading ? (
+                  <LoaderIcon className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCwIcon className="w-4 h-4 mr-2" />
+                )}
                 刷新
               </Button>
             </div>
@@ -535,7 +532,7 @@ export const Tasks = (): JSX.Element => {
                 <option value="pending">等待中</option>
                 <option value="completed">已完成</option>
                 <option value="failed">失败</option>
-                <option value="paused">已暂停</option>
+                <option value="cancelled">已取消</option>
               </select>
               
               <select
@@ -702,7 +699,7 @@ export const Tasks = (): JSX.Element => {
                               </DropdownMenuItem>
                             )}
                             
-                            {task.status === 'paused' && (
+                            {task.status === 'cancelled' && (
                               <DropdownMenuItem
                                 onClick={() => handleTaskOperation(task.id, 'resume')}
                                 className="cursor-pointer text-[#0c141c]"
@@ -760,9 +757,49 @@ export const Tasks = (): JSX.Element => {
               </TableBody>
             </Table>
             
-            {filteredTasks.length === 0 && (
+            {filteredTasks.length === 0 && !loading && (
               <div className="text-center py-8 text-[#4f7096]">
                 {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' ? '没有找到匹配的任务' : '暂无任务'}
+              </div>
+            )}
+            
+            {loading && (
+              <div className="text-center py-8 text-[#4f7096]">
+                <LoaderIcon className="w-6 h-6 mx-auto mb-2 animate-spin" />
+                <p>正在加载任务数据...</p>
+              </div>
+            )}
+
+            {/* 分页 */}
+            {pagination.total > 0 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-[#4f7096]">
+                  显示 {(pagination.page - 1) * pagination.per_page + 1} - {Math.min(pagination.page * pagination.per_page, pagination.total)} 条，
+                  共 {pagination.total} 条
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!pagination.has_prev || loading}
+                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                    className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
+                  >
+                    上一页
+                  </Button>
+                  <span className="flex items-center px-3 text-sm text-[#4f7096]">
+                    第 {pagination.page} / {pagination.total_pages} 页
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!pagination.has_next || loading}
+                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                    className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
+                  >
+                    下一页
+                  </Button>
+                </div>
               </div>
             )}
           </Card>

@@ -136,6 +136,15 @@ export const SystemMonitor = (): JSX.Element => {
 
   return (
     <div className="space-y-6">
+      {/* 预览提示 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <span className="text-blue-700 font-medium text-sm">预览功能</span>
+        </div>
+        <p className="text-blue-600 text-sm mt-1">目前的预览效果，待后续更新</p>
+      </div>
+
       {/* 头部控制 */}
       <div className="flex items-center justify-between">
         <div>

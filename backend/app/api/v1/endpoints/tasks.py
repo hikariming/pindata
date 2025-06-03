@@ -79,17 +79,22 @@ def get_tasks():
             # 如果是转换任务，添加转换相关信息
             if hasattr(task, 'conversion_job') and task.conversion_job:
                 conversion_job = task.conversion_job
-                task_dict.update({
-                    'library_id': conversion_job.library_id,
-                    'library_name': conversion_job.library.name if conversion_job.library else None,
-                    'conversion_method': conversion_job.method,
-                    'file_count': conversion_job.file_count,
-                    'completed_count': conversion_job.completed_count,
-                    'failed_count': conversion_job.failed_count,
-                    'current_file_name': conversion_job.current_file_name,
-                    'progress_percentage': conversion_job.progress_percentage,
-                    'celery_task_id': conversion_job.celery_task_id
-                })
+                # 确保conversion_job不是列表，如果是列表则取第一个
+                if isinstance(conversion_job, list):
+                    conversion_job = conversion_job[0] if conversion_job else None
+                
+                if conversion_job:
+                    task_dict.update({
+                        'library_id': conversion_job.library_id,
+                        'library_name': conversion_job.library.name if conversion_job.library else None,
+                        'conversion_method': conversion_job.method,
+                        'file_count': conversion_job.file_count,
+                        'completed_count': conversion_job.completed_count,
+                        'failed_count': conversion_job.failed_count,
+                        'current_file_name': conversion_job.current_file_name,
+                        'progress_percentage': conversion_job.progress_percentage,
+                        'celery_task_id': conversion_job.celery_task_id
+                    })
         
             tasks_list.append(task_dict)
         
@@ -110,7 +115,7 @@ def get_tasks():
         
     except Exception as e:
         logger.error(f"获取任务列表失败: {str(e)}")
-        return error_response('服务器内部错误'), 500
+        return error_response('服务器内部错误111'+str(e)), 500
 
 @api_v1.route('/tasks/<int:task_id>', methods=['GET'])
 @swag_from({
@@ -140,24 +145,29 @@ def get_task(task_id):
         # 如果是转换任务，添加详细信息
         if hasattr(task, 'conversion_job') and task.conversion_job:
             conversion_job = task.conversion_job
-            task_dict.update({
-                'library_id': conversion_job.library_id,
-                'library_name': conversion_job.library.name if conversion_job.library else None,
-                'conversion_method': conversion_job.method,
-                'file_count': conversion_job.file_count,
-                'completed_count': conversion_job.completed_count,
-                'failed_count': conversion_job.failed_count,
-                'current_file_name': conversion_job.current_file_name,
-                'progress_percentage': conversion_job.progress_percentage,
-                'celery_task_id': conversion_job.celery_task_id,
-                'file_details': [detail.to_dict() for detail in conversion_job.file_details]
-            })
+            # 确保conversion_job不是列表，如果是列表则取第一个
+            if isinstance(conversion_job, list):
+                conversion_job = conversion_job[0] if conversion_job else None
+            
+            if conversion_job:
+                task_dict.update({
+                    'library_id': conversion_job.library_id,
+                    'library_name': conversion_job.library.name if conversion_job.library else None,
+                    'conversion_method': conversion_job.method,
+                    'file_count': conversion_job.file_count,
+                    'completed_count': conversion_job.completed_count,
+                    'failed_count': conversion_job.failed_count,
+                    'current_file_name': conversion_job.current_file_name,
+                    'progress_percentage': conversion_job.progress_percentage,
+                    'celery_task_id': conversion_job.celery_task_id,
+                    'file_details': [detail.to_dict() for detail in conversion_job.file_details]
+                })
         
         return success_response(data=task_dict)
         
     except Exception as e:
         logger.error(f"获取任务详情失败: {str(e)}")
-        return error_response('服务器内部错误'), 500
+        return error_response('服务器内部错误222'), 500
 
 @api_v1.route('/tasks/<int:task_id>', methods=['DELETE'])
 @swag_from({
@@ -193,13 +203,14 @@ def delete_task(task_id):
         # 如果是转换任务，需要先删除相关的转换记录
         if hasattr(task, 'conversion_job') and task.conversion_job:
             conversion_job = task.conversion_job
+            # 确保conversion_job不是列表，如果是列表则取第一个
+            if isinstance(conversion_job, list):
+                conversion_job = conversion_job[0] if conversion_job else None
             
-            # 删除文件详情记录
-            for file_detail in conversion_job.file_details:
-                db.session.delete(file_detail)
-            
-            # 删除转换任务记录
-            db.session.delete(conversion_job)
+            if conversion_job:
+                for file_detail in conversion_job.file_details:
+                    db.session.delete(file_detail)
+                db.session.delete(conversion_job)
         
         # 删除主任务记录
         db.session.delete(task)
@@ -211,7 +222,7 @@ def delete_task(task_id):
     except Exception as e:
         logger.error(f"删除任务失败: {str(e)}")
         db.session.rollback()
-        return error_response('服务器内部错误'), 500
+        return error_response('服务器内部错误333'), 500
 
 @api_v1.route('/tasks/<int:task_id>/cancel', methods=['POST'])
 @swag_from({
@@ -247,20 +258,24 @@ def cancel_task(task_id):
         # 如果是转换任务，取消转换任务
         if hasattr(task, 'conversion_job') and task.conversion_job:
             conversion_job = task.conversion_job
+            # 确保conversion_job不是列表，如果是列表则取第一个
+            if isinstance(conversion_job, list):
+                conversion_job = conversion_job[0] if conversion_job else None
             
-            # 取消Celery任务
-            if conversion_job.celery_task_id:
-                from app.celery_app import celery
-                celery.control.revoke(conversion_job.celery_task_id, terminate=True)
-                logger.info(f"已取消Celery任务: {conversion_job.celery_task_id}")
-            
-            # 更新转换任务状态
-            conversion_job.status = ConversionStatus.CANCELLED
-            
-            # 取消所有未处理的文件
-            for file_detail in conversion_job.file_details:
-                if file_detail.status in [ConversionStatus.PENDING, ConversionStatus.PROCESSING]:
-                    file_detail.status = ConversionStatus.CANCELLED
+            if conversion_job:
+                # 取消Celery任务
+                if conversion_job.celery_task_id:
+                    from app.celery_app import celery
+                    celery.control.revoke(conversion_job.celery_task_id, terminate=True)
+                    logger.info(f"已取消Celery任务: {conversion_job.celery_task_id}")
+                
+                # 更新转换任务状态
+                conversion_job.status = ConversionStatus.CANCELLED
+                
+                # 取消所有未处理的文件
+                for file_detail in conversion_job.file_details:
+                    if file_detail.status in [ConversionStatus.PENDING, ConversionStatus.PROCESSING]:
+                        file_detail.status = ConversionStatus.CANCELLED
         
         # 更新主任务状态
         task.status = TaskStatus.CANCELLED
@@ -272,7 +287,7 @@ def cancel_task(task_id):
     except Exception as e:
         logger.error(f"取消任务失败: {str(e)}")
         db.session.rollback()
-        return error_response('服务器内部错误'), 500
+        return error_response('服务器内部错误44'), 500
 
 @api_v1.route('/tasks/statistics', methods=['GET'])
 @swag_from({
@@ -300,7 +315,37 @@ def get_task_statistics():
         
     except Exception as e:
         logger.error(f"获取任务统计失败: {str(e)}")
-        return error_response('服务器内部错误'), 500
+        return error_response('服务器内部错误55'), 500
+
+@api_v1.route('/tasks/batch/delete', methods=['POST'])
+@swag_from({
+    'tags': ['任务'],
+    'summary': '批量删除任务',
+    'parameters': [{
+        'name': 'task_ids',
+        'in': 'body',
+        'required': True,
+        'schema': {
+            'type': 'object',
+            'properties': {
+                'task_ids': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'integer'
+                    }
+                }
+            }
+        }
+    }],
+    'responses': {
+        200: {
+            'description': '批量删除成功'
+        }
+    }
+})
+def batch_delete_tasks_post():
+    """批量删除任务（POST方法）"""
+    return batch_delete_tasks()
 
 @api_v1.route('/tasks/batch', methods=['DELETE'])
 @swag_from({
@@ -353,9 +398,14 @@ def batch_delete_tasks():
                 # 删除相关记录
                 if hasattr(task, 'conversion_job') and task.conversion_job:
                     conversion_job = task.conversion_job
-                    for file_detail in conversion_job.file_details:
-                        db.session.delete(file_detail)
-                    db.session.delete(conversion_job)
+                    # 确保conversion_job不是列表，如果是列表则取第一个
+                    if isinstance(conversion_job, list):
+                        conversion_job = conversion_job[0] if conversion_job else None
+                    
+                    if conversion_job:
+                        for file_detail in conversion_job.file_details:
+                            db.session.delete(file_detail)
+                        db.session.delete(conversion_job)
                 
                 db.session.delete(task)
                 deleted_count += 1
@@ -381,4 +431,4 @@ def batch_delete_tasks():
     except Exception as e:
         logger.error(f"批量删除任务失败: {str(e)}")
         db.session.rollback()
-        return error_response('服务器内部错误'), 500 
+        return error_response('服务器内部错误666'), 500 
