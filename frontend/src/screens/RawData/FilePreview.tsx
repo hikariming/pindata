@@ -42,6 +42,7 @@ export const FilePreview = (): JSX.Element => {
   const [loadingMarkdown, setLoadingMarkdown] = useState(false);
   const [originalContent, setOriginalContent] = useState<string>('');
   const [loadingOriginal, setLoadingOriginal] = useState(false);
+  const [previewMethod, setPreviewMethod] = useState<'text' | 'image' | 'unsupported' | null>(null);
 
   // 获取文件详情
   useEffect(() => {
@@ -87,13 +88,48 @@ export const FilePreview = (): JSX.Element => {
   };
 
   const loadOriginalContent = async (objectName: string) => {
+    if (!file) return;
     try {
       setLoadingOriginal(true);
-      const content = await fileService.getFileContent(objectName);
-      setOriginalContent(content);
+      setPreviewMethod(null);
+      setOriginalContent('');
+
+      const fileType = file.file_type.toLowerCase();
+      // 常见纯文本类型，可根据需要扩展
+      const knownTextTypes = ['txt', 'md', 'json', 'xml', 'csv', 'log', 'yaml', 'ini', 'rtf', 'html', 'css', 'js', 'ts', 'py', 'java', 'c', 'cpp', 'go', 'rb', 'php', 'sh', 'conf'];
+      // 常见图片类型
+      const knownImageTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'];
+
+      if (knownTextTypes.includes(fileType)) {
+        const content = await fileService.getFileContent(objectName);
+        setOriginalContent(content);
+        setPreviewMethod('text');
+      } else if (knownImageTypes.includes(fileType)) {
+        const rawContent = await fileService.getFileContent(objectName);
+        if (rawContent.startsWith('data:image')) { // 已经是一个数据URI
+          setOriginalContent(rawContent);
+        } else if (fileType === 'svg') { // 对SVG特殊处理，可能是XML文本
+           if (rawContent.startsWith('<svg') || rawContent.startsWith('<?xml')) { // Crude check for SVG XML
+             setOriginalContent(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(rawContent)}`);
+           } else { // Assume base64 for SVG if not XML
+             setOriginalContent(`data:image/svg+xml;base64,${rawContent}`);
+           }
+        } else {
+          // 假设是Base64编码的图像数据
+          setOriginalContent(`data:image/${fileType};base64,${rawContent}`);
+        }
+        setPreviewMethod('image');
+      } else if (fileType === 'pdf') {
+        setOriginalContent('PDF 文件预览建议使用专门的PDF查看器或直接下载文件。');
+        setPreviewMethod('unsupported');
+      } else { // 其他如 docx, pptx, xlsx 等
+        setOriginalContent(`.${fileType} 文件类型不支持直接预览，请下载查看。`);
+        setPreviewMethod('unsupported');
+      }
     } catch (err) {
       console.error('获取原始内容失败:', err);
-      setOriginalContent('无法预览此文件类型的内容');
+      setOriginalContent('无法预览此文件类型的内容或加载时发生错误。');
+      setPreviewMethod('unsupported');
     } finally {
       setLoadingOriginal(false);
     }
@@ -507,7 +543,7 @@ export const FilePreview = (): JSX.Element => {
                   variant="outline" 
                   size="sm"
                   onClick={() => copyToClipboard(originalContent)}
-                  disabled={!originalContent}
+                  disabled={!originalContent || previewMethod !== 'text'}
                 >
                   <CopyIcon className="w-4 h-4 mr-2" />
                   复制文本
@@ -519,10 +555,40 @@ export const FilePreview = (): JSX.Element => {
                 <div className="flex items-center justify-center h-32">
                   <Loader2Icon className="w-6 h-6 animate-spin text-[#1977e5]" />
                 </div>
-              ) : (
+              ) : previewMethod === 'text' ? (
                 <pre className="whitespace-pre-wrap text-sm text-[#0c141c] font-mono">
-                  {originalContent || '点击刷新加载内容...'}
+                  {originalContent}
                 </pre>
+              ) : previewMethod === 'image' ? (
+                <img 
+                  src={originalContent} 
+                  alt={file.filename} 
+                  style={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', margin: 'auto', border: '1px solid #e8edf2', objectFit: 'contain' }} 
+                  onError={() => {
+                      setPreviewMethod('unsupported');
+                      setOriginalContent(`无法加载图片预览。请确认文件格式 (${file.file_type}) 或尝试下载。`);
+                  }}
+                />
+              ) : previewMethod === 'unsupported' ? (
+                <div className="text-center py-10">
+                  <FileIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 px-4">{originalContent || '此文件类型不支持预览。'}</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-6"
+                    onClick={handleDownloadOriginal}
+                  >
+                    <DownloadIcon className="w-4 h-4 mr-2" />
+                    下载原文件
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <FileSearchIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">
+                    {originalContent || (file?.minio_object_name ? '点击"刷新"按钮加载内容预览。' : '文件信息不完整，无法加载预览。')}
+                  </p>
+                </div>
               )}
             </div>
           </Card>
