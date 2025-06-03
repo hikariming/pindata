@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
@@ -36,11 +36,49 @@ import { CreateLibrary } from './CreateLibrary';
 import { LibraryDetails } from './LibraryDetails';
 
 // 导入API相关
-import { useLibraries, useLibraryStatistics, useLibraryActions } from '../../hooks/useLibraries';
-import { Library } from '../../types/library';
+import { useLibraries, useLibraryActions } from '../../hooks/useLibraries';
+import { LibraryService } from '../../services/library.service';
+import { Library, LibraryFile } from '../../types/library';
 import { dataTypeLabels } from '../../lib/config';
 
 type View = 'list' | 'create' | 'details';
+
+// 将字符串大小转换为字节数
+const parseSizeToBytes = (sizeStr: string): number => {
+  if (!sizeStr || sizeStr === '0 B') return 0;
+  
+  const match = sizeStr.match(/^([\d.]+)\s*([KMGT]?B?)$/i);
+  if (!match) return 0;
+  
+  const value = parseFloat(match[1]);
+  const unit = match[2].toUpperCase();
+  
+  const multipliers: { [key: string]: number } = {
+    'B': 1,
+    'KB': 1024,
+    'MB': 1024 * 1024,
+    'GB': 1024 * 1024 * 1024,
+    'TB': 1024 * 1024 * 1024 * 1024
+  };
+  
+  return value * (multipliers[unit] || 1);
+};
+
+// 格式化字节数为易读格式
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let size = bytes;
+  let unitIndex = 0;
+  
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
+};
 
 export const RawData = (): JSX.Element => {
   const { t } = useTranslation();
@@ -58,17 +96,165 @@ export const RawData = (): JSX.Element => {
   } = useLibraries();
   
   const { 
-    statistics, 
-    loading: statisticsLoading, 
-    error: statisticsError, 
-    refresh: refreshStatistics 
-  } = useLibraryStatistics();
-  
-  const { 
     loading: actionLoading, 
     error: actionError, 
     deleteLibrary 
   } = useLibraryActions();
+
+  // 获取所有libraries的准确文件统计信息
+  const [allLibraryFiles, setAllLibraryFiles] = useState<{[libraryId: string]: LibraryFile[]}>({});
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [filesError, setFilesError] = useState<string | null>(null);
+
+  const fetchAllLibraryFiles = useCallback(async () => {
+    if (!libraries || libraries.length === 0) {
+      setAllLibraryFiles({});
+      return;
+    }
+
+    setFilesLoading(true);
+    setFilesError(null);
+    const filesMap: {[libraryId: string]: LibraryFile[]} = {};
+
+    try {
+      // 并行获取所有libraries的文件列表
+      const filePromises = libraries.map(async (library) => {
+        try {
+          const result = await LibraryService.getLibraryFiles(library.id);
+          filesMap[library.id] = result.files;
+        } catch (error) {
+          console.error(`获取文件库 ${library.name} 的文件列表失败:`, error);
+          filesMap[library.id] = [];
+        }
+      });
+
+      await Promise.all(filePromises);
+      setAllLibraryFiles(filesMap);
+    } catch (error) {
+      setFilesError('获取文件统计信息失败');
+      console.error('获取文件统计信息失败:', error);
+    } finally {
+      setFilesLoading(false);
+    }
+  }, [libraries]);
+
+  // 当libraries变化时，重新获取文件统计信息
+  useEffect(() => {
+    fetchAllLibraryFiles();
+  }, [fetchAllLibraryFiles]);
+
+  // 基于实际文件数据计算统计信息
+  const calculatedStatistics = useMemo(() => {
+    if (!libraries || libraries.length === 0) {
+      return {
+        total_libraries: 0,
+        total_files: 0,
+        total_processed: 0,
+        total_size: '0 B',
+        conversion_rate: 0
+      };
+    }
+
+    const totalLibraries = libraries.length;
+    
+    // 基于实际文件数据计算统计信息
+    let totalFiles = 0;
+    let totalProcessed = 0;
+    let totalProcessing = 0;
+    let totalPending = 0;
+    let totalFailed = 0;
+    let totalSizeBytes = 0;
+
+    libraries.forEach(library => {
+      const libraryFiles = allLibraryFiles[library.id] || [];
+      
+      // 计算文件数量
+      totalFiles += libraryFiles.length;
+      
+      // 计算文件大小
+      totalSizeBytes += libraryFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
+      
+      // 按状态统计文件
+      libraryFiles.forEach(file => {
+        switch (file.process_status) {
+          case 'completed':
+            totalProcessed++;
+            break;
+          case 'processing':
+            totalProcessing++;
+            break;
+          case 'pending':
+            totalPending++;
+            break;
+          case 'failed':
+            totalFailed++;
+            break;
+        }
+      });
+    });
+
+    const totalSize = formatBytes(totalSizeBytes);
+    const conversionRate = totalFiles > 0 ? Math.round((totalProcessed / totalFiles) * 100) : 0;
+
+    return {
+      total_libraries: totalLibraries,
+      total_files: totalFiles,
+      total_processed: totalProcessed,
+      total_processing: totalProcessing,
+      total_pending: totalPending,
+      total_failed: totalFailed,
+      total_size: totalSize,
+      conversion_rate: conversionRate
+    };
+  }, [libraries, allLibraryFiles]);
+
+  // 计算单个library的准确统计信息
+  const getLibraryStats = useCallback((library: Library) => {
+    const libraryFiles = allLibraryFiles[library.id] || [];
+    
+    const stats = {
+      file_count: libraryFiles.length,
+      processed_count: 0,
+      processing_count: 0,
+      pending_count: 0,
+      failed_count: 0,
+      md_count: 0,
+      total_size_bytes: 0
+    };
+
+    libraryFiles.forEach(file => {
+      // 统计文件状态
+      switch (file.process_status) {
+        case 'completed':
+          stats.processed_count++;
+          // 如果转换格式为markdown，计入MD文件数
+          if (file.converted_format === 'markdown') {
+            stats.md_count++;
+          }
+          break;
+        case 'processing':
+          stats.processing_count++;
+          break;
+        case 'pending':
+          stats.pending_count++;
+          break;
+        case 'failed':
+          stats.failed_count++;
+          break;
+      }
+      
+      // 累计文件大小
+      stats.total_size_bytes += file.file_size || 0;
+    });
+
+    return {
+      ...stats,
+      total_size: formatBytes(stats.total_size_bytes),
+      progress_percentage: stats.file_count > 0 
+        ? Math.round((stats.processed_count / stats.file_count) * 100) 
+        : 0
+    };
+  }, [allLibraryFiles]);
 
   const handleViewLibrary = (library: Library) => {
     setSelectedLibrary(library);
@@ -84,7 +270,7 @@ export const RawData = (): JSX.Element => {
       const success = await deleteLibrary(library.id);
       if (success) {
         refreshLibraries();
-        refreshStatistics();
+        fetchAllLibraryFiles(); // 删除成功后刷新文件统计信息
       }
     }
   };
@@ -108,7 +294,7 @@ export const RawData = (): JSX.Element => {
 
   const handleRefresh = () => {
     refreshLibraries();
-    refreshStatistics();
+    fetchAllLibraryFiles(); // 同时刷新文件统计信息
   };
 
   if (view === 'create') {
@@ -117,7 +303,7 @@ export const RawData = (): JSX.Element => {
       onSuccess={() => {
         setView('list');
         refreshLibraries();
-        refreshStatistics();
+        fetchAllLibraryFiles(); // 创建成功后刷新文件统计信息
       }}
     />;
   }
@@ -136,8 +322,8 @@ export const RawData = (): JSX.Element => {
     <div className="w-full max-w-[1400px] p-6">
       {/* 页面标题和操作按钮 */}
       <div className="mb-6">
-        <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">训练数据管理</h1>
-        <p className="text-[#4f7096] mb-4">管理多源异构数据，批量转换为Markdown格式，用于大模型训练和数据蒸馏</p>
+        <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">原数据管理</h1>
+        <p className="text-[#4f7096] mb-4">管理多源异构数据，支持批量转换为MD，用于大模型训练和数据蒸馏</p>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -153,9 +339,9 @@ export const RawData = (): JSX.Element => {
             size="sm"
             className="h-9 px-4 border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
             onClick={handleRefresh}
-            disabled={librariesLoading || statisticsLoading}
+            disabled={librariesLoading || filesLoading}
           >
-            {(librariesLoading || statisticsLoading) ? (
+            {(librariesLoading || filesLoading) ? (
               <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <RefreshCwIcon className="w-4 h-4 mr-2" />
@@ -174,10 +360,10 @@ export const RawData = (): JSX.Element => {
       </div>
 
       {/* 错误提示 */}
-      {(librariesError || statisticsError || actionError) && (
+      {(librariesError || actionError || filesError) && (
         <Card className="border-red-200 bg-red-50 p-4 mb-6">
           <div className="text-red-600">
-            {librariesError || statisticsError || actionError}
+            {librariesError || actionError || filesError}
           </div>
         </Card>
       )}
@@ -190,7 +376,7 @@ export const RawData = (): JSX.Element => {
             <div>
               <p className="text-sm text-[#4f7096]">数据库总数</p>
               <p className="text-xl font-bold text-[#0c141c]">
-                {statisticsLoading ? '...' : (statistics?.total_libraries || 0)}
+                {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_libraries}
               </p>
             </div>
           </div>
@@ -202,7 +388,7 @@ export const RawData = (): JSX.Element => {
             <div>
               <p className="text-sm text-[#4f7096]">文件总数</p>
               <p className="text-xl font-bold text-[#0c141c]">
-                {statisticsLoading ? '...' : (statistics?.total_files || 0)}
+                {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_files}
               </p>
             </div>
           </div>
@@ -214,7 +400,7 @@ export const RawData = (): JSX.Element => {
             <div>
               <p className="text-sm text-[#4f7096]">已处理</p>
               <p className="text-xl font-bold text-[#0c141c]">
-                {statisticsLoading ? '...' : (statistics?.total_processed || 0)}
+                {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_processed}
               </p>
             </div>
           </div>
@@ -226,7 +412,7 @@ export const RawData = (): JSX.Element => {
             <div>
               <p className="text-sm text-[#4f7096]">转换率</p>
               <p className="text-xl font-bold text-[#0c141c]">
-                {statisticsLoading ? '...' : `${statistics?.conversion_rate || 0}%`}
+                {(librariesLoading || filesLoading) ? '...' : `${calculatedStatistics.conversion_rate}%`}
               </p>
             </div>
           </div>
@@ -238,7 +424,7 @@ export const RawData = (): JSX.Element => {
             <div>
               <p className="text-sm text-[#4f7096]">总大小</p>
               <p className="text-xl font-bold text-[#0c141c]">
-                {statisticsLoading ? '...' : (statistics?.total_size || '0 B')}
+                {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_size}
               </p>
             </div>
           </div>
@@ -274,7 +460,10 @@ export const RawData = (): JSX.Element => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {libraries.map((library) => (
+                {libraries.map((library) => {
+                  const libraryStats = getLibraryStats(library);
+                  
+                  return (
                   <TableRow 
                     key={library.id} 
                     className="border-[#d1dbe8] hover:bg-[#f7f9fc] cursor-pointer"
@@ -311,36 +500,32 @@ export const RawData = (): JSX.Element => {
                         <div className="flex justify-between text-xs">
                           <span className="text-[#4f7096]">已完成</span>
                           <span className="text-[#0c141c] font-medium">
-                            {library.file_count > 0 
-                              ? Math.round((library.processed_count / library.file_count) * 100)
-                              : 0}%
+                            {libraryStats.progress_percentage}%
                           </span>
                         </div>
                         <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
                           <div 
                             className="bg-[#10b981] h-1.5 rounded-full" 
                             style={{ 
-                              width: `${library.file_count > 0 
-                                ? (library.processed_count / library.file_count) * 100 
-                                : 0}%` 
+                              width: `${libraryStats.progress_percentage}%` 
                             }}
                           ></div>
                         </div>
                         <div className="flex justify-between text-xs text-[#4f7096]">
-                          <span>已处理: {library.processed_count}</span>
-                          <span>处理中: {library.processing_count}</span>
+                          <span>已处理: {libraryStats.processed_count}</span>
+                          <span>处理中: {libraryStats.processing_count}</span>
                         </div>
                       </div>
                     </TableCell>
                     
                     <TableCell className="py-4">
                       <div className="text-center">
-                        <div className="text-[#0c141c] font-medium">{library.file_count}</div>
-                        <div className="text-xs text-[#4f7096]">MD: {library.md_count}</div>
+                        <div className="text-[#0c141c] font-medium">{libraryStats.file_count}</div>
+                        <div className="text-xs text-[#4f7096]">MD: {libraryStats.md_count}</div>
                       </div>
                     </TableCell>
                     
-                    <TableCell className="py-4 text-[#4f7096]">{library.total_size}</TableCell>
+                    <TableCell className="py-4 text-[#4f7096]">{libraryStats.total_size}</TableCell>
                     
                     <TableCell className="py-4">
                       <div className="flex items-center text-[#4f7096]">
@@ -389,7 +574,7 @@ export const RawData = (): JSX.Element => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                )})}
                 {libraries.length === 0 && !librariesLoading && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-[#4f7096]">
