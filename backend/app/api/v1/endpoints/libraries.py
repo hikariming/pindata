@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 import os
 from app.api.v1.schemas.library_schemas import (
     LibraryCreateSchema, LibraryUpdateSchema, LibraryQuerySchema,
-    LibraryFileQuerySchema, LibraryStatisticsSchema
+    LibraryFileQuerySchema, LibraryStatisticsSchema, LibraryFileUpdateSchema
 )
 from app.services.library_service import LibraryService
 from app.services.storage_service import storage_service
@@ -319,6 +319,33 @@ class LibraryFileResource(Resource):
         except Exception as e:
             logger.error(f"获取文件详情失败: {str(e)}")
             return error_response('服务器内部错误'), 500
+    
+    def put(self, library_id, file_id):
+        """更新文件信息"""
+        try:
+            # 验证请求数据
+            schema = LibraryFileUpdateSchema()
+            data = schema.load(request.json)
+            
+            # 更新文件
+            file = LibraryService.update_file(file_id, **data)
+            if not file:
+                return error_response(message="文件不存在"), 404
+            
+            # 检查文件是否属于指定的文件库
+            if file.library_id != library_id:
+                return error_response(message="文件不属于指定的文件库"), 403
+            
+            return success_response(
+                data=file.to_dict(),
+                message="文件更新成功"
+            )
+            
+        except ValidationError as e:
+            return error_response(message="参数验证失败", errors=e.messages), 400
+        except Exception as e:
+            logger.error(f"更新文件失败: {str(e)}")
+            return error_response(message="更新文件失败"), 500
     
     def delete(self, library_id, file_id):
         """删除文件"""

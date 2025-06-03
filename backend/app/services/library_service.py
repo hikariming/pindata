@@ -253,6 +253,23 @@ class LibraryService:
         return library_file
     
     @staticmethod
+    def update_file(file_id: str, **kwargs) -> Optional[LibraryFile]:
+        """更新文件信息"""
+        library_file = LibraryFile.query.filter_by(id=file_id).first()
+        if not library_file:
+            return None
+        
+        # 更新字段
+        for key, value in kwargs.items():
+            if hasattr(library_file, key) and value is not None:
+                setattr(library_file, key, value)
+        
+        library_file.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return library_file
+    
+    @staticmethod
     def delete_file(file_id: str) -> bool:
         """删除文件"""
         library_file = LibraryFile.query.filter_by(id=file_id).first()

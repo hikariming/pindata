@@ -43,6 +43,8 @@ export interface LibraryFile {
   process_status_label: string;
   converted_format?: string;
   converted_object_name?: string;
+  converted_file_size?: number;
+  conversion_method?: string;
   conversion_error?: string;
   page_count?: number;
   word_count?: number;

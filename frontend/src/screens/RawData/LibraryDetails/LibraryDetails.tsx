@@ -36,6 +36,7 @@ import { useLibraryFiles, useFileActions } from '../../../hooks/useLibraries';
 import { useFileConversion } from '../../../hooks/useFileConversion';
 import { ConvertToMarkdownDialog, ConversionConfig } from './components/ConvertToMarkdownDialog';
 import { ConversionProgress } from './components/ConversionProgress';
+import { useNavigate } from 'react-router-dom';
 
 interface LibraryDetailsProps {
   onBack: () => void;
@@ -56,6 +57,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const { files, loading: filesLoading, error: filesError, refresh: refreshFiles } = useLibraryFiles(library.id);
   const { deleteFile, downloadFile, loading: deleteLoading } = useFileActions();
   const { convertFiles, getConversionJob, cancelConversionJob, loading: convertLoading } = useFileConversion();
+  const navigate = useNavigate();
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -261,6 +263,16 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
 
   const selectAllState = getSelectAllState();
   const selectedFilesForConversion = files.filter(f => selectedFiles.has(f.id));
+
+  const handleFileSelect = (file: any) => {
+    // 确保 currentLibrary 和 currentLibrary.id 是有效的
+    if (library && library.id) {
+      navigate(`/rawdata/library/${library.id}/file/${file.id}`);
+    } else {
+      console.error("Library ID is missing, cannot navigate to file details.");
+      // 可以选择显示一个错误提示给用户
+    }
+  };
 
   return (
     <div className="w-full max-w-[1400px] p-6">
@@ -491,7 +503,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                         <div>
                           <p 
                             className="font-medium text-[#0c141c] cursor-pointer hover:text-[#1977e5] hover:underline"
-                            onClick={() => onFileSelect(file)}
+                            onClick={() => handleFileSelect(file)}
                           >
                             {file.original_filename}
                           </p>
@@ -535,7 +547,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onFileSelect(file)}
+                          onClick={() => handleFileSelect(file)}
                           className="h-8 w-8 p-0 text-[#4f7096] hover:text-[#1977e5]"
                           title="查看详情"
                         >

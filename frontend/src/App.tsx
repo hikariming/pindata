@@ -22,7 +22,7 @@ export const App = (): JSX.Element => {
         {/* 主要页面路由 */}
         <Route path="overview" element={<ActivitySection />} />
         <Route path="rawdata" element={<RawData />} />
-        <Route path="rawdata/file/:fileId" element={<FilePreview />} />
+        <Route path="rawdata/library/:libraryId/file/:fileId" element={<FilePreview />} />
         <Route path="settings" element={<Settings />} />
         <Route path="plugins" element={<Plugins />} />
         <Route path="tasks" element={<Tasks />} />

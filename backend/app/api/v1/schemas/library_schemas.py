@@ -3,14 +3,11 @@ import re
 
 def validate_library_name(name):
     """验证文件库名称"""
-    if len(name) < 3:
-        raise ValidationError('名称长度不能少于3个字符')
-    if len(name) > 63:
-        raise ValidationError('名称长度不能超过63个字符')
-    
-    # 允许中文、英文、数字、下划线和连字符，但不能以连字符开头或结尾
-    if not re.match(r'^[a-zA-Z0-9\u4e00-\u9fa5][a-zA-Z0-9\u4e00-\u9fa5_-]*[a-zA-Z0-9\u4e00-\u9fa5]$', name):
-        raise ValidationError('名称只能包含中文、英文、数字、下划线和连字符，且不能以连字符开头或结尾')
+    if not name or not name.strip():
+        raise ValidationError('文件库名称不能为空')
+    if len(name.strip()) > 255:
+        raise ValidationError('文件库名称不能超过255个字符')
+    return name.strip()
 
 class LibraryCreateSchema(Schema):
     """创建文件库的验证模式"""
@@ -58,6 +55,11 @@ class LibraryFileQuerySchema(Schema):
         'uploaded_at', 'filename', 'file_size', 'process_status'
     ]))
     sort_order = fields.Str(missing='desc', validate=validate.OneOf(['asc', 'desc']))
+
+class LibraryFileUpdateSchema(Schema):
+    """文件更新验证模式"""
+    filename = fields.Str(validate=validate.Length(min=1, max=255))
+    original_filename = fields.Str(validate=validate.Length(min=1, max=255))
 
 class LibraryStatisticsSchema(Schema):
     """统计信息返回模式"""

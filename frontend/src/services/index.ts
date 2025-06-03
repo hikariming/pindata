@@ -1,5 +1,8 @@
 // 导出所有服务
-export { LibraryService } from './library.service';
+export { libraryService } from './library.service';
+export { systemLogService } from './systemLog.service';
+export { llmService } from './llm.service';
+export { fileService } from './file.service';
 
 // 导出所有Hooks
 export * from '../hooks/useLibraries';
