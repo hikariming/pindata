@@ -129,6 +129,7 @@ export interface CreateDatasetVersionRequest {
   author: string;
   version_type?: VersionType;
   parent_version_id?: string;
+  existing_file_ids?: string[];
   pipeline_config?: Record<string, any>;
   metadata?: Record<string, any>;
   files?: File[];

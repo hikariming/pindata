@@ -1,24 +1,142 @@
-import React from 'react';
+/**
+ * DataPreview 组件 - 数据集预览组件
+ * 
+ * 功能特性:
+ * - 支持版本切换和预览
+ * - 文件列表展示和预览
+ * - 文件批量操作 (下载/删除)
+ * - 版本信息导出
+ * - 文件类型过滤
+ * 
+ * 使用示例:
+ * ```tsx
+ * const [currentData, setCurrentData] = useState<DatasetPreviewType>();
+ * 
+ * const handleVersionChange = async (versionId: string) => {
+ *   try {
+ *     const newData = await enhancedDatasetService.getDatasetPreview(
+ *       datasetId, 
+ *       versionId
+ *     );
+ *     setCurrentData(newData);
+ *   } catch (error) {
+ *     console.error('切换版本失败:', error);
+ *   }
+ * };
+ * 
+ * return (
+ *   <DataPreview
+ *     data={currentData}
+ *     onVersionChange={handleVersionChange}
+ *     onRefresh={() => loadData()}
+ *     onDataChange={() => loadData()}
+ *   />
+ * );
+ * ```
+ */
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Checkbox } from '../ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
   TableIcon,
   ImageIcon,
   FileTextIcon,
   AlertCircleIcon,
   DownloadIcon,
-  EyeIcon
+  EyeIcon,
+  UploadIcon,
+  Trash2Icon,
+  PlusIcon,
+  FilterIcon,
+  FileIcon,
+  FolderIcon,
+  MoreHorizontalIcon,
+  GitBranch,
+  RefreshCw,
+  ChevronDownIcon
 } from 'lucide-react';
 import { enhancedDatasetService } from '../../services/enhanced-dataset.service';
-import { DatasetPreview as DatasetPreviewType } from '../../types/enhanced-dataset';
+import { DatasetPreview as DatasetPreviewType, EnhancedDatasetVersion } from '../../types/enhanced-dataset';
 
 interface DataPreviewProps {
   data: DatasetPreviewType;
   onRefresh?: () => void;
+  onDataChange?: () => void;
+  onVersionChange?: (versionId: string) => void;
 }
 
-export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => {
+export type { DataPreviewProps };
+
+export const DataPreview: React.FC<DataPreviewProps> = ({ 
+  data, 
+  onRefresh,
+  onDataChange,
+  onVersionChange 
+}) => {
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [filterType, setFilterType] = useState<string>('all');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [availableVersions, setAvailableVersions] = useState<EnhancedDatasetVersion[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 获取可用版本列表
+  useEffect(() => {
+    if (data.dataset?.id) {
+      loadAvailableVersions();
+    }
+  }, [data.dataset?.id]);
+
+  // 点击外部关闭版本选择器
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isVersionSelectorOpen && !target.closest('[data-version-selector]')) {
+        setIsVersionSelectorOpen(false);
+      }
+    };
+
+    if (isVersionSelectorOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isVersionSelectorOpen]);
+
+  const loadAvailableVersions = async () => {
+    if (!data.dataset?.id) return;
+    
+    try {
+      setIsLoadingVersions(true);
+      const versions = await enhancedDatasetService.getVersionTree(data.dataset.id);
+      setAvailableVersions(versions);
+    } catch (error) {
+      console.error('获取版本列表失败:', error);
+    } finally {
+      setIsLoadingVersions(false);
+    }
+  };
+
+  const handleVersionChange = (versionId: string) => {
+    onVersionChange?.(versionId);
+    setIsVersionSelectorOpen(false);
+  };
+
+  const handleDownloadVersion = async (versionId: string) => {
+    try {
+      await enhancedDatasetService.exportVersionInfo(versionId, 'json');
+    } catch (error) {
+      console.error('下载版本信息失败:', error);
+    }
+  };
+
   const handleDownloadFile = async (objectName: string, filename: string) => {
     try {
       await enhancedDatasetService.downloadDatasetFile(objectName, filename);
@@ -27,6 +145,73 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => 
       // 这里可以添加错误提示
     }
   };
+
+  const handleFileSelect = (fileId: string) => {
+    const newSelected = new Set(selectedFiles);
+    if (newSelected.has(fileId)) {
+      newSelected.delete(fileId);
+    } else {
+      newSelected.add(fileId);
+    }
+    setSelectedFiles(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedFiles.size === data.preview.files.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(data.preview.files.map(f => f.file.id)));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedFiles.size === 0 || !data.version) return;
+    
+    try {
+      await enhancedDatasetService.batchFileOperations(
+        data.version.id,
+        'delete',
+        Array.from(selectedFiles)
+      );
+      setSelectedFiles(new Set());
+      onDataChange?.();
+    } catch (error) {
+      console.error('批量删除失败:', error);
+    }
+  };
+
+  const handleFileUpload = async (files: File[]) => {
+    if (!data.version || files.length === 0) return;
+    
+    try {
+      setIsUploading(true);
+      await enhancedDatasetService.addFilesToVersion(data.version.id, files);
+      setIsUploadDialogOpen(false);
+      onDataChange?.();
+    } catch (error) {
+      console.error('文件上传失败:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      handleFileUpload(files);
+    }
+  };
+
+  const filteredFiles = data.preview.files.filter(filePreview => {
+    if (filterType === 'all') return true;
+    return filePreview.file.file_type === filterType;
+  });
+
+  const fileTypes = [...new Set(data.preview.files.map(f => f.file.file_type))];
 
   const renderPreviewContent = (filePreview: any) => {
     const { file, preview } = filePreview;
@@ -241,6 +426,15 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => 
               刷新预览
             </Button>
           )}
+          {data.version && !data.version.is_deprecated && (
+            <Button 
+              className="mt-2 ml-2"
+              onClick={handleUploadClick}
+            >
+              <PlusIcon className="w-4 h-4 mr-2" />
+              添加文件
+            </Button>
+          )}
         </div>
       </Card>
     );
@@ -248,16 +442,130 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => 
 
   return (
     <div className="space-y-6">
-      {/* 总览信息 */}
+      {/* 总览信息和操作栏 */}
       <Card className="p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold mb-2">数据预览</h3>
             <div className="space-y-1">
               <p className="text-sm text-gray-600">
-                数据集: {data.dataset?.name} | 
-                版本: {data.version?.version || '暂无版本'}
+                数据集: {data.dataset?.name}
               </p>
+              
+              {/* 版本选择器 */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">版本:</span>
+                <div className="relative" data-version-selector>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setIsVersionSelectorOpen(!isVersionSelectorOpen)}
+                    disabled={isLoadingVersions}
+                  >
+                    <GitBranch className="w-3 h-3 mr-1" />
+                    {data.version?.version || '暂无版本'}
+                    {data.version?.is_default && (
+                      <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+                        默认
+                      </Badge>
+                    )}
+                    <ChevronDownIcon className="w-3 h-3 ml-1" />
+                  </Button>
+                  
+                  {isVersionSelectorOpen && (
+                    <div className="absolute top-8 left-0 z-50 w-80 bg-white border rounded-md shadow-lg">
+                      <div className="p-2 border-b">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">选择版本</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={loadAvailableVersions}
+                            disabled={isLoadingVersions}
+                          >
+                            <RefreshCw className={`w-3 h-3 ${isLoadingVersions ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {availableVersions.length === 0 ? (
+                          <div className="p-3 text-sm text-gray-500 text-center">
+                            {isLoadingVersions ? '加载中...' : '暂无版本'}
+                          </div>
+                        ) : (
+                          availableVersions.map((version) => (
+                            <div
+                              key={version.id}
+                              className={`group relative hover:bg-gray-50 border-l-2 ${
+                                version.id === data.version?.id 
+                                  ? 'border-blue-500 bg-blue-50' 
+                                  : 'border-transparent'
+                              }`}
+                            >
+                              <div
+                                className="p-2 cursor-pointer"
+                                onClick={() => handleVersionChange(version.id)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium">
+                                        {version.version}
+                                      </span>
+                                      {version.is_default && (
+                                        <Badge variant="secondary" className="h-4 px-1 text-xs">
+                                          默认
+                                        </Badge>
+                                      )}
+                                      {version.is_draft && (
+                                        <Badge variant="outline" className="h-4 px-1 text-xs">
+                                          草稿
+                                        </Badge>
+                                      )}
+                                      {version.is_deprecated && (
+                                        <Badge variant="destructive" className="h-4 px-1 text-xs">
+                                          已废弃
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                      {version.commit_message}
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                                      <span>{version.author}</span>
+                                      <span>{version.file_count} 个文件</span>
+                                      <span>{version.total_size_formatted}</span>
+                                      <span>{new Date(version.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* 版本操作按钮 */}
+                              <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadVersion(version.id);
+                                  }}
+                                  title="下载版本信息"
+                                >
+                                  <DownloadIcon className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               <p className="text-sm text-gray-600">
                 总文件数: {data.preview.total_files} | 
                 预览文件数: {data.preview.preview_files}
@@ -273,6 +581,12 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => 
                   <Badge variant="outline">
                     {data.version.total_size_formatted}
                   </Badge>
+                  {data.version.is_draft && (
+                    <Badge variant="outline">草稿</Badge>
+                  )}
+                  {data.version.is_deprecated && (
+                    <Badge variant="destructive">已废弃</Badge>
+                  )}
                 </div>
               )}
             </div>
@@ -295,13 +609,86 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => 
             )}
           </div>
         </div>
+
+        {/* 文件操作栏 */}
+        <div className="flex items-center justify-between border-t pt-4">
+          <div className="flex items-center gap-4">
+            {/* 文件类型过滤 */}
+            <div className="flex items-center gap-2">
+              <FilterIcon className="w-4 h-4" />
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部类型</SelectItem>
+                  {fileTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 全选/取消全选 */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedFiles.size === filteredFiles.length && filteredFiles.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm">
+                已选择 {selectedFiles.size} / {filteredFiles.length} 个文件
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {/* 批量删除 */}
+            {selectedFiles.size > 0 && data.version && !data.version.is_deprecated && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBatchDelete}
+              >
+                <Trash2Icon className="w-4 h-4 mr-2" />
+                删除选中 ({selectedFiles.size})
+              </Button>
+            )}
+
+            {/* 添加文件 */}
+            {data.version && !data.version.is_deprecated && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileInputChange}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleUploadClick}
+                  disabled={isUploading}
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  {isUploading ? '上传中...' : '添加文件'}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </Card>
 
       {/* 文件预览列表 */}
-      {data.preview.files.map((filePreview, index) => (
+      {filteredFiles.map((filePreview, index) => (
         <Card key={filePreview.file.id} className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedFiles.has(filePreview.file.id)}
+                onCheckedChange={() => handleFileSelect(filePreview.file.id)}
+              />
               {getFileTypeIcon(filePreview.file.file_type)}
               <div>
                 <h4 className="font-medium">{filePreview.file.filename}</h4>
@@ -315,17 +702,33 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ data, onRefresh }) => 
                 )}
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleDownloadFile(
-                filePreview.file.minio_object_name,
-                filePreview.file.filename
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleDownloadFile(
+                  filePreview.file.minio_object_name,
+                  filePreview.file.filename
+                )}
+              >
+                <DownloadIcon className="w-4 h-4 mr-2" />
+                下载
+              </Button>
+              {data.version && !data.version.is_deprecated && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    enhancedDatasetService.deleteFileFromVersion(
+                      data.version!.id,
+                      filePreview.file.id
+                    ).then(() => onDataChange?.());
+                  }}
+                >
+                  <Trash2Icon className="w-4 h-4" />
+                </Button>
               )}
-            >
-              <DownloadIcon className="w-4 h-4 mr-2" />
-              下载
-            </Button>
+            </div>
           </div>
 
           {renderPreviewContent(filePreview)}

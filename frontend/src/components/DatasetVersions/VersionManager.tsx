@@ -27,6 +27,7 @@ import {
   CloneVersionRequest,
   VersionType
 } from '../../types/enhanced-dataset';
+import { FileSelector } from './FileSelector';
 
 interface VersionManagerProps {
   datasetId: number;
@@ -42,6 +43,8 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
   const [versions, setVersions] = useState<EnhancedDatasetVersion[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedExistingFileIds, setSelectedExistingFileIds] = useState<string[]>([]);
+  const [creationMode, setCreationMode] = useState<'upload' | 'existing' | 'mixed'>('upload');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [cloneSourceVersion, setCloneSourceVersion] = useState<EnhancedDatasetVersion | null>(null);
@@ -87,13 +90,73 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
   const handleCreateVersion = async () => {
     try {
       setLoading(true);
-      const newVersion = await enhancedDatasetService.createDatasetVersion(
-        datasetId,
-        createForm
-      );
+      
+      // 验证必填字段
+      if (!createForm.version.trim()) {
+        alert('版本号不能为空');
+        return;
+      }
+      
+      if (!createForm.author.trim()) {
+        alert('作者不能为空');
+        return;
+      }
+      
+      // 验证文件选择
+      if (creationMode === 'existing' && selectedExistingFileIds.length === 0) {
+        alert('请选择至少一个现有文件');
+        return;
+      }
+      
+      if (creationMode === 'upload' && selectedFiles.length === 0) {
+        alert('请选择至少一个文件上传');
+        return;
+      }
+      
+      if (creationMode === 'mixed' && selectedExistingFileIds.length === 0 && selectedFiles.length === 0) {
+        alert('请选择现有文件或上传新文件');
+        return;
+      }
+      
+      let newVersion: EnhancedDatasetVersion;
+      
+      if (creationMode === 'upload') {
+        // 传统上传模式
+        newVersion = await enhancedDatasetService.createDatasetVersion(
+          datasetId,
+          createForm
+        );
+      } else if (creationMode === 'existing') {
+        // 仅使用现有文件
+        newVersion = await enhancedDatasetService.createVersionWithExistingFiles(
+          datasetId,
+          {
+            version: createForm.version,
+            commit_message: createForm.commit_message,
+            author: createForm.author,
+            version_type: createForm.version_type,
+            existing_file_ids: selectedExistingFileIds
+          }
+        );
+      } else {
+        // 混合模式：现有文件 + 新文件
+        newVersion = await enhancedDatasetService.createVersionWithExistingFiles(
+          datasetId,
+          {
+            version: createForm.version,
+            commit_message: createForm.commit_message,
+            author: createForm.author,
+            version_type: createForm.version_type,
+            existing_file_ids: selectedExistingFileIds,
+            new_files: selectedFiles
+          }
+        );
+      }
       
       await loadVersions();
       setIsCreateDialogOpen(false);
+      
+      // 重置表单
       setCreateForm({
         version: '',
         commit_message: '',
@@ -102,12 +165,15 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
         files: []
       });
       setSelectedFiles([]);
+      setSelectedExistingFileIds([]);
+      setCreationMode('upload');
       
       if (onVersionChange) {
         onVersionChange(newVersion);
       }
     } catch (error) {
       console.error('创建版本失败:', error);
+      alert('创建版本失败，请检查输入信息');
     } finally {
       setLoading(false);
     }
@@ -197,12 +263,15 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="version" className="text-sm font-medium">版本号</label>
+                    <label htmlFor="version" className="text-sm font-medium">
+                      版本号 <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="version"
                       placeholder="如: v1.0.0"
                       value={createForm.version}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, version: e.target.value }))}
+                      required
                     />
                   </div>
                   
@@ -224,12 +293,15 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                   </div>
                   
                   <div>
-                    <label htmlFor="author" className="text-sm font-medium">作者</label>
+                    <label htmlFor="author" className="text-sm font-medium">
+                      作者 <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       id="author"
-                      placeholder="作者姓名"
+                      placeholder="请输入作者姓名"
                       value={createForm.author}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, author: e.target.value }))}
+                      required
                     />
                   </div>
                   
@@ -243,20 +315,84 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                     />
                   </div>
                   
+                  {/* 文件来源选择 */}
                   <div>
-                    <label htmlFor="files" className="text-sm font-medium">上传文件</label>
-                    <Input
-                      id="files"
-                      type="file"
-                      multiple
-                      onChange={handleFileSelect}
-                    />
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        已选择 {selectedFiles.length} 个文件
-                      </div>
-                    )}
+                    <label className="text-sm font-medium">文件来源</label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant={creationMode === 'upload' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCreationMode('upload')}
+                      >
+                        上传新文件
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={creationMode === 'existing' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCreationMode('existing')}
+                      >
+                        选择现有文件
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={creationMode === 'mixed' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCreationMode('mixed')}
+                      >
+                        混合模式
+                      </Button>
+                    </div>
                   </div>
+                  
+                  {/* 现有文件选择器 */}
+                  {(creationMode === 'existing' || creationMode === 'mixed') && (
+                    <div>
+                      <label className="text-sm font-medium">选择现有文件</label>
+                      <div className="mt-2">
+                        <FileSelector
+                          datasetId={datasetId}
+                          selectedFileIds={selectedExistingFileIds}
+                          onSelectionChange={setSelectedExistingFileIds}
+                        />
+                        {selectedExistingFileIds.length > 0 && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            已选择 {selectedExistingFileIds.length} 个现有文件
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 新文件上传 */}
+                  {(creationMode === 'upload' || creationMode === 'mixed') && (
+                    <div>
+                      <label htmlFor="files" className="text-sm font-medium">
+                        {creationMode === 'mixed' ? '上传额外文件' : '上传文件'}
+                      </label>
+                      <Input
+                        id="files"
+                        type="file"
+                        multiple
+                        onChange={handleFileSelect}
+                      />
+                      {selectedFiles.length > 0 && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          已选择 {selectedFiles.length} 个新文件
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 文件总计 */}
+                  {(selectedFiles.length > 0 || selectedExistingFileIds.length > 0) && (
+                    <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
+                      总计: {selectedFiles.length + selectedExistingFileIds.length} 个文件
+                      {selectedExistingFileIds.length > 0 && ` (现有: ${selectedExistingFileIds.length})`}
+                      {selectedFiles.length > 0 && ` (新增: ${selectedFiles.length})`}
+                    </div>
+                  )}
                   
                   <div className="flex gap-2 pt-4">
                     <Button onClick={handleCreateVersion} disabled={loading}>
