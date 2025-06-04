@@ -1,4 +1,5 @@
 from .dataset import Dataset, DatasetVersion, DatasetTag, DatasetLike, DatasetDownload
+from .dataset_version import EnhancedDatasetVersion, EnhancedDatasetFile, VersionType
 from .task import Task, TaskType, TaskStatus
 from .plugin import Plugin
 from .raw_data import RawData
@@ -11,6 +12,7 @@ from .conversion_file_detail import ConversionFileDetail
 
 __all__ = [
     'Dataset', 'DatasetVersion', 'DatasetTag', 'DatasetLike', 'DatasetDownload',
+    'EnhancedDatasetVersion', 'EnhancedDatasetFile', 'VersionType',
     'Task', 'TaskType', 'TaskStatus', 'Plugin', 'RawData', 
     'Library', 'LibraryFile', 'DataType', 'ProcessStatus',
     'LLMConfig', 'ProviderType', 'SystemLog', 'LogLevel',

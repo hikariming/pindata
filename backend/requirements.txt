@@ -15,8 +15,8 @@ flask_sqlalchemy
 flasgger==0.9.7.1
 
 # 数据处理
-pandas==2.1.4
-numpy==1.26.2
+pandas>=1.5.0
+numpy>=1.24.0
 
 # 对象存储
 minio==7.2.0
@@ -51,6 +51,6 @@ langchain-openai
 langchain-google-genai
 langchain-anthropic
 langchain-community
-pillow
+pillow>=9.0.0
 pdf2image
 pytesseract 

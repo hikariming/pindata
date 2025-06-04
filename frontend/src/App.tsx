@@ -8,7 +8,7 @@ import { Settings } from "./screens/Settings/Settings";
 import { Plugins } from "./screens/Plugins/Plugins";
 import { Tasks } from "./screens/Tasks/Tasks";
 import { Datasets } from "./screens/Datasets/Datasets";
-import { DatasetDetail } from "./screens/Datasets/DatasetDetail";
+import { DatasetDetailScreen } from "./screens/Datasets/DatasetDetail";
 import { CreateDataset } from "./screens/Datasets/CreateDataset";
 import { DatasetTasks } from "./screens/Datasets/DatasetTasks";
 
@@ -30,7 +30,7 @@ export const App = (): JSX.Element => {
         {/* 数据集相关路由 */}
         <Route path="datasets" element={<Datasets />} />
         <Route path="datasets/create" element={<CreateDataset />} />
-        <Route path="datasets/:id" element={<DatasetDetail />} />
+        <Route path="datasets/:id" element={<DatasetDetailScreen />} />
         <Route path="datasets/:id/tasks" element={<DatasetTasks />} />
         
         {/* 404 页面 */}

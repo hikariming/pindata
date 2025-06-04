@@ -4,6 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { DataPreview } from '../../components/DataPreview/DataPreview';
+import { VersionManager } from '../../components/DatasetVersions/VersionManager';
+import { enhancedDatasetService } from '../../services/enhanced-dataset.service';
+import { datasetService } from '../../services/dataset.service';
+import { 
+  DatasetPreview, 
+  EnhancedDatasetVersion 
+} from '../../types/enhanced-dataset';
+import { Dataset } from '../../types/dataset';
 import {
   ArrowLeftIcon,
   DatabaseIcon,
@@ -15,17 +25,24 @@ import {
   HardDriveIcon,
   Loader2Icon,
   AlertCircleIcon,
-  UserIcon
+  UserIcon,
+  FileText,
+  Calendar,
+  User,
+  Download,
+  Eye,
+  Settings,
+  Info
 } from 'lucide-react';
-
-import { DatasetDetail } from '../../types/dataset';
-import { datasetService } from '../../services/dataset.service';
 
 export const DatasetDetailScreen = (): JSX.Element => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const [dataset, setDataset] = useState<DatasetDetail | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [previewData, setPreviewData] = useState<DatasetPreview | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<EnhancedDatasetVersion | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('preview');
   const [error, setError] = useState<string | null>(null);
 
   // 获取数据集详情
@@ -35,8 +52,13 @@ export const DatasetDetailScreen = (): JSX.Element => {
     try {
       setLoading(true);
       setError(null);
-      const data = await datasetService.getDatasetById(id);
-      setDataset(data);
+      const [datasetInfo, preview] = await Promise.all([
+        datasetService.getDatasetById(id),
+        enhancedDatasetService.getDatasetPreview(parseInt(id))
+      ]);
+      setDataset(datasetInfo);
+      setPreviewData(preview);
+      setCurrentVersion(preview.version);
     } catch (err) {
       console.error('获取数据集详情失败:', err);
       setError(err instanceof Error ? err.message : '获取数据集详情失败');
@@ -129,7 +151,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
     );
   }
 
-  if (!dataset) {
+  if (!dataset || !previewData) {
     return (
       <div className="w-full max-w-[1200px] p-6">
         <div className="flex items-center justify-center py-12">
@@ -140,7 +162,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
   }
 
   return (
-    <div className="w-full max-w-[1200px] p-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link to="/datasets">
@@ -161,154 +183,137 @@ export const DatasetDetailScreen = (): JSX.Element => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">描述</h2>
-            <p className="text-[#4f7096] leading-relaxed">
-              {dataset.description || '暂无描述'}
-            </p>
-          </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="preview" className="flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            数据预览
+          </TabsTrigger>
+          <TabsTrigger value="versions" className="flex items-center gap-2">
+            <GitBranchIcon className="w-4 h-4" />
+            版本管理
+          </TabsTrigger>
+          <TabsTrigger value="info" className="flex items-center gap-2">
+            <Info className="w-4 h-4" />
+            详细信息
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            设置
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Tags */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">标签</h2>
-            <div className="flex flex-wrap gap-2">
-              <Badge className={getTaskTypeColor(dataset.taskType)}>
-                {dataset.taskType}
-              </Badge>
-              {dataset.tags.map((tag) => (
-                <Badge key={tag} variant="outline">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </Card>
+        <TabsContent value="preview" className="space-y-4">
+          <DataPreview 
+            data={previewData} 
+            onRefresh={() => fetchDatasetDetail()}
+          />
+        </TabsContent>
 
-          {/* Versions */}
-          {dataset.version_list && dataset.version_list.length > 0 && (
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-3">版本历史</h2>
+        <TabsContent value="versions" className="space-y-4">
+          <VersionManager
+            datasetId={parseInt(id!)}
+            currentVersion={currentVersion || undefined}
+            onVersionChange={(newVersion) => {
+              setCurrentVersion(newVersion);
+              fetchDatasetDetail();
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="info" className="space-y-4">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">数据集详细信息</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                {dataset.version_list.map((version) => (
-                  <div key={version.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">数据集ID</label>
+                  <p className="mt-1">{dataset.id}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">名称</label>
+                  <p className="mt-1">{dataset.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">状态</label>
+                  <p className="mt-1">
+                    <Badge variant="default">
+                      已发布
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">创建时间</label>
+                  <p className="mt-1">{dataset.created_at ? new Date(dataset.created_at).toLocaleString('zh-CN') : dataset.created}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">当前版本</label>
+                  <p className="mt-1">{currentVersion?.version || '暂无版本'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">版本类型</label>
+                  <p className="mt-1">
+                    {currentVersion && (
+                      <Badge variant="outline">
+                        {currentVersion.version_type}
+                      </Badge>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">文件数量</label>
+                  <p className="mt-1">{currentVersion?.file_count || 0} 个文件</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">总大小</label>
+                  <p className="mt-1">{currentVersion?.total_size_formatted || '0B'}</p>
+                </div>
+              </div>
+            </div>
+
+            {dataset.description && (
+              <div className="mt-6">
+                <label className="text-sm font-medium text-gray-600">描述</label>
+                <p className="mt-2 text-gray-700">{dataset.description}</p>
+              </div>
+            )}
+
+            {currentVersion && (
+              <div className="mt-6">
+                <label className="text-sm font-medium text-gray-600">版本信息</label>
+                <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">{version.version}</span>
-                      <span className="text-sm text-[#4f7096] ml-2">
-                        {new Date(version.created_at).toLocaleDateString()}
-                      </span>
+                      <span className="font-medium">提交哈希:</span>
+                      <span className="ml-2 font-mono">{currentVersion.commit_hash}</span>
                     </div>
-                    <Button size="sm" variant="outline">
-                      下载
-                    </Button>
+                    <div>
+                      <span className="font-medium">作者:</span>
+                      <span className="ml-2">{currentVersion.author}</span>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-medium">提交信息:</span>
+                      <span className="ml-2">{currentVersion.commit_message}</span>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </Card>
-          )}
-        </div>
+            )}
+          </Card>
+        </TabsContent>
 
-        {/* Right Column - Sidebar */}
-        <div className="space-y-6">
-          {/* Actions */}
+        <TabsContent value="settings" className="space-y-4">
           <Card className="p-6">
-            <div className="space-y-3">
-              <Button 
-                className="w-full bg-[#1977e5] hover:bg-[#1565c0]"
-                onClick={handleDownload}
-              >
-                <DownloadIcon className="w-4 h-4 mr-2" />
-                下载数据集
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={handleLike}
-              >
-                <HeartIcon className="w-4 h-4 mr-2" />
-                点赞
-              </Button>
+            <h3 className="text-lg font-semibold mb-4">数据集设置</h3>
+            <div className="text-gray-500">
+              设置功能开发中...
             </div>
           </Card>
-
-          {/* Stats */}
-          <Card className="p-6">
-            <h3 className="font-semibold mb-4">统计信息</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DownloadIcon className="w-4 h-4 text-[#4f7096]" />
-                  <span className="text-sm">下载量</span>
-                </div>
-                <span className="font-medium">{formatNumber(dataset.downloads)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <HeartIcon className="w-4 h-4 text-[#4f7096]" />
-                  <span className="text-sm">点赞数</span>
-                </div>
-                <span className="font-medium">{dataset.likes}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <GitBranchIcon className="w-4 h-4 text-[#4f7096]" />
-                  <span className="text-sm">版本数</span>
-                </div>
-                <span className="font-medium">{dataset.versions}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <HardDriveIcon className="w-4 h-4 text-[#4f7096]" />
-                  <span className="text-sm">大小</span>
-                </div>
-                <span className="font-medium">{dataset.size}</span>
-              </div>
-            </div>
-          </Card>
-
-          {/* Meta Info */}
-          <Card className="p-6">
-            <h3 className="font-semibold mb-4">详细信息</h3>
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <UserIcon className="w-4 h-4 text-[#4f7096]" />
-                  <span className="text-sm">拥有者</span>
-                </div>
-                <span className="font-medium text-right">{dataset.owner}</span>
-              </div>
-              {dataset.license && (
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <TagIcon className="w-4 h-4 text-[#4f7096]" />
-                    <span className="text-sm">许可证</span>
-                  </div>
-                  <span className="font-medium text-right">{dataset.license}</span>
-                </div>
-              )}
-              {dataset.language && (
-                <div className="flex items-start justify-between">
-                  <span className="text-sm">语言</span>
-                  <span className="font-medium text-right">{dataset.language}</span>
-                </div>
-              )}
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-[#4f7096]" />
-                  <span className="text-sm">创建时间</span>
-                </div>
-                <span className="font-medium text-right">{dataset.created}</span>
-              </div>
-              <div className="flex items-start justify-between">
-                <span className="text-sm">最后更新</span>
-                <span className="font-medium text-right">{dataset.lastUpdated}</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }; 
