@@ -158,6 +158,44 @@ export const Tasks = (): JSX.Element => {
     fetchStatistics();
   }, [fetchTasks, fetchStatistics]);
 
+  // 实时更新运行中任务的进度 - 简化为定期刷新
+  useEffect(() => {
+    let intervalId: number;
+    
+    // 如果有运行中的任务，设置定时刷新
+    const runningTasksCount = tasks.filter(task => task.status === 'running').length;
+    if (runningTasksCount > 0) {
+      console.info(`启动定时刷新，${runningTasksCount} 个运行中任务，刷新间隔: 10秒`);
+      
+      intervalId = window.setInterval(async () => {
+        try {
+          console.debug('定时刷新任务列表...');
+          await fetchTasks();
+          await fetchStatistics();
+          console.debug('定时刷新完成');
+        } catch (error) {
+          console.warn('定时刷新失败:', error);
+        }
+      }, 10000); // 每10秒刷新一次
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        console.info('停止定时刷新');
+      }
+    };
+  }, [tasks.filter(task => task.status === 'running').length, fetchTasks, fetchStatistics]); // 依赖运行中任务的数量
+
+  // 清理已完成任务的进度缓存
+  useEffect(() => {
+    tasks.forEach(task => {
+      if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
+        taskService.clearProgressCache(task.id);
+      }
+    });
+  }, [tasks]);
+
   // 搜索防抖
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -505,6 +543,14 @@ export const Tasks = (): JSX.Element => {
                 )}
                 刷新
               </Button>
+              
+              {/* 显示运行中任务的自动刷新状态 */}
+              {tasks.filter(task => task.status === 'running').length > 0 && (
+                <div className="flex items-center text-sm text-[#4f7096] bg-blue-50 px-3 py-1 rounded-md">
+                  <ActivityIcon className="w-4 h-4 mr-2 animate-pulse text-blue-500" />
+                  <span>每10秒自动刷新中</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -601,12 +647,6 @@ export const Tasks = (): JSX.Element => {
                             当前: {task.details.currentItem}
                           </div>
                         )}
-                        {task.resourceUsage && (
-                          <div className="text-xs text-[#4f7096] mt-1">
-                            CPU: {task.resourceUsage.cpu}% | 内存: {Math.round(task.resourceUsage.memory / 1024)}GB
-                            {task.resourceUsage.gpu && ` | GPU: ${task.resourceUsage.gpu}%`}
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                     
@@ -633,26 +673,58 @@ export const Tasks = (): JSX.Element => {
                           </span>
                           <span className="text-[#0c141c] font-medium">{task.progress}%</span>
                         </div>
-                        <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
+                        <div className="w-full bg-[#e8edf2] rounded-full h-1.5 relative">
                           <div 
                             className={`h-1.5 rounded-full transition-all duration-300 ${
                               task.status === 'failed' ? 'bg-red-500' : 
-                              task.status === 'completed' ? 'bg-green-500' : 'bg-[#1977e5]'
+                              task.status === 'completed' ? 'bg-green-500' : 
+                              task.status === 'running' ? 'bg-[#1977e5] animate-pulse' : 'bg-[#1977e5]'
                             }`}
                             style={{ width: `${task.progress}%` }}
                           ></div>
+                          {/* 为运行中的任务添加闪烁效果 */}
+                          {task.status === 'running' && task.progress < 100 && (
+                            <div 
+                              className="absolute top-0 h-1.5 w-2 bg-white opacity-30 rounded-full animate-ping"
+                              style={{ left: `${Math.min(task.progress, 95)}%` }}
+                            ></div>
+                          )}
                         </div>
-                        {task.estimatedTime && task.status === 'running' && (
-                          <div className="text-xs text-[#4f7096]">预计剩余: {task.estimatedTime}</div>
+                        {/* 显示当前处理项目 */}
+                        {task.details.currentItem && task.status === 'running' && (
+                          <div className="text-xs text-[#4f7096] truncate max-w-[150px]" title={task.details.currentItem}>
+                            正在处理: {task.details.currentItem}
+                          </div>
                         )}
+                        {/* 显示预估时间，特别是对于大模型任务 */}
+                        {task.estimatedTime && task.status === 'running' && (
+                          <div className="text-xs text-[#4f7096] flex items-center gap-1">
+                            <ClockIcon className="w-3 h-3" />
+                            预计剩余: {task.estimatedTime}
+                          </div>
+                        )}
+                        {/* 显示错误和警告计数 */}
                         {(task.details.errorCount! > 0 || task.details.warningCount! > 0) && (
                           <div className="flex gap-2 text-xs">
                             {task.details.errorCount! > 0 && (
-                              <span className="text-red-600">错误: {task.details.errorCount}</span>
+                              <span className="text-red-600 flex items-center gap-1">
+                                <AlertTriangleIcon className="w-3 h-3" />
+                                错误: {task.details.errorCount}
+                              </span>
                             )}
                             {task.details.warningCount! > 0 && (
-                              <span className="text-yellow-600">警告: {task.details.warningCount}</span>
+                              <span className="text-yellow-600 flex items-center gap-1">
+                                <AlertCircleIcon className="w-3 h-3" />
+                                警告: {task.details.warningCount}
+                              </span>
                             )}
+                          </div>
+                        )}
+                        {/* 大模型任务的额外信息 */}
+                        {task.type === 'file_conversion' && task.status === 'running' && (
+                          <div className="text-xs text-[#4f7096] flex items-center gap-1">
+                            <BrainIcon className="w-3 h-3" />
+                            <span>AI处理中...</span>
                           </div>
                         )}
                       </div>
@@ -827,6 +899,10 @@ export const Tasks = (): JSX.Element => {
           taskId={showDetails}
           task={tasks.find(t => t.id === showDetails)!}
           onClose={() => setShowDetails(null)}
+          onRefresh={async () => {
+            await fetchTasks();
+            await fetchStatistics();
+          }}
         />
       )}
     </div>
@@ -838,17 +914,29 @@ interface TaskDetailsModalProps {
   taskId: string;
   task: Task;
   onClose: () => void;
+  onRefresh: () => Promise<void>;
 }
 
-const TaskDetailsModal = ({ taskId, task, onClose }: TaskDetailsModalProps) => {
+const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModalProps) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-[#e8edf2]">
           <h3 className="text-lg font-semibold text-[#0c141c]">任务详情</h3>
-          <Button variant="ghost" onClick={onClose} className="h-8 w-8 p-0">
-            ✕
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onRefresh}
+              className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
+            >
+              <RefreshCwIcon className="w-4 h-4 mr-1" />
+              刷新
+            </Button>
+            <Button variant="ghost" onClick={onClose} className="h-8 w-8 p-0">
+              ✕
+            </Button>
+          </div>
         </div>
         
         <div className="p-6 overflow-auto max-h-[60vh]">
@@ -929,65 +1017,48 @@ const TaskDetailsModal = ({ taskId, task, onClose }: TaskDetailsModalProps) => {
             </Card>
           </div>
 
-          {/* 资源使用情况 */}
-          {task.resourceUsage && (
-            <Card className="border-[#d1dbe8] bg-white p-4 mt-6">
-              <h4 className="font-medium text-[#0c141c] mb-3">资源使用情况</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[#4f7096]">CPU使用率</span>
-                    <span className="text-[#0c141c] font-medium">{task.resourceUsage.cpu}%</span>
-                  </div>
-                  <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
-                    <div 
-                      className="bg-blue-500 h-1.5 rounded-full" 
-                      style={{ width: `${task.resourceUsage.cpu}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[#4f7096]">内存使用</span>
-                    <span className="text-[#0c141c] font-medium">{Math.round(task.resourceUsage.memory / 1024)}GB</span>
-                  </div>
-                  <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
-                    <div 
-                      className="bg-green-500 h-1.5 rounded-full" 
-                      style={{ width: `${Math.min((task.resourceUsage.memory / 16384) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                {task.resourceUsage.gpu && (
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-[#4f7096]">GPU使用率</span>
-                      <span className="text-[#0c141c] font-medium">{task.resourceUsage.gpu}%</span>
-                    </div>
-                    <div className="w-full bg-[#e8edf2] rounded-full h-1.5">
-                      <div 
-                        className="bg-purple-500 h-1.5 rounded-full" 
-                        style={{ width: `${task.resourceUsage.gpu}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
-
           {/* 任务日志 */}
           {task.logs && task.logs.length > 0 && (
             <Card className="border-[#d1dbe8] bg-white p-4 mt-6">
-              <h4 className="font-medium text-[#0c141c] mb-3">任务日志</h4>
-              <div className="bg-[#f7f9fc] border border-[#e8edf2] rounded-lg p-3 max-h-40 overflow-auto">
-                {task.logs.map((log, index) => (
-                  <div key={index} className="text-xs text-[#0c141c] font-mono mb-1">
-                    {log}
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-[#0c141c]">任务日志</h4>
+                {task.status === 'running' && (
+                  <div className="flex items-center text-xs text-[#4f7096]">
+                    <ActivityIcon className="w-3 h-3 mr-1 animate-pulse" />
+                    实时更新中
                   </div>
-                ))}
+                )}
+              </div>
+              <div className="bg-[#f7f9fc] border border-[#e8edf2] rounded-lg p-3 max-h-60 overflow-auto">
+                {task.logs.map((log, index) => {
+                  // 解析日志级别
+                  const isError = log.includes('错误:') || log.includes('失败');
+                  const isWarning = log.includes('警告:');
+                  const isInfo = log.includes('正在处理:') || log.includes('开始') || log.includes('完成');
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`text-xs font-mono mb-1 p-1 rounded ${
+                        isError ? 'text-red-700 bg-red-50' :
+                        isWarning ? 'text-yellow-700 bg-yellow-50' :
+                        isInfo ? 'text-blue-700 bg-blue-50' :
+                        'text-[#0c141c]'
+                      }`}
+                    >
+                      <span className="text-[#4f7096] mr-2">
+                        [{String(index + 1).padStart(3, '0')}]
+                      </span>
+                      {log}
+                    </div>
+                  );
+                })}
+                {task.status === 'running' && (
+                  <div className="text-xs text-[#4f7096] font-mono mt-2 p-1 bg-blue-50 rounded flex items-center">
+                    <LoaderIcon className="w-3 h-3 mr-2 animate-spin" />
+                    任务执行中，日志将自动更新...
+                  </div>
+                )}
               </div>
             </Card>
           )}

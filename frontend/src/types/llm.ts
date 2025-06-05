@@ -67,6 +67,13 @@ export interface SetDefaultConfigRequest {
 export interface TestConfigResponse {
   latency: number;
   status: string;
+  model_info?: {
+    model: string;
+    provider: string;
+    response_preview?: string;
+  };
+  test_time?: string;
+  error_detail?: string;
 }
 
 export interface ModelProvider {

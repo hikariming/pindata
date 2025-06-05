@@ -2,13 +2,17 @@ from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from sqlalchemy import or_, and_
 from marshmallow import ValidationError
+import logging
+import time
+from datetime import datetime
+
 from app.models import LLMConfig, ProviderType, SystemLog
 from app.api.v1.schemas.llm_schemas import (
     LLMConfigCreateSchema, LLMConfigUpdateSchema, 
     LLMConfigQuerySchema, SetDefaultConfigSchema
 )
 from app.db import db
-import logging
+from app.services.llm_conversion_service import LLMConversionService
 
 # 创建蓝图
 llm_configs_bp = Blueprint('llm_configs', __name__)
@@ -313,29 +317,131 @@ class LLMConfigTestResource(Resource):
             if not config:
                 return {'success': False, 'message': '配置不存在'}, 404
             
-            # TODO: 实现实际的连接测试逻辑
-            # 这里只是示例，实际应该调用对应的LLM API进行测试
+            if not config.is_active:
+                return {'success': False, 'message': '配置已禁用，无法测试'}, 400
+            
+            # 实现实际的连接测试逻辑
+            start_time = time.time()
+            test_result = self._test_llm_connection(config)
+            end_time = time.time()
+            
+            latency = round((end_time - start_time) * 1000, 2)  # 转换为毫秒
             
             # 记录日志
             SystemLog.log_info(
-                f"测试LLM配置连接: {config.name}",
+                f"测试LLM配置连接: {config.name} - 结果: {test_result['status']}",
                 "LLMConfig",
-                extra_data={'config_id': config.id}
+                extra_data={
+                    'config_id': config.id,
+                    'latency': latency,
+                    'status': test_result['status'],
+                    'model_info': test_result.get('model_info')
+                }
             )
             
             return {
-                'success': True,
-                'message': '连接测试成功',
+                'success': test_result['success'],
+                'message': test_result['message'],
                 'data': {
-                    'latency': 150,  # 示例延迟
-                    'status': 'connected'
+                    'latency': latency,
+                    'status': test_result['status'],
+                    'model_info': test_result.get('model_info'),
+                    'test_time': datetime.now().isoformat()
                 }
-            }, 200
+            }, 200 if test_result['success'] else 400
             
         except Exception as e:
             logger.error(f"测试LLM配置连接失败: {str(e)}")
             SystemLog.log_error(f"测试LLM配置连接失败: {str(e)}", "LLMConfig")
-            return {'success': False, 'message': '连接测试失败'}, 500
+            return {'success': False, 'message': f'连接测试失败: {str(e)}'}, 500
+    
+    def _test_llm_connection(self, config: LLMConfig) -> dict:
+        """测试LLM连接"""
+        try:
+            # 获取LLM服务实例
+            llm_service = LLMConversionService()
+            llm_client = llm_service.get_llm_client(config)
+            
+            # 准备测试消息
+            test_prompt = "请回复'连接测试成功'以确认配置正确。"
+            
+            if config.provider == ProviderType.OPENAI:
+                # OpenAI格式测试
+                from langchain.schema import HumanMessage
+                messages = [HumanMessage(content=test_prompt)]
+                response = llm_client.invoke(messages)
+                model_info = {
+                    'model': config.model_name,
+                    'provider': 'OpenAI',
+                    'response_preview': response.content[:100] + '...' if len(response.content) > 100 else response.content
+                }
+                
+            elif config.provider == ProviderType.CLAUDE:
+                # Claude格式测试
+                from langchain.schema import HumanMessage
+                messages = [HumanMessage(content=test_prompt)]
+                response = llm_client.invoke(messages)
+                model_info = {
+                    'model': config.model_name,
+                    'provider': 'Claude',
+                    'response_preview': response.content[:100] + '...' if len(response.content) > 100 else response.content
+                }
+                
+            elif config.provider == ProviderType.GEMINI:
+                # Gemini格式测试
+                from langchain.schema import HumanMessage
+                messages = [HumanMessage(content=test_prompt)]
+                response = llm_client.invoke(messages)
+                model_info = {
+                    'model': config.model_name,
+                    'provider': 'Gemini',
+                    'response_preview': response.content[:100] + '...' if len(response.content) > 100 else response.content
+                }
+                
+            else:
+                # 自定义提供商测试
+                from langchain.schema import HumanMessage
+                messages = [HumanMessage(content=test_prompt)]
+                response = llm_client.invoke(messages)
+                model_info = {
+                    'model': config.model_name,
+                    'provider': str(config.provider),
+                    'response_preview': response.content[:100] + '...' if len(response.content) > 100 else response.content
+                }
+            
+            return {
+                'success': True,
+                'status': 'connected',
+                'message': '连接测试成功',
+                'model_info': model_info
+            }
+            
+        except Exception as e:
+            error_msg = str(e)
+            
+            # 分析具体错误类型
+            if 'authentication' in error_msg.lower() or 'api_key' in error_msg.lower():
+                status = 'auth_failed'
+                message = 'API密钥认证失败'
+            elif 'timeout' in error_msg.lower() or 'connection' in error_msg.lower():
+                status = 'connection_failed'
+                message = '连接超时或网络错误'
+            elif 'not found' in error_msg.lower() or '404' in error_msg:
+                status = 'model_not_found'
+                message = '模型不存在或无权访问'
+            elif 'rate limit' in error_msg.lower() or '429' in error_msg:
+                status = 'rate_limited'
+                message = '请求频率超限'
+            else:
+                status = 'unknown_error'
+                message = f'未知错误: {error_msg}'
+            
+            return {
+                'success': False,
+                'status': status,
+                'message': message,
+                'error_detail': error_msg
+            }
 
 # 注册路由
 api.add_resource(LLMConfigListResource, '/configs')

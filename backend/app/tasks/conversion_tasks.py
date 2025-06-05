@@ -13,6 +13,7 @@ from app.services.storage_service import storage_service
 from app.services.llm_conversion_service import llm_conversion_service
 from app.db import db
 import markitdown
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ def process_conversion_job(self, job_id: str):
     """处理转换任务的Celery任务"""
     with self.flask_app.app_context():
         try:
+            start_time = time.time()
             logger.info(f"开始处理转换任务: {job_id}")
             
             # 获取任务信息
@@ -47,6 +49,11 @@ def process_conversion_job(self, job_id: str):
             if not job:
                 logger.error(f"转换任务不存在: {job_id}")
                 return {'success': False, 'error': '任务不存在'}
+            
+            # 记录任务详情
+            logger.info(f"任务详情 - 方法: {job.method}, 文件数: {len(job.file_details)}, 库ID: {job.library_id}")
+            if job.llm_config_id:
+                logger.info(f"使用LLM配置: {job.llm_config_id}")
             
             # 更新任务状态
             job.status = ConversionStatus.PROCESSING
@@ -58,16 +65,33 @@ def process_conversion_job(self, job_id: str):
             # 处理每个文件
             total_files = len(job.file_details)
             processed_files = 0
+            total_processing_time = 0
             
-            for file_detail in job.file_details:
+            logger.info(f"开始处理 {total_files} 个文件")
+            
+            for file_index, file_detail in enumerate(job.file_details, 1):
+                file_start_time = time.time()
+                
                 try:
+                    # 记录开始处理的文件
+                    file_name = file_detail.library_file.original_filename
+                    logger.info(f"处理文件 {file_index}/{total_files}: {file_name}")
+                    
                     # 转换单个文件
                     _convert_single_file(self, file_detail, job)
                     job.completed_count += 1
                     processed_files += 1
                     
+                    file_duration = time.time() - file_start_time
+                    total_processing_time += file_duration
+                    
+                    logger.info(f"文件处理完成 {file_index}/{total_files}: {file_name}, 耗时: {file_duration:.2f}秒")
+                    
                 except Exception as e:
-                    logger.error(f"转换文件失败 {file_detail.library_file_id}: {str(e)}")
+                    file_duration = time.time() - file_start_time
+                    file_name = file_detail.library_file.original_filename if file_detail.library_file else 'unknown'
+                    
+                    logger.error(f"转换文件失败 {file_index}/{total_files}: {file_name}, 耗时: {file_duration:.2f}秒, 错误: {str(e)}")
                     file_detail.status = ConversionStatus.FAILED
                     file_detail.error_message = str(e)
                     job.failed_count += 1
@@ -78,6 +102,15 @@ def process_conversion_job(self, job_id: str):
                 job.task.progress = int(job.progress_percentage)
                 db.session.commit()
                 
+                # 计算平均处理时间和预估剩余时间
+                if processed_files > 0:
+                    avg_time_per_file = total_processing_time / processed_files
+                    remaining_files = total_files - processed_files
+                    estimated_remaining_time = remaining_files * avg_time_per_file
+                    
+                    logger.info(f"进度统计 - 已完成: {processed_files}/{total_files} ({job.progress_percentage:.1f}%), "
+                              f"平均耗时: {avg_time_per_file:.2f}秒/文件, 预计剩余: {estimated_remaining_time:.2f}秒")
+                
                 # 更新Celery任务进度
                 self.update_state(
                     state='PROGRESS',
@@ -85,37 +118,49 @@ def process_conversion_job(self, job_id: str):
                         'current': processed_files,
                         'total': total_files,
                         'progress': job.progress_percentage,
-                        'current_file': job.current_file_name
+                        'current_file': job.current_file_name,
+                        'completed_count': job.completed_count,
+                        'failed_count': job.failed_count,
+                        'avg_time_per_file': avg_time_per_file if processed_files > 0 else 0,
+                        'estimated_remaining_time': estimated_remaining_time if processed_files > 0 else 0
                     }
                 )
             
             # 更新任务完成状态
+            total_duration = time.time() - start_time
+            
             if job.failed_count == 0:
                 job.status = ConversionStatus.COMPLETED
                 job.task.status = TaskStatus.COMPLETED
-                message = '所有文件转换成功'
+                message = f'所有 {job.completed_count} 个文件转换成功'
             else:
                 job.status = ConversionStatus.COMPLETED
                 job.task.status = TaskStatus.COMPLETED
                 job.error_message = f"{job.failed_count} 个文件转换失败"
-                message = f"转换完成，{job.failed_count} 个文件失败"
+                message = f"转换完成: 成功 {job.completed_count} 个, 失败 {job.failed_count} 个"
             
             job.completed_at = datetime.utcnow()
             job.task.completed_at = datetime.utcnow()
             db.session.commit()
             
-            logger.info(f"转换任务完成: {job_id}, {message}")
+            logger.info(f"转换任务完成: {job_id}, {message}, 总耗时: {total_duration:.2f}秒")
+            logger.info(f"性能统计 - 平均处理时间: {total_processing_time/processed_files:.2f}秒/文件, "
+                       f"总处理时间: {total_processing_time:.2f}秒")
             
             return {
                 'success': True,
                 'job_id': job_id,
                 'completed_count': job.completed_count,
                 'failed_count': job.failed_count,
+                'total_duration': total_duration,
+                'avg_time_per_file': total_processing_time / processed_files if processed_files > 0 else 0,
                 'message': message
             }
             
         except Exception as e:
-            logger.error(f"处理转换任务失败 {job_id}: {str(e)}")
+            total_duration = time.time() - start_time if 'start_time' in locals() else 0
+            logger.error(f"处理转换任务失败 {job_id}: {str(e)}, 总耗时: {total_duration:.2f}秒")
+            
             try:
                 job = ConversionJob.query.get(job_id)
                 if job:
@@ -124,10 +169,10 @@ def process_conversion_job(self, job_id: str):
                     job.task.status = TaskStatus.FAILED
                     job.task.error_message = str(e)
                     db.session.commit()
-            except:
-                pass
+            except Exception as commit_error:
+                logger.error(f"更新任务失败状态时出错: {str(commit_error)}")
             
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': str(e), 'duration': total_duration}
 
 def _convert_single_file(celery_task, file_detail: ConversionFileDetail, job: ConversionJob):
     """转换单个文件"""
@@ -219,13 +264,45 @@ def _convert_with_llm(file_path: str, file_type: str, config: dict, llm_config_i
         if not llm_config:
             raise ValueError(f"LLM配置不存在: {llm_config_id}")
         
-        # 定义进度回调函数
+        # 添加调试信息
+        logger.info(f"转换任务中获取到的LLM配置: ID={llm_config.id}, Name={llm_config.name}, Provider={llm_config.provider}")
+        logger.info(f"API Key前缀: {llm_config.api_key[:10]}... (长度: {len(llm_config.api_key)})")
+        
+        # 强制清除LLM客户端缓存，确保使用最新配置
+        if hasattr(llm_conversion_service, 'llm_cache') and llm_config.id in llm_conversion_service.llm_cache:
+            logger.info(f"清除LLM客户端缓存: {llm_config.id}")
+            del llm_conversion_service.llm_cache[llm_config.id]
+        
+        # 记录文件转换开始
+        file_name = os.path.basename(file_path)
+        logger.info(f"开始LLM转换 - 文件: {file_name}, 类型: {file_type}")
+        logger.info(f"转换配置: enableOCR={config.get('enableOCR', True)}, extractImages={config.get('extractImages', False)}")
+        
+        # 定义增强的进度回调函数
         def progress_callback(current_page: int, total_pages: int):
-            file_detail.processed_pages = current_page
-            file_detail.total_pages = total_pages
-            db.session.commit()
+            try:
+                # 更新文件级别的进度
+                file_detail.processed_pages = current_page
+                file_detail.total_pages = total_pages
+                
+                # 计算文件内部进度百分比
+                if total_pages > 0:
+                    file_progress = (current_page / total_pages) * 100
+                    logger.info(f"文件内部进度 - {file_name}: {current_page}/{total_pages} 页 ({file_progress:.1f}%)")
+                else:
+                    file_progress = 0
+                
+                # 更新数据库
+                db.session.commit()
+                
+                # 记录进度更新
+                logger.debug(f"进度回调更新成功 - 文件: {file_name}, 当前页: {current_page}, 总页数: {total_pages}")
+                
+            except Exception as e:
+                logger.warning(f"进度回调失败 - 文件: {file_name}, 错误: {str(e)}")
         
         # 调用LLM转换服务
+        start_time = time.time()
         markdown_content = llm_conversion_service.convert_document_with_vision(
             file_path=file_path,
             file_type=file_type,
@@ -233,6 +310,10 @@ def _convert_with_llm(file_path: str, file_type: str, config: dict, llm_config_i
             conversion_config=config,
             progress_callback=progress_callback
         )
+        conversion_duration = time.time() - start_time
+        
+        # 记录转换完成信息
+        logger.info(f"LLM转换完成 - 文件: {file_name}, 耗时: {conversion_duration:.2f}秒, 输出长度: {len(markdown_content)} 字符")
         
         # 更新LLM使用统计
         llm_config.update_usage()
@@ -240,5 +321,8 @@ def _convert_with_llm(file_path: str, file_type: str, config: dict, llm_config_i
         return markdown_content
         
     except Exception as e:
-        logger.error(f"LLM转换失败: {str(e)}")
+        logger.error(f"LLM转换失败 - 文件: {file_name if 'file_name' in locals() else 'unknown'}: {str(e)}")
+        # 记录详细错误信息用于调试
+        if 'llm_config' in locals():
+            logger.error(f"LLM配置详情: Provider={llm_config.provider}, Model={llm_config.model_name}")
         raise 

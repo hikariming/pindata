@@ -13,6 +13,13 @@ import {
 } from '../types/task';
 
 export class TaskService {
+  // 添加任务进度缓存，用于计算平均处理速度
+  private static progressCache = new Map<string, {
+    lastProgress: number;
+    lastUpdateTime: number;
+    avgSpeed: number; // 每分钟的进度增长
+  }>();
+
   /**
    * 获取任务列表
    */
@@ -95,6 +102,8 @@ export class TaskService {
     return response.data!;
   }
 
+
+
   /**
    * 将后端任务转换为前端显示格式
    */
@@ -135,33 +144,129 @@ export class TaskService {
       return task.progress || 0;
     };
 
-    // 估算剩余时间
+    // 改进的估算剩余时间算法
     const getEstimatedTime = (task: Task): string | undefined => {
       if (task.status !== 'running') return undefined;
       
       const progress = getProgress(task);
-      if (progress <= 0) return undefined;
+      const taskId = task.id.toString();
       
+      // 如果任务刚开始，没有足够的进度数据
+      if (progress <= 5) return undefined;
+      
+      // 更新进度缓存
+      const now = Date.now();
+      const cached = this.progressCache.get(taskId);
+      
+      if (cached && cached.lastProgress !== progress) {
+        // 计算进度速度 (进度/分钟)
+        const timeDiff = (now - cached.lastUpdateTime) / (1000 * 60); // 分钟
+        const progressDiff = progress - cached.lastProgress;
+        
+        if (timeDiff > 0 && progressDiff > 0) {
+          const currentSpeed = progressDiff / timeDiff;
+          // 使用指数移动平均来平滑速度计算
+          cached.avgSpeed = cached.avgSpeed * 0.7 + currentSpeed * 0.3;
+        }
+        
+        cached.lastProgress = progress;
+        cached.lastUpdateTime = now;
+      } else if (!cached) {
+        // 首次记录，使用基于开始时间的估算
+        if (task.started_at) {
+          const startTime = new Date(task.started_at);
+          const elapsed = (now - startTime.getTime()) / (1000 * 60); // 分钟
+          const avgSpeed = elapsed > 0 ? progress / elapsed : 0;
+          
+          this.progressCache.set(taskId, {
+            lastProgress: progress,
+            lastUpdateTime: now,
+            avgSpeed: avgSpeed
+          });
+        }
+      }
+      
+      // 计算剩余时间
+      const cacheData = this.progressCache.get(taskId);
+      if (cacheData && cacheData.avgSpeed > 0) {
+        const remainingProgress = 100 - progress;
+        const estimatedMinutes = remainingProgress / cacheData.avgSpeed;
+        
+        if (estimatedMinutes > 0) {
+          if (estimatedMinutes < 60) {
+            return `约${Math.round(estimatedMinutes)}分钟`;
+          } else if (estimatedMinutes < 1440) {
+            const hours = Math.floor(estimatedMinutes / 60);
+            const mins = Math.round(estimatedMinutes % 60);
+            return mins > 0 ? `约${hours}小时${mins}分钟` : `约${hours}小时`;
+          } else {
+            const days = Math.floor(estimatedMinutes / 1440);
+            const hours = Math.round((estimatedMinutes % 1440) / 60);
+            return hours > 0 ? `约${days}天${hours}小时` : `约${days}天`;
+          }
+        }
+      }
+      
+      // 降级到简单的基于开始时间的估算
       if (task.started_at) {
         const startTime = new Date(task.started_at);
-        const now = new Date();
-        const elapsed = now.getTime() - startTime.getTime();
-        const totalEstimated = (elapsed / progress) * 100;
-        const remaining = totalEstimated - elapsed;
-        
-        if (remaining > 0) {
-          const minutes = Math.round(remaining / (1000 * 60));
-          if (minutes < 60) {
-            return `${minutes}分钟`;
-          } else {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            return `${hours}小时${mins}分钟`;
+        const elapsed = now - startTime.getTime();
+        if (elapsed > 0 && progress > 0) {
+          const totalEstimated = (elapsed / progress) * 100;
+          const remaining = totalEstimated - elapsed;
+          
+          if (remaining > 0) {
+            const minutes = Math.round(remaining / (1000 * 60));
+            if (minutes < 60) {
+              return `约${minutes}分钟`;
+            } else {
+              const hours = Math.floor(minutes / 60);
+              const mins = minutes % 60;
+              return mins > 0 ? `约${hours}小时${mins}分钟` : `约${hours}小时`;
+            }
           }
         }
       }
       
       return undefined;
+    };
+
+    // 生成更详细的日志信息
+    const generateLogs = (task: Task): string[] => {
+      const logs: string[] = [];
+      
+      logs.push(`${task.created_at} - 任务创建`);
+      
+      if (task.started_at) {
+        logs.push(`${task.started_at} - 任务开始`);
+      }
+      
+      if (task.status === 'running' && task.current_file_name) {
+        logs.push(`正在处理: ${task.current_file_name}`);
+        
+        // 如果有页面进度信息
+        if (task.file_details && task.file_details.length > 0) {
+          const fileDetail = task.file_details[0];
+          if (fileDetail.processed_pages && fileDetail.total_pages) {
+            logs.push(`当前文件进度: ${fileDetail.processed_pages}/${fileDetail.total_pages} 页`);
+          }
+        }
+        
+        // 添加文件处理进度
+        if (task.completed_count && task.file_count) {
+          logs.push(`文件处理进度: ${task.completed_count}/${task.file_count} 个文件`);
+        }
+      }
+      
+      if (task.error_message) {
+        logs.push(`错误: ${task.error_message}`);
+      }
+      
+      if (task.completed_at) {
+        logs.push(`${task.completed_at} - 任务完成`);
+      }
+      
+      return logs;
     };
 
     return {
@@ -183,18 +288,8 @@ export class TaskService {
         errorCount: task.failed_count,
         warningCount: 0
       },
-      logs: task.error_message ? [
-        `${task.created_at} - 任务创建`,
-        ...(task.started_at ? [`${task.started_at} - 任务开始`] : []),
-        ...(task.error_message ? [`错误: ${task.error_message}`] : []),
-        ...(task.completed_at ? [`${task.completed_at} - 任务完成`] : [])
-      ] : undefined,
+      logs: generateLogs(task),
       createdBy: '系统', // 后端暂时没有用户信息
-      resourceUsage: {
-        cpu: Math.random() * 100, // 临时模拟数据
-        memory: Math.random() * 8192,
-        gpu: task.type === 'DOCUMENT_CONVERSION' ? Math.random() * 100 : undefined
-      }
     };
   }
 
@@ -212,6 +307,15 @@ export class TaskService {
       pagination
     };
   }
+
+  /**
+   * 清理进度缓存（当任务完成或失败时）
+   */
+  static clearProgressCache(taskId: string): void {
+    this.progressCache.delete(taskId);
+  }
+
+
 }
 
 // 导出单例实例

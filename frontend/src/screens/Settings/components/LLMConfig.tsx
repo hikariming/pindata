@@ -24,7 +24,11 @@ import {
   SettingsIcon,
   ShieldCheckIcon,
   InfoIcon,
-  AlertCircleIcon
+  AlertCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  WifiIcon,
+  WifiOffIcon
 } from 'lucide-react';
 import {
   Dialog,
@@ -36,7 +40,7 @@ import {
   DialogTrigger,
 } from "../../../components/ui/dialog";
 import { useLLMConfigs } from '../../../hooks/useLLMConfigs';
-import { type LLMConfig, ProviderType, CreateLLMConfigRequest, UpdateLLMConfigRequest, ModelProvider } from '../../../types/llm';
+import { type LLMConfig, ProviderType, CreateLLMConfigRequest, UpdateLLMConfigRequest, ModelProvider, TestConfigResponse } from '../../../types/llm';
 
 const MODEL_PROVIDERS: ModelProvider[] = [
   {
@@ -72,6 +76,16 @@ export const LLMConfigComponent = (): JSX.Element => {
   const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
   const [testingConfigId, setTestingConfigId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    configId: string;
+    result: TestConfigResponse;
+    success: boolean;
+  } | null>(null);
+  const [showTestResult, setShowTestResult] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // 使用自定义Hook
   const {
@@ -99,6 +113,16 @@ export const LLMConfigComponent = (): JSX.Element => {
   });
 
   const [editConfig, setEditConfig] = useState<Partial<UpdateLLMConfigRequest>>({});
+
+  // 自动清除通知
+  React.useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const resetNewConfig = () => {
     setNewConfig({
@@ -168,14 +192,93 @@ export const LLMConfigComponent = (): JSX.Element => {
 
   const handleTestConfig = async (configId: string) => {
     setTestingConfigId(configId);
+    setTestResult(null);
     try {
       const result = await testConfig(configId);
-      console.log('Test result:', result);
-      // 这里可以显示测试结果的通知
-    } catch (error) {
-      console.error('Failed to test config:', error);
+      setTestResult({
+        configId,
+        result,
+        success: true
+      });
+      setShowTestResult(true);
+      
+      // 显示成功通知
+      setNotification({
+        type: 'success',
+        message: `${llmConfigs.find(c => c.id === configId)?.name} 连接测试成功！延迟: ${result.latency}ms`
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || '测试连接失败';
+      setTestResult({
+        configId,
+        result: {
+          latency: 0,
+          status: 'failed',
+          error_detail: errorMessage
+        },
+        success: false
+      });
+      setShowTestResult(true);
+      
+      // 显示错误通知
+      setNotification({
+        type: 'error',
+        message: `${llmConfigs.find(c => c.id === configId)?.name} 连接测试失败`
+      });
     } finally {
       setTestingConfigId(null);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return <CheckCircleIcon className="w-5 h-5 text-green-600" />;
+      case 'auth_failed':
+        return <AlertCircleIcon className="w-5 h-5 text-red-600" />;
+      case 'connection_failed':
+        return <WifiOffIcon className="w-5 h-5 text-red-600" />;
+      case 'model_not_found':
+        return <XIcon className="w-5 h-5 text-red-600" />;
+      case 'rate_limited':
+        return <ClockIcon className="w-5 h-5 text-orange-600" />;
+      default:
+        return <AlertCircleIcon className="w-5 h-5 text-red-600" />;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return '连接成功';
+      case 'auth_failed':
+        return 'API密钥认证失败';
+      case 'connection_failed':
+        return '连接失败';
+      case 'model_not_found':
+        return '模型不存在';
+      case 'rate_limited':
+        return '请求频率超限';
+      case 'failed':
+        return '测试失败';
+      default:
+        return '未知错误';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'auth_failed':
+      case 'connection_failed':
+      case 'model_not_found':
+      case 'failed':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'rate_limited':
+        return 'text-orange-600 bg-orange-50 border-orange-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
@@ -205,6 +308,30 @@ export const LLMConfigComponent = (): JSX.Element => {
 
   return (
     <div className="space-y-6">
+      {/* Toast通知 */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 border ${
+          notification.type === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            {notification.type === 'success' ? (
+              <CheckCircleIcon className="w-5 h-5" />
+            ) : (
+              <AlertCircleIcon className="w-5 h-5" />
+            )}
+            <span className="font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-2 text-gray-500 hover:text-gray-700"
+            >
+              <XIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 错误提示 */}
       {configsError && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -217,7 +344,12 @@ export const LLMConfigComponent = (): JSX.Element => {
 
       {/* 添加模型按钮 */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-[#0c141c]">模型配置列表</h3>
+        <div>
+          <h3 className="text-lg font-semibold text-[#0c141c]">模型配置列表</h3>
+          <p className="text-sm text-[#4f7096] mt-1">
+            管理您的大语言模型配置。点击"测试"按钮可以验证配置是否正确，系统会发送测试请求并显示详细结果。
+          </p>
+        </div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -534,6 +666,154 @@ export const LLMConfigComponent = (): JSX.Element => {
         </DialogContent>
       </Dialog>
 
+      {/* 测试结果对话框 */}
+      <Dialog open={showTestResult} onOpenChange={setShowTestResult}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {testResult && getStatusIcon(testResult.result.status)}
+              连接测试结果
+            </DialogTitle>
+            <DialogDescription>
+              {testResult && `配置 "${llmConfigs.find(c => c.id === testResult.configId)?.name}" 的测试结果`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {testResult && (
+            <div className="space-y-4 py-4">
+              {/* 状态概览 */}
+              <div className={`p-4 rounded-lg border ${getStatusColor(testResult.result.status)}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(testResult.result.status)}
+                    <span className="font-medium">{getStatusText(testResult.result.status)}</span>
+                  </div>
+                  {testResult.success && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <WifiIcon className="w-4 h-4" />
+                      <span>{testResult.result.latency}ms</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 详细信息 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">响应延迟</label>
+                  <div className="text-lg font-mono">
+                    {testResult.result.latency}ms
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">测试时间</label>
+                  <div className="text-sm text-gray-600">
+                    {testResult.result.test_time ? 
+                      new Date(testResult.result.test_time).toLocaleString('zh-CN') : 
+                      '刚刚'
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {/* 模型信息 */}
+              {testResult.result.model_info && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">模型信息</label>
+                  <div className="bg-gray-50 p-3 rounded border space-y-2">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">提供商:</span>
+                        <span className="ml-2 font-medium">{testResult.result.model_info.provider}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">模型:</span>
+                        <span className="ml-2 font-medium">{testResult.result.model_info.model}</span>
+                      </div>
+                    </div>
+                    {testResult.result.model_info.response_preview && (
+                      <div>
+                        <span className="text-gray-600 text-sm">响应预览:</span>
+                        <div className="mt-1 p-2 bg-white border rounded text-sm italic">
+                          "{testResult.result.model_info.response_preview}"
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 错误详情 */}
+              {!testResult.success && testResult.result.error_detail && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">错误详情</label>
+                  <div className="bg-red-50 p-3 rounded border border-red-200">
+                    <code className="text-sm text-red-800">
+                      {testResult.result.error_detail}
+                    </code>
+                  </div>
+                </div>
+              )}
+
+              {/* 建议 */}
+              {!testResult.success && (
+                <div className="bg-blue-50 p-4 rounded border border-blue-200">
+                  <div className="flex items-start gap-2">
+                    <InfoIcon className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900 mb-1">解决建议</h4>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        {testResult.result.status === 'auth_failed' && (
+                          <>
+                            <li>• 检查API密钥是否正确且有效</li>
+                            <li>• 确认API密钥具有所需权限</li>
+                          </>
+                        )}
+                        {testResult.result.status === 'connection_failed' && (
+                          <>
+                            <li>• 检查网络连接是否正常</li>
+                            <li>• 确认API接口地址是否正确</li>
+                            <li>• 检查防火墙设置</li>
+                          </>
+                        )}
+                        {testResult.result.status === 'model_not_found' && (
+                          <>
+                            <li>• 确认模型名称是否正确</li>
+                            <li>• 检查是否有该模型的访问权限</li>
+                          </>
+                        )}
+                        {testResult.result.status === 'rate_limited' && (
+                          <>
+                            <li>• 稍后重试</li>
+                            <li>• 检查API调用频率限制</li>
+                          </>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTestResult(false)}>
+              关闭
+            </Button>
+            {testResult && (
+              <Button onClick={() => handleTestConfig(testResult.configId)} disabled={testingConfigId === testResult.configId}>
+                {testingConfigId === testResult.configId ? (
+                  <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <PlayIcon className="w-4 h-4 mr-2" />
+                )}
+                重新测试
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* 模型配置列表 */}
       <div className="space-y-4">
         {configsLoading ? (
@@ -584,6 +864,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                     size="sm"
                     onClick={() => handleTestConfig(config.id)}
                     disabled={testingConfigId === config.id}
+                    title="测试LLM连接并验证配置是否正确"
                   >
                     {testingConfigId === config.id ? (
                       <Loader2Icon className="w-4 h-4 mr-1 animate-spin" />

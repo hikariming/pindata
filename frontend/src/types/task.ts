@@ -70,6 +70,8 @@ export interface ConversionFileDetail {
   file_name?: string;
   error_message?: string;
   processed_at?: string;
+  processed_pages?: number;
+  total_pages?: number;
 }
 
 // 任务统计接口
