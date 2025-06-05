@@ -67,6 +67,33 @@ export const DatasetDetailScreen = (): JSX.Element => {
     }
   };
 
+  // 处理版本切换
+  const handleVersionChange = async (versionId: string) => {
+    if (!id) return;
+    
+    try {
+      const newPreviewData = await enhancedDatasetService.getDatasetPreview(
+        parseInt(id),
+        versionId
+      );
+      setPreviewData(newPreviewData);
+      setCurrentVersion(newPreviewData.version);
+    } catch (err) {
+      console.error('版本切换失败:', err);
+      setError(err instanceof Error ? err.message : '版本切换失败');
+    }
+  };
+
+  // 处理数据变更（文件上传、删除等）
+  const handleDataChange = () => {
+    // 重新获取当前版本的数据
+    if (currentVersion) {
+      handleVersionChange(currentVersion.id);
+    } else {
+      fetchDatasetDetail();
+    }
+  };
+
   // 处理点赞
   const handleLike = async () => {
     if (!dataset) return;
@@ -207,6 +234,8 @@ export const DatasetDetailScreen = (): JSX.Element => {
           <DataPreview 
             data={previewData} 
             onRefresh={() => fetchDatasetDetail()}
+            onVersionChange={handleVersionChange}
+            onDataChange={handleDataChange}
           />
         </TabsContent>
 
@@ -216,7 +245,8 @@ export const DatasetDetailScreen = (): JSX.Element => {
             currentVersion={currentVersion || undefined}
             onVersionChange={(newVersion) => {
               setCurrentVersion(newVersion);
-              fetchDatasetDetail();
+              // 同步更新预览数据
+              handleVersionChange(newVersion.id);
             }}
           />
         </TabsContent>

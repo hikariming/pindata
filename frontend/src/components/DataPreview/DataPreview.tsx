@@ -86,6 +86,8 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
   const [availableVersions, setAvailableVersions] = useState<EnhancedDatasetVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
+  const [isVersionChanging, setIsVersionChanging] = useState(false);
+  const [versionChangeError, setVersionChangeError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 获取可用版本列表
@@ -94,6 +96,14 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       loadAvailableVersions();
     }
   }, [data.dataset?.id]);
+
+  // 版本切换时重置相关状态
+  useEffect(() => {
+    // 当数据发生变化（版本切换后），重置选中状态和过滤条件
+    setSelectedFiles(new Set());
+    setFilterType('all');
+    setVersionChangeError(null);
+  }, [data.version?.id]);
 
   // 点击外部关闭版本选择器
   useEffect(() => {
@@ -124,9 +134,27 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
     }
   };
 
-  const handleVersionChange = (versionId: string) => {
-    onVersionChange?.(versionId);
-    setIsVersionSelectorOpen(false);
+  const handleVersionChange = async (versionId: string) => {
+    if (versionId === data.version?.id) {
+      // 如果选择的是当前版本，直接关闭选择器
+      setIsVersionSelectorOpen(false);
+      return;
+    }
+
+    try {
+      setIsVersionChanging(true);
+      setVersionChangeError(null);
+      setIsVersionSelectorOpen(false);
+      
+      // 调用父组件的版本切换函数
+      await onVersionChange?.(versionId);
+      
+    } catch (error) {
+      console.error('版本切换失败:', error);
+      setVersionChangeError(error instanceof Error ? error.message : '版本切换失败');
+    } finally {
+      setIsVersionChanging(false);
+    }
   };
 
   const handleDownloadVersion = async (versionId: string) => {
@@ -461,16 +489,20 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                     size="sm"
                     className="h-7 px-2 text-xs"
                     onClick={() => setIsVersionSelectorOpen(!isVersionSelectorOpen)}
-                    disabled={isLoadingVersions}
+                    disabled={isLoadingVersions || isVersionChanging}
                   >
-                    <GitBranch className="w-3 h-3 mr-1" />
-                    {data.version?.version || '暂无版本'}
-                    {data.version?.is_default && (
+                    {isVersionChanging ? (
+                      <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <GitBranch className="w-3 h-3 mr-1" />
+                    )}
+                    {isVersionChanging ? '切换中...' : (data.version?.version || '暂无版本')}
+                    {!isVersionChanging && data.version?.is_default && (
                       <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
                         默认
                       </Badge>
                     )}
-                    <ChevronDownIcon className="w-3 h-3 ml-1" />
+                    {!isVersionChanging && <ChevronDownIcon className="w-3 h-3 ml-1" />}
                   </Button>
                   
                   {isVersionSelectorOpen && (
@@ -497,15 +529,23 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                           availableVersions.map((version) => (
                             <div
                               key={version.id}
-                              className={`group relative hover:bg-gray-50 border-l-2 ${
+                              className={`group relative border-l-2 ${
                                 version.id === data.version?.id 
                                   ? 'border-blue-500 bg-blue-50' 
-                                  : 'border-transparent'
-                              }`}
+                                  : 'border-transparent hover:bg-gray-50'
+                              } ${isVersionChanging ? 'opacity-50' : ''}`}
                             >
                               <div
-                                className="p-2 cursor-pointer"
-                                onClick={() => handleVersionChange(version.id)}
+                                className={`p-2 ${
+                                  version.id === data.version?.id || isVersionChanging 
+                                    ? 'cursor-default' 
+                                    : 'cursor-pointer'
+                                }`}
+                                onClick={() => {
+                                  if (version.id !== data.version?.id && !isVersionChanging) {
+                                    handleVersionChange(version.id);
+                                  }
+                                }}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
@@ -513,6 +553,11 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                                       <span className="text-sm font-medium">
                                         {version.version}
                                       </span>
+                                      {version.id === data.version?.id && (
+                                        <Badge variant="default" className="h-4 px-1 text-xs">
+                                          当前
+                                        </Badge>
+                                      )}
                                       {version.is_default && (
                                         <Badge variant="secondary" className="h-4 px-1 text-xs">
                                           默认
@@ -570,6 +615,22 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                 总文件数: {data.preview.total_files} | 
                 预览文件数: {data.preview.preview_files}
               </p>
+              
+              {/* 版本切换错误提示 */}
+              {versionChangeError && (
+                <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700 mt-2">
+                  <AlertCircleIcon className="w-4 h-4" />
+                  <span>版本切换失败: {versionChangeError}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-6 w-6 p-0"
+                    onClick={() => setVersionChangeError(null)}
+                  >
+                    ×
+                  </Button>
+                </div>
+              )}
               {data.version && (
                 <div className="flex gap-2 mt-2">
                   <Badge variant={data.version.is_default ? "default" : "secondary"}>
