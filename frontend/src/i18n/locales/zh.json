@@ -113,10 +113,80 @@
   },
   "actions": {
     "createDataset": "创建数据集",
+    "smartCreateDataset": "智能创建数据集",
     "startNewTask": "开始新任务",
     "edit": "编辑",
     "delete": "删除",
     "view": "查看"
+  },
+  "smartDatasetCreator": {
+    "title": "智能数据集创建器",
+    "description": "使用AI技术从原始数据自动生成高质量的训练数据集，支持多种数据集类型和格式。",
+    "steps": {
+      "selectData": "选择数据源",
+      "configureDataset": "配置数据集",
+      "configureModel": "模型配置",
+      "preview": "预览确认",
+      "generate": "生成数据集"
+    },
+    "dataSelection": {
+      "title": "选择原始数据文件",
+      "selectAll": "全选",
+      "filesSelected": "已选择 {{selected}} / {{total}} 个文件",
+      "refresh": "刷新",
+      "preview": "预览",
+      "multimodalSupport": "多模态支持",
+      "multimodalDescription": "除了Markdown文件，我们还支持处理图片、视频和音频文件，用于创建多模态数据集。"
+    },
+    "datasetTypes": {
+      "qaPairs": "问答对 (QA Pairs)",
+      "qaPairsDesc": "从文档内容生成问题和答案对，适用于问答系统训练",
+      "instructionTuning": "指令微调 (Instruction Tuning)",
+      "instructionTuningDesc": "生成指令-输入-输出三元组，用于指令遵循模型训练",
+      "textClassification": "文本分类",
+      "textClassificationDesc": "提取文档片段并生成分类标签",
+      "summarization": "文档摘要",
+      "summarizationDesc": "生成文档摘要对，原文-摘要格式",
+      "knowledgeBase": "知识库",
+      "knowledgeBaseDesc": "结构化知识提取，生成实体-关系-属性三元组",
+      "dialogue": "对话数据",
+      "dialogueDesc": "生成多轮对话数据，支持角色扮演和情境对话"
+    },
+    "modelConfig": {
+      "title": "模型配置",
+      "selectModel": "选择AI模型",
+      "temperature": "温度 (Temperature)",
+      "temperatureDesc": "控制生成内容的创造性，值越高越有创意",
+      "maxTokens": "最大Token数",
+      "batchSize": "批处理大小",
+      "batchSizeDesc": "同时处理的文档数量，影响处理速度",
+      "customPrompt": "自定义提示词 (可选)",
+      "customPromptDesc": "留空将使用默认的最佳实践提示词"
+    },
+    "preview": {
+      "title": "预览确认",
+      "dataSource": "数据源",
+      "datasetConfig": "数据集配置",
+      "modelConfig": "模型配置",
+      "estimatedInfo": "预估处理信息",
+      "fileCount": "文件数量",
+      "estimatedTime": "预估时间",
+      "estimatedEntries": "预估条目",
+      "estimatedSize": "预估大小"
+    },
+    "generation": {
+      "title": "AI正在生成数据集",
+      "progress": "{{progress}}% 完成",
+      "steps": {
+        "parsing": "解析文档内容",
+        "extracting": "提取关键信息",
+        "processing": "AI模型处理",
+        "formatting": "格式化数据",
+        "saving": "保存数据集"
+      },
+      "completed": "数据集生成完成！",
+      "redirecting": "正在跳转到数据集管理页面..."
+    }
   },
   "time": {
     "hoursAgo": "{{count}}小时前",

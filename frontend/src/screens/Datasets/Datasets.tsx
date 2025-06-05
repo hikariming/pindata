@@ -19,6 +19,7 @@ import {
   SearchIcon, 
   SlidersHorizontalIcon,
   PlusIcon,
+  WandIcon,
   HardDriveIcon,
   Loader2Icon,
   AlertCircleIcon
@@ -211,12 +212,23 @@ export const Datasets = (): JSX.Element => {
             {formatNumber(totalDatasets)} 个数据集
           </Badge>
         </div>
-        <Link to="/datasets/create">
-          <Button className="bg-[#1977e5] hover:bg-[#1565c0] flex items-center gap-2">
-            <PlusIcon className="w-4 h-4" />
-            创建数据集
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link to="/datasets/create-smart">
+            <Button className="bg-gradient-to-r from-[#1977e5] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1] flex items-center gap-2 relative">
+              <WandIcon className="w-4 h-4" />
+              智能创建
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-orange-500 text-white text-xs rounded-full">
+                AI
+              </span>
+            </Button>
+          </Link>
+          <Link to="/datasets/create">
+            <Button variant="outline" className="border-[#d1dbe8] flex items-center gap-2">
+              <PlusIcon className="w-4 h-4" />
+              创建数据集
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters and Search */}

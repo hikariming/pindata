@@ -10,6 +10,8 @@ import {
   SettingsIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from 'lucide-react';
 import { Button } from './button';
 import { LanguageSwitcher } from './language-switcher';
@@ -18,8 +20,23 @@ interface SidenavProps {
   onCollapsedChange?: (isCollapsed: boolean) => void;
 }
 
+interface SubMenuItem {
+  label: string;
+  path: string;
+  badge?: string;
+}
+
+interface NavigationItem {
+  icon: React.ReactNode;
+  label: string;
+  page: string;
+  path: string;
+  subItems?: SubMenuItem[];
+}
+
 export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['datasets']);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,6 +47,14 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
 
   const handleToggleCollapse = () => {
     setIsCollapsed(prev => !prev);
+  };
+
+  const toggleItemExpansion = (itemPage: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemPage) 
+        ? prev.filter(item => item !== itemPage)
+        : [...prev, itemPage]
+    );
   };
 
   const getCurrentPage = () => {
@@ -57,6 +82,21 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
       label: t('navigation.datasets'),
       page: 'datasets',
       path: '/datasets',
+      subItems: [
+        {
+          label: '数据集列表',
+          path: '/datasets',
+        },
+        {
+          label: '创建数据集',
+          path: '/datasets/create',
+        },
+        {
+          label: '智能创建',
+          path: '/datasets/create-smart',
+          badge: 'AI'
+        }
+      ]
     },
     {
       icon: <ListTodoIcon size={24} />,
@@ -103,22 +143,64 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
 
           <div className="flex flex-col gap-2 w-full">
             {navigationItems.map((item) => (
-              <Button
-                key={item.page}
-                variant={currentPage === item.page ? 'secondary' : 'ghost'}
-                className={`flex ${isCollapsed ? 'justify-center' : 'justify-start'} gap-3 px-3 py-2 h-auto w-full transition-all duration-300 ${
-                  currentPage === item.page ? 'bg-[#e8edf2]' : ''
-                }`}
-                onClick={() => navigate(item.path)}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <span className="w-6 flex-shrink-0">{item.icon}</span>
-                <span className={`font-medium text-sm text-[#0c141c] leading-[21px] transition-all duration-300 ${
-                  isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
-                }`}>
-                  {item.label}
-                </span>
-              </Button>
+              <div key={item.page} className="w-full">
+                <Button
+                  variant={currentPage === item.page ? 'secondary' : 'ghost'}
+                  className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} gap-3 px-3 py-2 h-auto w-full transition-all duration-300 ${
+                    currentPage === item.page ? 'bg-[#e8edf2]' : ''
+                  }`}
+                  onClick={() => {
+                    if (item.subItems && !isCollapsed) {
+                      toggleItemExpansion(item.page);
+                    } else {
+                      navigate(item.path);
+                    }
+                  }}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 flex-shrink-0">{item.icon}</span>
+                    <span className={`font-medium text-sm text-[#0c141c] leading-[21px] transition-all duration-300 ${
+                      isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                    }`}>
+                      {item.label}
+                    </span>
+                  </div>
+                  {item.subItems && !isCollapsed && (
+                    <span className="w-4 flex-shrink-0">
+                      {expandedItems.includes(item.page) ? 
+                        <ChevronUpIcon size={16} /> : 
+                        <ChevronDownIcon size={16} />
+                      }
+                    </span>
+                  )}
+                </Button>
+                
+                {/* 子菜单 */}
+                {item.subItems && !isCollapsed && expandedItems.includes(item.page) && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {item.subItems.map((subItem) => (
+                      <Button
+                        key={subItem.path}
+                        variant="ghost"
+                        className={`flex justify-start gap-2 px-3 py-1.5 h-auto w-full text-left transition-all duration-300 ${
+                          location.pathname === subItem.path ? 'bg-[#e8edf2] text-[#1977e5]' : 'text-[#4f7096] hover:bg-[#f0f4f8]'
+                        }`}
+                        onClick={() => navigate(subItem.path)}
+                      >
+                        <span className="font-medium text-xs leading-[18px]">
+                          {subItem.label}
+                        </span>
+                        {subItem.badge && (
+                          <span className="px-1.5 py-0.5 bg-[#1977e5] text-white text-xs rounded-full">
+                            {subItem.badge}
+                          </span>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
