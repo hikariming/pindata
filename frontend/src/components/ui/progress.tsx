@@ -1,16 +1,17 @@
 import React from 'react';
+import { cn } from "../../lib/utils";
 
 interface ProgressProps {
   value: number;
   className?: string;
 }
 
-export const Progress = ({ value, className = '' }: ProgressProps): JSX.Element => {
+export const Progress: React.FC<ProgressProps> = ({ value, className }) => {
   return (
-    <div className={`w-full bg-gray-200 rounded-full overflow-hidden ${className}`}>
-      <div 
-        className="bg-[#1977e5] h-full transition-all duration-300 ease-out rounded-full"
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+    <div className={cn("w-full bg-gray-200 rounded-full h-2", className)}>
+      <div
+        className="bg-[#1977e5] h-2 rounded-full transition-all duration-300 ease-in-out"
+        style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
       />
     </div>
   );

@@ -14,13 +14,10 @@ import {
 import { 
   ArrowDownIcon, 
   DatabaseIcon, 
-  DownloadIcon, 
-  HeartIcon, 
   SearchIcon, 
   SlidersHorizontalIcon,
   PlusIcon,
   WandIcon,
-  HardDriveIcon,
   Loader2Icon,
   AlertCircleIcon
 } from 'lucide-react';
@@ -356,28 +353,10 @@ export const Datasets = (): JSX.Element => {
                         </div>
                         
                         {/* 任务类型标签 */}
-                        <div className="mb-3">
+                        <div className="mb-2">
                           <Badge className={getTaskTypeColor(dataset.taskType) + " text-xs"}>
                             {dataset.taskType}
                           </Badge>
-                        </div>
-
-                        {/* 关键指标 */}
-                        <div className="flex items-center justify-between text-sm text-[#4f7096]">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1">
-                              <DownloadIcon className="w-3.5 h-3.5" />
-                              <span>{formatNumber(dataset.downloads)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <HeartIcon className="w-3.5 h-3.5" />
-                              <span>{dataset.likes}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <HardDriveIcon className="w-3.5 h-3.5" />
-                              <span>{dataset.size}</span>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
