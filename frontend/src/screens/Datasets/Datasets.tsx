@@ -6,14 +6,6 @@ import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,19 +13,12 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { 
   ArrowDownIcon, 
-  ArrowUpIcon, 
   DatabaseIcon, 
   DownloadIcon, 
-  EyeIcon, 
   HeartIcon, 
   SearchIcon, 
   SlidersHorizontalIcon,
   PlusIcon,
-  GitBranchIcon,
-  FileTextIcon,
-  TagIcon,
-  CalendarIcon,
-  UserIcon,
   HardDriveIcon,
   Loader2Icon,
   AlertCircleIcon
@@ -334,119 +319,59 @@ export const Datasets = (): JSX.Element => {
         </div>
       )}
 
-      {/* Dataset List */}
+      {/* Dataset Grid - 双栏布局 */}
       {!loading && !error && (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {datasets.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="col-span-full flex items-center justify-center py-12">
               <span className="text-[#4f7096]">没有找到数据集</span>
             </div>
           ) : (
             datasets.map((dataset) => (
-              <Card key={dataset.id} className="border-[#d1dbe8] hover:shadow-md transition-shadow">
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3 mb-3">
-                        <DatabaseIcon className="w-5 h-5 text-[#1977e5] mt-1 flex-shrink-0" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Link to={`/datasets/${dataset.id}`}>
-                              <h3 className="text-lg font-semibold text-[#0c141c] hover:text-[#1977e5] cursor-pointer">
-                                {dataset.owner}/{dataset.name}
-                              </h3>
-                            </Link>
-                            {dataset.featured && (
-                              <Badge className="bg-[#ff6b35] text-white text-xs">推荐</Badge>
-                            )}
-                          </div>
-                          <p className="text-[#4f7096] text-sm mb-3 line-clamp-2">
-                            {dataset.description}
-                          </p>
-                          
-                          {/* Tags */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <Badge className={getTaskTypeColor(dataset.taskType)}>
-                              {dataset.taskType}
-                            </Badge>
-                            {dataset.tags.slice(0, 3).map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                            {dataset.tags.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{dataset.tags.length - 3}
-                              </Badge>
-                            )}
-                          </div>
+              <Link key={dataset.id} to={`/datasets/${dataset.id}`}>
+                <Card className="border-[#d1dbe8] hover:shadow-md hover:border-[#1977e5] transition-all cursor-pointer h-full">
+                  <div className="p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <DatabaseIcon className="w-5 h-5 text-[#1977e5] mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-base font-semibold text-[#0c141c] truncate">
+                            {dataset.owner}/{dataset.name}
+                          </h3>
+                          {dataset.featured && (
+                            <Badge className="bg-[#ff6b35] text-white text-xs flex-shrink-0">推荐</Badge>
+                          )}
+                        </div>
+                        
+                        {/* 任务类型标签 */}
+                        <div className="mb-3">
+                          <Badge className={getTaskTypeColor(dataset.taskType) + " text-xs"}>
+                            {dataset.taskType}
+                          </Badge>
+                        </div>
 
-                          {/* Metadata */}
-                          <div className="flex items-center gap-6 text-sm text-[#4f7096]">
+                        {/* 关键指标 */}
+                        <div className="flex items-center justify-between text-sm text-[#4f7096]">
+                          <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
-                              <CalendarIcon className="w-4 h-4" />
-                              <span>更新于 {dataset.lastUpdated}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <HardDriveIcon className="w-4 h-4" />
-                              <span>{dataset.size}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DownloadIcon className="w-4 h-4" />
+                              <DownloadIcon className="w-3.5 h-3.5" />
                               <span>{formatNumber(dataset.downloads)}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <HeartIcon className="w-4 h-4" />
+                              <HeartIcon className="w-3.5 h-3.5" />
                               <span>{dataset.likes}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <GitBranchIcon className="w-4 h-4" />
-                              <span>{dataset.versions} 个版本</span>
+                              <HardDriveIcon className="w-3.5 h-3.5" />
+                              <span>{dataset.size}</span>
                             </div>
-                            {dataset.license && (
-                              <div className="flex items-center gap-1">
-                                <TagIcon className="w-4 h-4" />
-                                <span>{dataset.license}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 ml-4">
-                      <Link to={`/datasets/${dataset.id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-[#d1dbe8] h-8 px-3"
-                        >
-                          <EyeIcon className="w-4 h-4 mr-2" />
-                          预览
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-[#d1dbe8] h-8 px-3"
-                        onClick={(e) => handleDownload(dataset.id, e)}
-                      >
-                        <DownloadIcon className="w-4 h-4 mr-2" />
-                        下载
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-[#d1dbe8] h-8 px-3"
-                        onClick={(e) => handleLike(dataset.id, e)}
-                      >
-                        <HeartIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             ))
           )}
         </div>

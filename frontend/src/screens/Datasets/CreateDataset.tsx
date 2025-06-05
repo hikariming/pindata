@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,101 +14,92 @@ import {
 import { 
   ArrowLeftIcon,
   DatabaseIcon, 
-  UploadIcon, 
-  GlobeIcon, 
-  BrainIcon,
   ChevronDownIcon,
-  FileIcon,
-  FolderIcon,
-  PlayIcon,
-  SettingsIcon,
-  CheckIcon,
+  FolderPlusIcon,
+  InfoIcon,
+  Loader2Icon,
   AlertCircleIcon,
-  InfoIcon
+  CheckCircleIcon
 } from 'lucide-react';
-
-interface FileItem {
-  id: string;
-  name: string;
-  type: 'file' | 'folder';
-  size?: string;
-  selected: boolean;
-}
-
-interface ExtractionTask {
-  id: string;
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: number;
-  sourceFiles: string[];
-  outputFormat: string;
-}
+import { datasetService } from '../../services/dataset.service';
+import { CreateDatasetRequest } from '../../types/dataset';
 
 export const CreateDataset = (): JSX.Element => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('extract');
+  const navigate = useNavigate();
+  
+  // 表单状态
   const [datasetName, setDatasetName] = useState('');
+  const [owner, setOwner] = useState('');
   const [description, setDescription] = useState('');
   const [license, setLicense] = useState('MIT');
   const [taskType, setTaskType] = useState('Natural Language Processing');
   const [tags, setTags] = useState('');
   
-  // 文件提取相关状态
-  const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
-  const [extractionPrompt, setExtractionPrompt] = useState('');
-  const [outputFormat, setOutputFormat] = useState('jsonl');
-  const [modelName, setModelName] = useState('gpt-4');
-  
-  // 网络下载相关状态
-  const [downloadUrl, setDownloadUrl] = useState('');
-  const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'completed' | 'failed'>('idle');
-  
-  // 模型蒸馏相关状态
-  const [sourceModel, setSourceModel] = useState('');
-  const [distillationPrompts, setDistillationPrompts] = useState('');
-  const [sampleCount, setSampleCount] = useState(1000);
+  // UI状态
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  // Mock数据 - 可用的原始文件
-  const availableFiles: FileItem[] = [
-    { id: '1', name: 'documents', type: 'folder', selected: false },
-    { id: '2', name: 'research_papers.pdf', type: 'file', size: '150MB', selected: false },
-    { id: '3', name: 'interview_transcripts.txt', type: 'file', size: '25MB', selected: false },
-    { id: '4', name: 'product_reviews.csv', type: 'file', size: '80MB', selected: false },
-    { id: '5', name: 'knowledge_base', type: 'folder', selected: false },
-    { id: '6', name: 'training_logs.json', type: 'file', size: '120MB', selected: false }
-  ];
+  const handleCreateDataset = async () => {
+    if (!datasetName.trim() || !description.trim() || !owner.trim()) {
+      setError('数据集名称、拥有者和描述为必填项');
+      return;
+    }
 
-  const [files, setFiles] = useState<FileItem[]>(availableFiles);
+    setIsLoading(true);
+    setError(null);
 
-  const toggleFileSelection = (fileId: string) => {
-    setFiles(files.map(file => 
-      file.id === fileId ? { ...file, selected: !file.selected } : file
-    ));
+    try {
+      const createRequest: CreateDatasetRequest = {
+        name: datasetName.trim(),
+        owner: owner.trim(),
+        description: description.trim(),
+        license,
+        task_type: taskType,
+        language: 'Chinese', // 默认中文，后续可以添加语言选择
+        featured: false,
+        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+      };
+
+      const newDataset = await datasetService.createDataset(createRequest);
+      
+      setSuccess(true);
+      
+      // 显示成功消息后跳转到数据集详情页
+      setTimeout(() => {
+        navigate(`/datasets/${newDataset.id}`);
+      }, 1500);
+      
+    } catch (err: any) {
+      console.error('创建数据集失败:', err);
+      setError(err.message || '创建数据集时发生错误，请重试');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCreateDataset = () => {
-    console.log('Creating dataset:', {
-      name: datasetName,
-      description,
-      license,
-      taskType,
-      tags: tags.split(',').map(tag => tag.trim()),
-      method: activeTab,
-      config: {
-        selectedFiles: files.filter(f => f.selected),
-        extractionPrompt,
-        outputFormat,
-        modelName,
-        downloadUrl,
-        sourceModel,
-        distillationPrompts,
-        sampleCount
-      }
-    });
-  };
+  // 如果创建成功，显示成功页面
+  if (success) {
+    return (
+      <div className="w-full max-w-[800px] p-6">
+        <Card className="border-[#d1dbe8]">
+          <div className="p-8 text-center">
+            <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-[#0c141c] mb-2">数据集创建成功！</h2>
+            <p className="text-[#4f7096] mb-4">正在跳转到数据集详情页...</p>
+            <div className="flex items-center justify-center gap-2">
+              <Loader2Icon className="w-4 h-4 animate-spin" />
+              <span className="text-sm text-[#4f7096]">加载中...</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-[1200px] p-6">
+    <div className="w-full max-w-[800px] p-6">
       {/* Back Button */}
       <div className="mb-6">
         <Link to="/datasets">
@@ -128,9 +117,22 @@ export const CreateDataset = (): JSX.Element => {
           <h1 className="text-2xl font-bold text-[#0c141c]">创建数据集</h1>
         </div>
         <p className="text-[#4f7096] text-lg max-w-3xl">
-          通过多种方式创建高质量的数据集：从原始文件中提取、下载互联网数据集或通过大模型蒸馏生成。
+          创建一个新的空数据集目录，您可以稍后上传和管理数据文件。
         </p>
       </div>
+
+      {/* 错误提示 */}
+      {error && (
+        <Card className="border-red-200 bg-red-50 mb-6">
+          <div className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon className="w-5 h-5 text-red-500" />
+              <span className="text-red-700 font-medium">创建失败</span>
+            </div>
+            <p className="text-red-600 mt-1">{error}</p>
+          </div>
+        </Card>
+      )}
 
       {/* 基本信息 */}
       <Card className="border-[#d1dbe8] mb-6">
@@ -146,7 +148,21 @@ export const CreateDataset = (): JSX.Element => {
                 placeholder="输入数据集名称..."
                 value={datasetName}
                 onChange={(e) => setDatasetName(e.target.value)}
+                disabled={isLoading}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#0c141c] mb-2">
+                拥有者 *
+              </label>
+              <Input
+                className="border-[#d1dbe8]"
+                placeholder="输入拥有者用户名或组织名..."
+                value={owner}
+                onChange={(e) => setOwner(e.target.value)}
+                disabled={isLoading}
+              />
+              <p className="text-xs text-[#4f7096] mt-1">拥有者和数据集名称的组合必须唯一</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0c141c] mb-2">
@@ -154,7 +170,11 @@ export const CreateDataset = (): JSX.Element => {
               </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full border-[#d1dbe8] justify-between">
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-[#d1dbe8] justify-between"
+                    disabled={isLoading}
+                  >
                     {license}
                     <ChevronDownIcon className="w-4 h-4" />
                   </Button>
@@ -173,7 +193,11 @@ export const CreateDataset = (): JSX.Element => {
               </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full border-[#d1dbe8] justify-between">
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-[#d1dbe8] justify-between"
+                    disabled={isLoading}
+                  >
                     {taskType}
                     <ChevronDownIcon className="w-4 h-4" />
                   </Button>
@@ -194,17 +218,18 @@ export const CreateDataset = (): JSX.Element => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                标签
-              </label>
-              <Input
-                className="border-[#d1dbe8]"
-                placeholder="用逗号分隔标签..."
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-              />
-            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-[#0c141c] mb-2">
+              标签
+            </label>
+            <Input
+              className="border-[#d1dbe8]"
+              placeholder="用逗号分隔标签，如：nlp, 中文, 问答..."
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
           <div className="mt-4">
             <label className="block text-sm font-medium text-[#0c141c] mb-2">
@@ -215,293 +240,37 @@ export const CreateDataset = (): JSX.Element => {
               placeholder="描述您的数据集内容、用途和特点..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={isLoading}
             />
           </div>
         </div>
       </Card>
 
-      {/* 数据来源选择 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="extract" className="flex items-center gap-2">
-            <FileIcon className="w-4 h-4" />
-            文件提取
-          </TabsTrigger>
-          <TabsTrigger value="download" className="flex items-center gap-2">
-            <GlobeIcon className="w-4 h-4" />
-            网络下载
-          </TabsTrigger>
-          <TabsTrigger value="distill" className="flex items-center gap-2">
-            <BrainIcon className="w-4 h-4" />
-            模型蒸馏
-          </TabsTrigger>
-        </TabsList>
-
-        {/* 文件提取 */}
-        <TabsContent value="extract" className="space-y-6">
-          <Card className="border-[#d1dbe8]">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <FileIcon className="w-5 h-5 text-[#1977e5]" />
-                <h3 className="text-lg font-semibold text-[#0c141c]">从原始文件提取</h3>
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-medium text-[#0c141c] mb-3">选择源文件</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto border border-[#d1dbe8] rounded-lg p-3">
-                    {files.map((file) => (
-                      <div 
-                        key={file.id}
-                        className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-[#f0f4f8] ${
-                          file.selected ? 'bg-[#e3f2fd]' : ''
-                        }`}
-                        onClick={() => toggleFileSelection(file.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {file.selected && <CheckIcon className="w-4 h-4 text-[#1977e5]" />}
-                          {file.type === 'folder' ? (
-                            <FolderIcon className="w-4 h-4 text-[#4f7096]" />
-                          ) : (
-                            <FileIcon className="w-4 h-4 text-[#4f7096]" />
-                          )}
-                          <span className="font-medium">{file.name}</span>
-                        </div>
-                        {file.size && (
-                          <span className="text-sm text-[#4f7096]">{file.size}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm text-[#4f7096] mt-2">
-                    已选择 {files.filter(f => f.selected).length} 个文件/文件夹
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      提取模型
-                    </label>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full border-[#d1dbe8] justify-between">
-                          {modelName}
-                          <ChevronDownIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-full">
-                        <DropdownMenuItem onClick={() => setModelName('gpt-4')}>GPT-4</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setModelName('gpt-3.5-turbo')}>GPT-3.5 Turbo</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setModelName('claude-3')}>Claude-3</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setModelName('gemini-pro')}>Gemini Pro</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      输出格式
-                    </label>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full border-[#d1dbe8] justify-between">
-                          {outputFormat.toUpperCase()}
-                          <ChevronDownIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-full">
-                        <DropdownMenuItem onClick={() => setOutputFormat('jsonl')}>JSONL</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setOutputFormat('csv')}>CSV</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setOutputFormat('parquet')}>Parquet</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                    提取指令
-                  </label>
-                  <Textarea
-                    className="border-[#d1dbe8] min-h-[120px]"
-                    placeholder="描述您希望如何从文件中提取数据，例如：
-从文档中提取问答对，问题应该基于文档内容，答案要准确详细。
-格式要求：{'question': '问题', 'answer': '答案', 'context': '相关上下文'}
-
-或者：
-提取文档中的关键信息，包括实体、关系和事件。
-输出格式：{'entity': '实体名', 'type': '实体类型', 'relation': '关系', 'confidence': 0.95}"
-                    value={extractionPrompt}
-                    onChange={(e) => setExtractionPrompt(e.target.value)}
-                  />
-                </div>
-
-                <div className="bg-[#f0f4f8] border border-[#d1dbe8] rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <InfoIcon className="w-5 h-5 text-[#1977e5] mt-0.5" />
-                    <div>
-                      <h5 className="font-medium text-[#0c141c] mb-1">提取流程说明</h5>
-                      <ul className="text-sm text-[#4f7096] space-y-1">
-                        <li>• 系统将使用所选模型分析您的文件内容</li>
-                        <li>• 根据提取指令生成结构化数据</li>
-                        <li>• 自动进行质量检查和数据清洗</li>
-                        <li>• 生成数据统计报告和样本预览</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+      {/* 创建说明 */}
+      <Card className="border-[#d1dbe8] mb-6">
+        <div className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FolderPlusIcon className="w-5 h-5 text-[#1977e5]" />
+            <h3 className="text-lg font-semibold text-[#0c141c]">创建空数据集</h3>
+          </div>
+          
+          <div className="bg-[#f0f4f8] border border-[#d1dbe8] rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <InfoIcon className="w-5 h-5 text-[#1977e5] mt-0.5" />
+              <div>
+                <h5 className="font-medium text-[#0c141c] mb-1">创建说明</h5>
+                <ul className="text-sm text-[#4f7096] space-y-1">
+                  <li>• 系统将为您创建一个新的空数据集目录</li>
+                  <li>• 拥有者可以是个人用户名或组织名称，将作为数据集的命名空间</li>
+                  <li>• 您可以稍后通过文件管理界面上传数据文件</li>
+                  <li>• 支持多种格式：JSON、CSV、Parquet、TXT等</li>
+                  <li>• 创建后可以随时编辑数据集的基本信息</li>
+                </ul>
               </div>
             </div>
-          </Card>
-        </TabsContent>
-
-        {/* 网络下载 */}
-        <TabsContent value="download" className="space-y-6">
-          <Card className="border-[#d1dbe8]">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <GlobeIcon className="w-5 h-5 text-[#1977e5]" />
-                <h3 className="text-lg font-semibold text-[#0c141c]">从网络下载数据集</h3>
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                    数据集URL
-                  </label>
-                  <Input
-                    className="border-[#d1dbe8]"
-                    placeholder="输入数据集下载链接 (支持 Hugging Face, GitHub, Kaggle 等)"
-                    value={downloadUrl}
-                    onChange={(e) => setDownloadUrl(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="border-[#e5e5e5] p-4">
-                    <h4 className="font-medium text-[#0c141c] mb-2">支持的平台</h4>
-                    <ul className="text-sm text-[#4f7096] space-y-1">
-                      <li>• Hugging Face Datasets</li>
-                      <li>• GitHub 仓库</li>
-                      <li>• Kaggle 数据集</li>
-                      <li>• 直接文件下载链接</li>
-                    </ul>
-                  </Card>
-                  <Card className="border-[#e5e5e5] p-4">
-                    <h4 className="font-medium text-[#0c141c] mb-2">示例链接</h4>
-                    <ul className="text-sm text-[#4f7096] space-y-1">
-                      <li>• https://huggingface.co/datasets/squad</li>
-                      <li>• https://github.com/user/dataset</li>
-                      <li>• https://kaggle.com/datasets/...</li>
-                      <li>• https://example.com/data.zip</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                {downloadUrl && (
-                  <div className="bg-[#f0f4f8] border border-[#d1dbe8] rounded-lg p-4">
-                    <h5 className="font-medium text-[#0c141c] mb-2">预检查结果</h5>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <CheckIcon className="w-4 h-4 text-green-600" />
-                        <span>链接可访问</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckIcon className="w-4 h-4 text-green-600" />
-                        <span>文件格式支持</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <AlertCircleIcon className="w-4 h-4 text-orange-500" />
-                        <span>预估大小：~150MB</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* 模型蒸馏 */}
-        <TabsContent value="distill" className="space-y-6">
-          <Card className="border-[#d1dbe8]">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <BrainIcon className="w-5 h-5 text-[#1977e5]" />
-                <h3 className="text-lg font-semibold text-[#0c141c]">通过模型蒸馏生成</h3>
-              </div>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      源模型
-                    </label>
-                    <Input
-                      className="border-[#d1dbe8]"
-                      placeholder="输入模型名称或API端点"
-                      value={sourceModel}
-                      onChange={(e) => setSourceModel(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      样本数量
-                    </label>
-                    <Input
-                      type="number"
-                      className="border-[#d1dbe8]"
-                      placeholder="1000"
-                      value={sampleCount}
-                      onChange={(e) => setSampleCount(Number(e.target.value))}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                    蒸馏提示词
-                  </label>
-                  <Textarea
-                    className="border-[#d1dbe8] min-h-[150px]"
-                    placeholder="描述您希望生成的数据类型和格式，例如：
-
-生成高质量的数学问题解答数据集，包含：
-1. 从简单算术到高等数学的各种题目
-2. 详细的解题步骤和推理过程
-3. 多种解法和验证方法
-
-输出格式：
-{
-  'problem': '数学问题描述',
-  'solution': '详细解答过程',
-  'difficulty': '难度等级(1-10)',
-  'topics': ['相关数学概念']
-}"
-                    value={distillationPrompts}
-                    onChange={(e) => setDistillationPrompts(e.target.value)}
-                  />
-                </div>
-
-                <div className="bg-[#f0f4f8] border border-[#d1dbe8] rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <InfoIcon className="w-5 h-5 text-[#1977e5] mt-0.5" />
-                    <div>
-                      <h5 className="font-medium text-[#0c141c] mb-1">蒸馏流程说明</h5>
-                      <ul className="text-sm text-[#4f7096] space-y-1">
-                        <li>• 使用指定的源模型生成多样化的数据样本</li>
-                        <li>• 自动进行质量过滤和去重</li>
-                        <li>• 确保生成数据的多样性和一致性</li>
-                        <li>• 提供详细的生成统计和质量报告</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </div>
+        </div>
+      </Card>
 
       {/* 操作按钮 */}
       <div className="flex items-center justify-between mt-8">
@@ -509,16 +278,29 @@ export const CreateDataset = (): JSX.Element => {
           * 必填字段
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="border-[#d1dbe8]">
+          <Button 
+            variant="outline" 
+            className="border-[#d1dbe8]"
+            disabled={isLoading}
+          >
             保存草稿
           </Button>
           <Button 
             className="bg-[#1977e5] hover:bg-[#1565c0] flex items-center gap-2"
             onClick={handleCreateDataset}
-            disabled={!datasetName || !description}
+            disabled={!datasetName.trim() || !description.trim() || !owner.trim() || isLoading}
           >
-            <PlayIcon className="w-4 h-4" />
-            开始创建
+            {isLoading ? (
+              <>
+                <Loader2Icon className="w-4 h-4 animate-spin" />
+                创建中...
+              </>
+            ) : (
+              <>
+                <FolderPlusIcon className="w-4 h-4" />
+                创建数据集
+              </>
+            )}
           </Button>
         </div>
       </div>
