@@ -42,6 +42,9 @@ class ConversionJob(db.Model):
     # 错误信息
     error_message = Column(Text)
     
+    # 处理日志（存储详细的处理过程）
+    processing_logs = Column(JSON, default=list)  # 存储处理过程的详细日志
+    
     # 时间戳
     created_at = Column(DateTime, default=datetime.utcnow)
     started_at = Column(DateTime)
@@ -74,6 +77,7 @@ class ConversionJob(db.Model):
             'progress_percentage': self.progress_percentage,
             'current_file_name': self.current_file_name,
             'error_message': self.error_message,
+            'processing_logs': self.processing_logs,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
@@ -85,4 +89,20 @@ class ConversionJob(db.Model):
         if self.file_count > 0:
             self.progress_percentage = ((self.completed_count + self.failed_count) / self.file_count) * 100
         else:
-            self.progress_percentage = 0 
+            self.progress_percentage = 0
+    
+    def add_log(self, message: str, level: str = 'INFO'):
+        """添加处理日志"""
+        if self.processing_logs is None:
+            self.processing_logs = []
+        
+        log_entry = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'level': level,
+            'message': message
+        }
+        self.processing_logs.append(log_entry)
+        
+        # 限制日志数量，避免过多
+        if len(self.processing_logs) > 1000:
+            self.processing_logs = self.processing_logs[-1000:] 

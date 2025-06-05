@@ -235,6 +235,22 @@ export class TaskService {
     const generateLogs = (task: Task): string[] => {
       const logs: string[] = [];
       
+      // 如果有详细的处理日志，使用它们
+      if (task.processing_logs && task.processing_logs.length > 0) {
+        task.processing_logs.forEach(log => {
+          const timestamp = new Date(log.timestamp).toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+          logs.push(`${timestamp} [${log.level}] ${log.message}`);
+        });
+        return logs;
+      }
+      
+      // 如果没有详细日志，使用基本信息
       logs.push(`${task.created_at} - 任务创建`);
       
       if (task.started_at) {

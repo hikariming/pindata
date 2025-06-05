@@ -59,6 +59,11 @@ export interface Task {
   progress_percentage?: number;
   celery_task_id?: string;
   file_details?: ConversionFileDetail[];
+  processing_logs?: Array<{
+    timestamp: string;
+    level: string;
+    message: string;
+  }>;
 }
 
 // 转换文件详情接口

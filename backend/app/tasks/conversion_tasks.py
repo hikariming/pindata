@@ -55,6 +55,9 @@ def process_conversion_job(self, job_id: str):
             if job.llm_config_id:
                 logger.info(f"使用LLM配置: {job.llm_config_id}")
             
+            # 添加开始日志
+            job.add_log(f"开始处理转换任务 - 方法: {job.method}, 文件数: {len(job.file_details)}")
+            
             # 更新任务状态
             job.status = ConversionStatus.PROCESSING
             job.started_at = datetime.utcnow()
@@ -76,6 +79,7 @@ def process_conversion_job(self, job_id: str):
                     # 记录开始处理的文件
                     file_name = file_detail.library_file.original_filename
                     logger.info(f"处理文件 {file_index}/{total_files}: {file_name}")
+                    job.add_log(f"开始处理文件 {file_index}/{total_files}: {file_name}")
                     
                     # 转换单个文件
                     _convert_single_file(self, file_detail, job)
@@ -86,12 +90,14 @@ def process_conversion_job(self, job_id: str):
                     total_processing_time += file_duration
                     
                     logger.info(f"文件处理完成 {file_index}/{total_files}: {file_name}, 耗时: {file_duration:.2f}秒")
+                    job.add_log(f"文件处理完成 {file_index}/{total_files}: {file_name}, 耗时: {file_duration:.2f}秒")
                     
                 except Exception as e:
                     file_duration = time.time() - file_start_time
                     file_name = file_detail.library_file.original_filename if file_detail.library_file else 'unknown'
                     
                     logger.error(f"转换文件失败 {file_index}/{total_files}: {file_name}, 耗时: {file_duration:.2f}秒, 错误: {str(e)}")
+                    job.add_log(f"转换文件失败 {file_index}/{total_files}: {file_name}, 错误: {str(e)}", level='ERROR')
                     file_detail.status = ConversionStatus.FAILED
                     file_detail.error_message = str(e)
                     job.failed_count += 1
@@ -110,6 +116,11 @@ def process_conversion_job(self, job_id: str):
                     
                     logger.info(f"进度统计 - 已完成: {processed_files}/{total_files} ({job.progress_percentage:.1f}%), "
                               f"平均耗时: {avg_time_per_file:.2f}秒/文件, 预计剩余: {estimated_remaining_time:.2f}秒")
+                    
+                    # 添加进度日志
+                    if processed_files % 1 == 0:  # 每个文件都记录
+                        job.add_log(f"进度更新: {processed_files}/{total_files} 文件 ({job.progress_percentage:.1f}%), "
+                                  f"预计剩余: {estimated_remaining_time/60:.1f}分钟")
                 
                 # 更新Celery任务进度
                 self.update_state(
@@ -146,6 +157,11 @@ def process_conversion_job(self, job_id: str):
             logger.info(f"转换任务完成: {job_id}, {message}, 总耗时: {total_duration:.2f}秒")
             logger.info(f"性能统计 - 平均处理时间: {total_processing_time/processed_files:.2f}秒/文件, "
                        f"总处理时间: {total_processing_time:.2f}秒")
+            
+            # 添加完成日志
+            job.add_log(f"任务完成: {message}, 总耗时: {total_duration/60:.1f}分钟")
+            if processed_files > 0:
+                job.add_log(f"性能统计: 平均 {total_processing_time/processed_files:.1f}秒/文件")
             
             return {
                 'success': True,
@@ -289,6 +305,11 @@ def _convert_with_llm(file_path: str, file_type: str, config: dict, llm_config_i
                 if total_pages > 0:
                     file_progress = (current_page / total_pages) * 100
                     logger.info(f"文件内部进度 - {file_name}: {current_page}/{total_pages} 页 ({file_progress:.1f}%)")
+                    
+                    # 添加页面进度日志到数据库
+                    if hasattr(progress_callback, '_job_ref'):
+                        job = progress_callback._job_ref
+                        job.add_log(f"页面进度 - {file_name}: {current_page}/{total_pages} 页 ({file_progress:.1f}%)")
                 else:
                     file_progress = 0
                 
@@ -300,6 +321,9 @@ def _convert_with_llm(file_path: str, file_type: str, config: dict, llm_config_i
                 
             except Exception as e:
                 logger.warning(f"进度回调失败 - 文件: {file_name}, 错误: {str(e)}")
+        
+        # 将job引用传递给回调函数（通过属性）
+        progress_callback._job_ref = ConversionJob.query.get(file_detail.conversion_job_id)
         
         # 调用LLM转换服务
         start_time = time.time()
