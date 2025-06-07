@@ -28,7 +28,7 @@ class StorageDownloadResource(Resource):
             logger.info(f"下载请求: 原始路径={object_path}, 解码后={object_name}")
             
             # 可能的bucket列表，按优先级排序
-            possible_buckets = ['raw-data', 'llama-dataset']
+            possible_buckets = ['datasets', 'raw-data', 'llama-dataset']
             
             downloaded_file = None
             actual_bucket = None
@@ -75,19 +75,22 @@ class StorageDownloadResource(Resource):
                 '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                 '.ppt': 'application/vnd.ms-powerpoint',
                 '.txt': 'text/plain',
-                '.md': 'text/markdown; charset=utf-8'
+                '.md': 'text/markdown; charset=utf-8',
+                '.json': 'application/json',
+                '.jsonl': 'application/json'
             }
             
             content_type = mime_types.get(file_ext, 'application/octet-stream')
             
-            # 如果是markdown文件，以文本形式返回
-            if file_ext == '.md':
+            # 如果是文本类文件，以文本形式返回
+            if file_ext in ['.md', '.json', '.jsonl', '.txt']:
                 with open(downloaded_file, 'r', encoding='utf-8') as f:
                     content = f.read()
                 os.unlink(downloaded_file)
                 
                 response = make_response(content)
                 response.headers['Content-Type'] = content_type
+                response.headers['Content-Disposition'] = f'attachment; filename="{os.path.basename(object_name)}"'
                 return response
             else:
                 # 其他文件以二进制形式返回

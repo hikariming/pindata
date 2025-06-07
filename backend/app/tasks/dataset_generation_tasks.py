@@ -741,7 +741,9 @@ def _parse_instruction_response(response: str) -> List[Dict]:
     """解析指令响应"""
     try:
         import json
+        import re
         
+        # 尝试直接解析JSON
         try:
             instruction_data = json.loads(response)
             if isinstance(instruction_data, list):
@@ -749,7 +751,34 @@ def _parse_instruction_response(response: str) -> List[Dict]:
         except:
             pass
         
-        logger.warning("无法解析指令响应")
+        # 尝试提取JSON部分
+        json_match = re.search(r'\[.*\]', response, re.DOTALL)
+        if json_match:
+            try:
+                instruction_data = json.loads(json_match.group())
+                if isinstance(instruction_data, list):
+                    return instruction_data
+            except:
+                pass
+        
+        # 尝试提取多个JSON对象（每行一个）
+        json_objects = []
+        lines = response.strip().split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('{') and line.endswith('}'):
+                try:
+                    obj = json.loads(line)
+                    if isinstance(obj, dict):
+                        json_objects.append(obj)
+                except:
+                    continue
+        
+        if json_objects:
+            return json_objects
+        
+        # 记录实际响应内容以便调试
+        logger.warning(f"无法解析指令响应，响应内容前200字符: {response[:200]}")
         return []
         
     except Exception as e:
@@ -760,7 +789,9 @@ def _parse_classification_response(response: str) -> List[Dict]:
     """解析分类响应"""
     try:
         import json
+        import re
         
+        # 尝试直接解析JSON
         try:
             classification_data = json.loads(response)
             if isinstance(classification_data, list):
@@ -768,7 +799,34 @@ def _parse_classification_response(response: str) -> List[Dict]:
         except:
             pass
         
-        logger.warning("无法解析分类响应")
+        # 尝试提取JSON部分
+        json_match = re.search(r'\[.*\]', response, re.DOTALL)
+        if json_match:
+            try:
+                classification_data = json.loads(json_match.group())
+                if isinstance(classification_data, list):
+                    return classification_data
+            except:
+                pass
+        
+        # 尝试提取多个JSON对象（每行一个）
+        json_objects = []
+        lines = response.strip().split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('{') and line.endswith('}'):
+                try:
+                    obj = json.loads(line)
+                    if isinstance(obj, dict):
+                        json_objects.append(obj)
+                except:
+                    continue
+        
+        if json_objects:
+            return json_objects
+        
+        # 记录实际响应内容以便调试
+        logger.warning(f"无法解析分类响应，响应内容前200字符: {response[:200]}")
         return []
         
     except Exception as e:
@@ -796,7 +854,7 @@ def _save_generated_data(version: EnhancedDatasetVersion, original_filename: str
         
         try:
             # 上传到MinIO
-            object_name = f"datasets/{version.dataset_id}/v{version.version}/generated/{generated_filename}"
+            object_name = f"datasets/{version.dataset_id}/{version.version}/generated/{generated_filename}"
             
             # 使用upload_file_from_path方法
             bucket_name = 'datasets'
