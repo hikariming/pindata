@@ -18,6 +18,7 @@ class TaskType(enum.Enum):
     DATA_EXPORT = "DATA_EXPORT"
     DATA_PROCESSING = "DATA_PROCESSING"
     DOCUMENT_CONVERSION = "DOCUMENT_CONVERSION"
+    DATASET_GENERATION = "DATASET_GENERATION"  # 数据集自动生成
 
 class Task(db.Model):
     """任务模型"""

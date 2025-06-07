@@ -1,6 +1,17 @@
 import React from 'react';
-import { Card } from '../../../../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../../../components/ui/dialog";
 import { Button } from '../../../../components/ui/button';
+import { 
+  CheckIcon,
+  XIcon,
+  InfoIcon,
+  CodeIcon
+} from 'lucide-react';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
 import { FORMAT_DETAILS } from '../constants';
 
@@ -11,81 +22,105 @@ export const FormatDetailsModal: React.FC = () => {
     setShowFormatDetails
   } = useSmartDatasetCreatorStore();
 
-  if (!showFormatDetails || !selectedFormat || !FORMAT_DETAILS[selectedFormat as keyof typeof FORMAT_DETAILS]) {
-    return null;
-  }
+  const formatDetails = selectedFormat ? FORMAT_DETAILS[selectedFormat as keyof typeof FORMAT_DETAILS] : null;
 
-  const formatDetail = FORMAT_DETAILS[selectedFormat as keyof typeof FORMAT_DETAILS];
+  if (!formatDetails) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#0c141c]">
-              {formatDetail.name}
+    <Dialog open={showFormatDetails} onOpenChange={setShowFormatDetails}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <InfoIcon className="w-5 h-5 text-[#1977e5]" />
+            {formatDetails.name} 详细说明
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* 基本信息 */}
+          <div>
+            <h3 className="text-lg font-semibold text-[#0c141c] mb-2">格式说明</h3>
+            <p className="text-[#4f7096]">{formatDetails.description}</p>
+          </div>
+
+          {/* 数据结构 */}
+          <div>
+            <h3 className="text-lg font-semibold text-[#0c141c] mb-2">数据结构</h3>
+            <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-3">
+              <code className="text-sm text-[#1977e5]">{formatDetails.structure}</code>
+            </div>
+          </div>
+
+          {/* 优缺点对比 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-[#0c141c] mb-3 flex items-center gap-2">
+                <CheckIcon className="w-5 h-5 text-green-600" />
+                优势
+              </h3>
+              <ul className="space-y-2">
+                {formatDetails.advantages.map((advantage, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <CheckIcon className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-[#4f7096]">{advantage}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold text-[#0c141c] mb-3 flex items-center gap-2">
+                <XIcon className="w-5 h-5 text-red-600" />
+                局限性
+              </h3>
+              <ul className="space-y-2">
+                {formatDetails.disadvantages.map((disadvantage, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <XIcon className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-[#4f7096]">{disadvantage}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* 最适用场景 */}
+          <div>
+            <h3 className="text-lg font-semibold text-[#0c141c] mb-2">最适用场景</h3>
+            <div className="flex flex-wrap gap-2">
+              {formatDetails.bestFor.map((scenario, index) => (
+                <span 
+                  key={index} 
+                  className="px-3 py-1 bg-[#e0f2fe] text-[#0277bd] text-sm rounded-full"
+                >
+                  {scenario}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 示例代码 */}
+          <div>
+            <h3 className="text-lg font-semibold text-[#0c141c] mb-3 flex items-center gap-2">
+              <CodeIcon className="w-5 h-5 text-[#1977e5]" />
+              格式示例
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
+            <div className="bg-[#0c141c] text-green-400 p-4 rounded-lg overflow-x-auto">
+              <pre className="text-sm">{formatDetails.example}</pre>
+            </div>
+          </div>
+
+          {/* 操作按钮 */}
+          <div className="flex justify-end">
+            <Button 
               onClick={() => setShowFormatDetails(false)}
+              className="bg-[#1977e5] hover:bg-[#1565c0]"
             >
-              ✕
+              了解了
             </Button>
           </div>
-          <div className="space-y-4">
-            <p className="text-[#4f7096]">
-              {formatDetail.description}
-            </p>
-            <div>
-              <h4 className="font-medium text-[#0c141c] mb-2">数据结构</h4>
-              <p className="text-sm text-[#4f7096]">
-                {formatDetail.structure}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-[#0c141c] mb-2">优势</h4>
-                <ul className="text-sm text-[#4f7096] space-y-1">
-                  {formatDetail.advantages.map((advantage, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-green-500 rounded-full" />
-                      {advantage}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-medium text-[#0c141c] mb-2">局限性</h4>
-                <ul className="text-sm text-[#4f7096] space-y-1">
-                  {formatDetail.disadvantages.map((disadvantage, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-orange-500 rounded-full" />
-                      {disadvantage}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-medium text-[#0c141c] mb-2">适用场景</h4>
-              <div className="flex flex-wrap gap-2">
-                {formatDetail.bestFor.map((useCase, index) => (
-                  <span key={index} className="px-2 py-1 bg-[#e8edf2] text-[#4f7096] text-xs rounded">
-                    {useCase}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="font-medium text-[#0c141c] mb-2">格式示例</h4>
-              <pre className="text-xs text-[#4f7096] bg-[#f8fbff] p-3 rounded border overflow-x-auto">
-                {formatDetail.example}
-              </pre>
-            </div>
-          </div>
         </div>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }; 

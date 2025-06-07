@@ -1,4 +1,5 @@
 import { Library, LibraryFile } from '../../../../types/library';
+import { LLMConfig } from '../../../../types/llm';
 
 export interface SelectedFile {
   id: string;
@@ -19,6 +20,11 @@ export interface ProcessingConfig {
   maxTokens: number;
   batchSize: number;
   customPrompt: string;
+  // 文档分片配置
+  chunkSize: number;        // 分片大小（字符数）
+  chunkOverlap: number;     // 分片重叠大小
+  preserveStructure: boolean; // 保持文档结构
+  splitByHeaders: boolean;   // 按标题分割
 }
 
 export interface DatasetType {
@@ -64,11 +70,13 @@ export interface SmartDatasetCreatorState {
   datasetName: string;
   datasetDescription: string;
   processingConfig: ProcessingConfig;
+  availableLLMConfigs: LLMConfig[];
   
   // UI状态
   isLoading: boolean;
   loadingFiles: boolean;
   loadingCollections: boolean;
+  loadingLLMConfigs: boolean;
   progress: number;
   error: string | null;
   showFormatDetails: boolean;
@@ -101,18 +109,20 @@ export interface SmartDatasetCreatorActions {
   
   // 模型配置
   setProcessingConfig: (config: Partial<ProcessingConfig>) => void;
+  loadLLMConfigs: () => Promise<void>;
+  generatePrompt: () => string;
   
   // UI控制
   setIsLoading: (loading: boolean) => void;
   setLoadingFiles: (loading: boolean) => void;
   setLoadingCollections: (loading: boolean) => void;
+  setLoadingLLMConfigs: (loading: boolean) => void;
   setProgress: (progress: number) => void;
   setError: (error: string | null) => void;
   setShowFormatDetails: (show: boolean) => void;
   setSelectedFormat: (format: string | null) => void;
   
   // 业务逻辑
-  startGeneration: () => Promise<void>;
   resetState: () => void;
 }
 

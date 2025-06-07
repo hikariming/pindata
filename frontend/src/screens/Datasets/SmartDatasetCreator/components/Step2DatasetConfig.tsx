@@ -47,6 +47,16 @@ export const Step2DatasetConfig: React.FC = () => {
 
   const currentDatasetType = DATASET_TYPES.find(t => t.id === datasetType);
 
+  // 获取当前格式对应的示例数据
+  const getCurrentExample = () => {
+    if (outputFormat && FORMAT_DETAILS[outputFormat as keyof typeof FORMAT_DETAILS]) {
+      return FORMAT_DETAILS[outputFormat as keyof typeof FORMAT_DETAILS].example;
+    }
+    
+    // 如果没有格式特定示例，返回数据集类型的默认示例
+    return currentDatasetType?.example || '暂无示例数据';
+  };
+
   return (
     <div className="space-y-6">
       {/* 教学指南 */}
@@ -106,9 +116,6 @@ export const Step2DatasetConfig: React.FC = () => {
                     <span className="text-2xl">{type.icon}</span>
                     <h4 className="font-semibold text-[#0c141c]">{type.name}</h4>
                     <div className="flex gap-1">
-                      {type.multimodal && (
-                        <span className="px-2 py-1 bg-[#1977e5] text-white text-xs rounded-full">多模态</span>
-                      )}
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         type.category === 'supervised' ? 'bg-green-100 text-green-700' :
                         type.category === 'reasoning' ? 'bg-purple-100 text-purple-700' :
@@ -210,18 +217,23 @@ export const Step2DatasetConfig: React.FC = () => {
             />
           </div>
 
-          {/* 示例预览 */}
-          {currentDatasetType && (
-            <div className="mt-6 p-4 bg-[#f8fbff] border border-[#e3f2fd] rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
+          {/* 示例预览 - 根据选中的格式动态显示 */}
+          <div className="mt-6 p-4 bg-[#f8fbff] border border-[#e3f2fd] rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
                 <BookOpenIcon className="w-4 h-4 text-[#1977e5]" />
                 <span className="text-sm font-medium text-[#0c141c]">数据示例</span>
               </div>
-              <pre className="text-xs text-[#4f7096] bg-white p-3 rounded border overflow-x-auto">
-                {currentDatasetType.example}
-              </pre>
+              <div className="flex items-center gap-2 text-xs text-[#4f7096]">
+                <span>格式：{FORMAT_DETAILS[outputFormat as keyof typeof FORMAT_DETAILS]?.name || outputFormat}</span>
+                <span>•</span>
+                <span>类型：{currentDatasetType?.name}</span>
+              </div>
             </div>
-          )}
+            <pre className="text-xs text-[#4f7096] bg-white p-3 rounded border overflow-x-auto whitespace-pre-wrap">
+              {getCurrentExample()}
+            </pre>
+          </div>
         </div>
       </Card>
 

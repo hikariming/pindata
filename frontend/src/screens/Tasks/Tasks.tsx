@@ -225,6 +225,8 @@ export const Tasks = (): JSX.Element => {
         return <FileTextIcon className="w-4 h-4 text-blue-500" />;
       case 'dataset_generation':
         return <DatabaseIcon className="w-4 h-4 text-green-500" />;
+      case 'DATASET_GENERATION':
+        return <DatabaseIcon className="w-4 h-4 text-green-500" />;
       case 'DATA_IMPORT':
         return <CloudDownloadIcon className="w-4 h-4 text-blue-500" />;
       case 'data_distillation':
@@ -243,6 +245,8 @@ export const Tasks = (): JSX.Element => {
       case 'file_conversion':
         return '文件转换';
       case 'dataset_generation':
+        return '数据集生成';
+      case 'DATASET_GENERATION':
         return '数据集生成';
       case 'data_distillation':
         return '数据蒸馏';

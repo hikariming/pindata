@@ -363,6 +363,39 @@ class LLMConversionService:
             HumanMessage(content=content_parts)
         ]
     
+    def call_llm(self, llm_config: LLMConfig, prompt: str) -> str:
+        """调用LLM生成文本回复
+        
+        Args:
+            llm_config: LLM配置
+            prompt: 提示词
+            
+        Returns:
+            str: LLM的回复内容
+        """
+        try:
+            llm = self.get_llm_client(llm_config)
+            
+            # 构建消息
+            messages = [HumanMessage(content=prompt)]
+            
+            # 调用LLM
+            logger.info(f"调用LLM生成文本 - 模型: {llm_config.model_name}")
+            start_time = time.time()
+            response = llm.invoke(messages)
+            duration = time.time() - start_time
+            
+            logger.info(f"LLM调用完成 - 耗时: {duration:.2f}秒, 输入长度: {len(prompt)}, 输出长度: {len(response.content)}")
+            
+            # 更新使用统计
+            llm_config.update_usage()
+            
+            return response.content
+            
+        except Exception as e:
+            logger.error(f"调用LLM失败: {str(e)}")
+            raise
+    
     def _get_system_prompt(self, custom_prompt: str) -> str:
         """获取系统提示词"""
         base_prompt = """你是一个专业的文档转换助手。你的任务是将文档内容转换为高质量的 Markdown 格式。

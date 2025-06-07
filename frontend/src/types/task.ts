@@ -7,7 +7,8 @@ export type TaskType =
   | 'DATA_IMPORT' 
   | 'DATA_EXPORT'
   | 'DATA_PROCESSING'
-  | 'DOCUMENT_CONVERSION';
+  | 'DOCUMENT_CONVERSION'
+  | 'DATASET_GENERATION';
 
 // 前端展示用的任务类型映射
 export type TaskDisplayType = 
@@ -17,7 +18,8 @@ export type TaskDisplayType =
   | 'batch_processing' 
   | 'model_training' 
   | 'data_preprocessing'
-  | 'DATA_IMPORT';
+  | 'DATA_IMPORT'
+  | 'DATASET_GENERATION';
 
 // 任务详情接口
 export interface TaskDetails {

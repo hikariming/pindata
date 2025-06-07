@@ -2,6 +2,7 @@ from flask import jsonify, request
 from flasgger import swag_from
 from sqlalchemy import desc, asc, or_, func
 from marshmallow import ValidationError
+import logging
 from app.api.v1 import api_v1
 from app.models.dataset import Dataset, DatasetVersion, DatasetTag, DatasetLike, DatasetDownload
 from app.api.v1.schemas.dataset_schemas import (
@@ -9,6 +10,8 @@ from app.api.v1.schemas.dataset_schemas import (
     DatasetVersionCreateSchema, DatasetResponseSchema, DatasetDetailResponseSchema
 )
 from app.db import db
+
+logger = logging.getLogger(__name__)
 
 
 @api_v1.route('/datasets', methods=['GET'])
@@ -533,6 +536,214 @@ def get_dataset_import_status(dataset_id):
     
     return jsonify({
         'task': import_task.to_dict(),
+        'celery_status': celery_status,
+        'dataset': dataset.to_dict()
+    })
+
+
+@api_v1.route('/datasets/<int:dataset_id>/generate', methods=['POST'])
+@swag_from({
+    'tags': ['数据集'],
+    'summary': '自动生成数据集',
+    'parameters': [
+        {
+            'name': 'dataset_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': '数据集ID'
+        },
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'selected_files': {
+                        'type': 'array',
+                        'items': {'type': 'object'},
+                        'description': '选中的文件列表'
+                    },
+                    'dataset_config': {
+                        'type': 'object',
+                        'description': '数据集配置',
+                        'properties': {
+                            'type': {'type': 'string', 'enum': ['qa', 'summarization', 'instruction', 'classification', 'generic']},
+                            'format': {'type': 'string'},
+                            'name': {'type': 'string'},
+                            'description': {'type': 'string'}
+                        }
+                    },
+                    'model_config': {
+                        'type': 'object',
+                        'description': 'AI模型配置',
+                        'properties': {
+                            'id': {'type': 'integer'},
+                            'name': {'type': 'string'},
+                            'provider': {'type': 'string'}
+                        }
+                    },
+                    'processing_config': {
+                        'type': 'object',
+                        'description': '处理配置',
+                        'properties': {
+                            'dataset_type': {'type': 'string'},
+                            'chunk_size': {'type': 'integer'},
+                            'qa_pairs_per_chunk': {'type': 'integer'},
+                            'summary_length': {'type': 'string'},
+                            'instructions_per_chunk': {'type': 'integer'},
+                            'categories': {'type': 'array', 'items': {'type': 'string'}}
+                        }
+                    }
+                },
+                'required': ['selected_files', 'dataset_config', 'model_config', 'processing_config']
+            }
+        }
+    ],
+    'responses': {
+        202: {'description': '数据集生成任务已启动'},
+        400: {'description': '参数错误'},
+        404: {'description': '数据集不存在'}
+    }
+})
+def generate_dataset(dataset_id):
+    """启动数据集自动生成任务"""
+    from app.models import Task as TaskModel, TaskType
+    from app.tasks.dataset_generation_tasks import generate_dataset_task
+    
+    dataset = Dataset.query.get_or_404(dataset_id)
+    
+    try:
+        data = request.get_json() or {}
+        
+        # 验证必需参数
+        required_fields = ['selected_files', 'dataset_config', 'model_config', 'processing_config']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'缺少必需参数: {field}'}), 400
+        
+        selected_files = data['selected_files']
+        dataset_config = data['dataset_config']
+        model_config = data['model_config']
+        processing_config = data['processing_config']
+        
+        # 验证文件列表
+        if not selected_files or not isinstance(selected_files, list):
+            return jsonify({'error': '选中的文件列表不能为空'}), 400
+        
+        # 验证模型配置
+        if not model_config.get('id'):
+            return jsonify({'error': '必须指定AI模型配置'}), 400
+        
+        # 创建任务记录
+        task = TaskModel(
+            name=f"生成数据集: {dataset.name} - {dataset_config.get('type', 'unknown')}类型",
+            type=TaskType.DATASET_GENERATION,
+            config={
+                'dataset_id': dataset_id,
+                'selected_files': selected_files,
+                'dataset_config': dataset_config,
+                'model_config': model_config,
+                'processing_config': processing_config,
+                'created_by': 'system'
+            }
+        )
+        
+        db.session.add(task)
+        db.session.flush()  # 获取task.id
+        
+        # 启动Celery任务
+        celery_task = generate_dataset_task.delay(
+            dataset_id=dataset_id,
+            selected_files=selected_files,
+            dataset_config=dataset_config,
+            model_config=model_config,
+            processing_config=processing_config,
+            task_id=task.id
+        )
+        
+        # 更新任务的Celery ID
+        task.config['celery_task_id'] = celery_task.id
+        
+        db.session.commit()
+        
+        logger.info(f"启动数据集生成任务: {task.id}, Celery任务ID: {celery_task.id}")
+        
+        return jsonify({
+            'message': '数据集生成任务已启动',
+            'task_id': task.id,
+            'celery_task_id': celery_task.id,
+            'dataset': dataset.to_dict(),
+            'config': {
+                'selected_files_count': len(selected_files),
+                'dataset_type': dataset_config.get('type'),
+                'model_name': model_config.get('name'),
+                'processing_config': processing_config
+            }
+        }), 202
+        
+    except Exception as e:
+        logger.error(f"启动数据集生成任务失败: {str(e)}")
+        return jsonify({'error': f'启动任务失败: {str(e)}'}), 500
+
+
+@api_v1.route('/datasets/<int:dataset_id>/generation-status', methods=['GET'])
+@swag_from({
+    'tags': ['数据集'],
+    'summary': '获取数据集生成状态',
+    'parameters': [{
+        'name': 'dataset_id',
+        'in': 'path',
+        'type': 'integer',
+        'required': True,
+        'description': '数据集ID'
+    }],
+    'responses': {
+        200: {'description': '成功获取生成状态'},
+        404: {'description': '数据集或任务不存在'}
+    }
+})
+def get_dataset_generation_status(dataset_id):
+    """获取数据集生成状态"""
+    from app.models import Task as TaskModel, TaskType
+    from app.celery_app import celery
+    
+    dataset = Dataset.query.get_or_404(dataset_id)
+    
+    # 查找关联的生成任务（获取最新的）
+    from sqlalchemy import text
+    generation_task = TaskModel.query.filter_by(
+        type=TaskType.DATASET_GENERATION
+    ).filter(
+        text("config->>'dataset_id' = :dataset_id")
+    ).params(dataset_id=str(dataset_id)).order_by(TaskModel.created_at.desc()).first()
+    
+    if not generation_task:
+        return jsonify({
+            'status': 'not_found',
+            'message': '未找到数据集生成任务'
+        }), 404
+    
+    # 获取Celery任务状态
+    celery_task_id = generation_task.config.get('celery_task_id')
+    celery_status = {}
+    
+    if celery_task_id:
+        try:
+            celery_task = celery.AsyncResult(celery_task_id)
+            celery_status = {
+                'state': celery_task.state,
+                'info': celery_task.info if celery_task.info else {}
+            }
+        except Exception as e:
+            celery_status = {
+                'state': 'UNKNOWN',
+                'info': {'error': str(e)}
+            }
+    
+    return jsonify({
+        'task': generation_task.to_dict(),
         'celery_status': celery_status,
         'dataset': dataset.to_dict()
     }) 
