@@ -742,59 +742,74 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       </Card>
 
       {/* 文件预览列表 */}
-      {filteredFiles.map((filePreview, index) => (
-        <Card key={filePreview.file.id} className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={selectedFiles.has(filePreview.file.id)}
-                onCheckedChange={() => handleFileSelect(filePreview.file.id)}
-              />
-              {getFileTypeIcon(filePreview.file.file_type)}
-              <div>
-                <h4 className="font-medium">{filePreview.file.filename}</h4>
-                <p className="text-sm text-gray-600">
-                  {filePreview.file.file_type} · {filePreview.file.file_size_formatted}
-                </p>
-                {filePreview.file.checksum && (
-                  <p className="text-xs text-gray-400 font-mono">
-                    校验和: {filePreview.file.checksum.slice(0, 8)}...
+      {filteredFiles.map((filePreview, index) => {
+        const isUnsupported = filePreview.preview?.type === 'unsupported' || 
+                              filePreview.preview?.type === 'error';
+        
+        return (
+          <Card key={filePreview.file.id} className={`${isUnsupported ? 'p-4' : 'p-6'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={selectedFiles.has(filePreview.file.id)}
+                  onCheckedChange={() => handleFileSelect(filePreview.file.id)}
+                />
+                {getFileTypeIcon(filePreview.file.file_type)}
+                <div>
+                  <h4 className="font-medium">{filePreview.file.filename}</h4>
+                  <p className="text-sm text-gray-600">
+                    {filePreview.file.file_type} · {filePreview.file.file_size_formatted}
                   </p>
+                  {filePreview.file.checksum && (
+                    <p className="text-xs text-gray-400 font-mono">
+                      校验和: {filePreview.file.checksum.slice(0, 8)}...
+                    </p>
+                  )}
+                  {isUnsupported && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {filePreview.preview?.message || '暂不支持预览此文件类型'}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDownloadFile(
+                    filePreview.file.minio_object_name,
+                    filePreview.file.filename
+                  )}
+                >
+                  <DownloadIcon className="w-4 h-4 mr-2" />
+                  下载
+                </Button>
+                {data.version && !data.version.is_deprecated && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      enhancedDatasetService.deleteFileFromVersion(
+                        data.version!.id,
+                        filePreview.file.id
+                      ).then(() => onDataChange?.());
+                    }}
+                  >
+                    <Trash2Icon className="w-4 h-4" />
+                  </Button>
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDownloadFile(
-                  filePreview.file.minio_object_name,
-                  filePreview.file.filename
-                )}
-              >
-                <DownloadIcon className="w-4 h-4 mr-2" />
-                下载
-              </Button>
-              {data.version && !data.version.is_deprecated && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    enhancedDatasetService.deleteFileFromVersion(
-                      data.version!.id,
-                      filePreview.file.id
-                    ).then(() => onDataChange?.());
-                  }}
-                >
-                  <Trash2Icon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
 
-          {renderPreviewContent(filePreview)}
-        </Card>
-      ))}
+            {/* 只有支持的文件类型才显示预览内容 */}
+            {!isUnsupported && (
+              <div className="mt-4">
+                {renderPreviewContent(filePreview)}
+              </div>
+            )}
+          </Card>
+        );
+      })}
 
       {/* 版本信息卡片 */}
       {data.version && (
