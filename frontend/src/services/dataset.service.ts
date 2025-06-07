@@ -11,6 +11,7 @@ import {
   DatasetListResponse,
   LikeResponse,
   DownloadResponse,
+  DatasetImportStatus,
 } from '../types/dataset';
 
 export class DatasetService {
@@ -167,6 +168,14 @@ export class DatasetService {
       page,
       per_page,
     });
+  }
+
+  /**
+   * 获取数据集导入状态
+   */
+  static async getDatasetImportStatus(datasetId: string | number): Promise<DatasetImportStatus> {
+    const response = await apiClient.get<DatasetImportStatus>(`/api/v1/datasets/${datasetId}/import-status`);
+    return response;
   }
 }
 

@@ -32,6 +32,7 @@ import {
   TrendingUpIcon,
   ActivityIcon,
   DownloadIcon,
+  CloudDownloadIcon,
   AlertTriangleIcon,
   ListIcon,
   Layers3Icon,
@@ -224,6 +225,8 @@ export const Tasks = (): JSX.Element => {
         return <FileTextIcon className="w-4 h-4 text-blue-500" />;
       case 'dataset_generation':
         return <DatabaseIcon className="w-4 h-4 text-green-500" />;
+      case 'DATA_IMPORT':
+        return <CloudDownloadIcon className="w-4 h-4 text-blue-500" />;
       case 'data_distillation':
         return <BrainIcon className="w-4 h-4 text-purple-500" />;
       case 'batch_processing':
@@ -249,6 +252,8 @@ export const Tasks = (): JSX.Element => {
         return '模型训练';
       case 'data_preprocessing':
         return '数据预处理';
+      case 'DATA_IMPORT':
+        return '数据导入';
     }
   };
 

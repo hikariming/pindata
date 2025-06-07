@@ -116,7 +116,7 @@ export class TaskService {
         case 'DATA_PROCESSING':
           return 'data_preprocessing';
         case 'DATA_IMPORT':
-          return 'dataset_generation';
+          return 'DATA_IMPORT';  // 数据导入使用单独的显示类型
         case 'DATA_EXPORT':
           return 'batch_processing';
         case 'PIPELINE_EXECUTION':

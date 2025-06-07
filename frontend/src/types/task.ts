@@ -16,7 +16,8 @@ export type TaskDisplayType =
   | 'data_distillation' 
   | 'batch_processing' 
   | 'model_training' 
-  | 'data_preprocessing';
+  | 'data_preprocessing'
+  | 'DATA_IMPORT';
 
 // 任务详情接口
 export interface TaskDetails {

@@ -39,14 +39,17 @@ export interface DatasetTag {
 }
 
 export interface CreateDatasetRequest {
-  name: string;
-  owner: string;
+  name?: string;  // 导入时可选
+  owner?: string; // 导入时可选
   description?: string;
   license?: string;
   task_type?: string;
   language?: string;
   featured?: boolean;
   tags?: string[];
+  // 导入相关字段
+  import_method?: 'huggingface' | 'modelscope';
+  import_url?: string;
 }
 
 export interface UpdateDatasetRequest {
@@ -111,4 +114,25 @@ export interface DownloadResponse {
   message: string;
   downloads: number;
   download_url: string;
+}
+
+export interface DatasetImportStatus {
+  task: {
+    id: number;
+    name: string;
+    type: string;
+    status: string;
+    progress: number;
+    config: Record<string, any>;
+    result?: Record<string, any>;
+    error_message?: string;
+    created_at: string;
+    started_at?: string;
+    completed_at?: string;
+  };
+  celery_status: {
+    state: string;
+    info: Record<string, any>;
+  };
+  dataset: Dataset;
 } 

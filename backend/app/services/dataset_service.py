@@ -105,18 +105,22 @@ class DatasetService:
         """
         创建数据集
         """
-        # 检查名称唯一性
-        existing = Dataset.query.filter_by(
-            name=data['name'], 
-            owner=data['owner']
-        ).first()
-        if existing:
-            raise ValueError('该拥有者下已存在同名数据集')
+        # 对于导入数据集，不需要检查名称唯一性，因为名称会从源获取
+        is_import = data.get('import_method') is not None
+        
+        if not is_import:
+            # 检查名称唯一性（仅对空数据集）
+            existing = Dataset.query.filter_by(
+                name=data['name'], 
+                owner=data['owner']
+            ).first()
+            if existing:
+                raise ValueError('该拥有者下已存在同名数据集')
         
         # 创建数据集
         dataset = Dataset(
-            name=data['name'],
-            owner=data['owner'],
+            name=data.get('name', ''),  # 导入时可能为空，会在任务中更新
+            owner=data.get('owner', ''),
             description=data.get('description', ''),
             license=data.get('license'),
             task_type=data.get('task_type'),
@@ -146,6 +150,11 @@ class DatasetService:
         db.session.add(initial_version)
         
         db.session.commit()
+        
+        # 如果是导入数据集，启动导入任务
+        if is_import:
+            self._start_import_task(dataset, data)
+        
         return dataset
     
     def update_dataset(self, dataset_id: int, data: Dict) -> Dataset:
@@ -381,4 +390,39 @@ class DatasetService:
         )
         
         if os.path.exists(dataset_dir):
-            shutil.rmtree(dataset_dir) 
+            shutil.rmtree(dataset_dir)
+    
+    def _start_import_task(self, dataset: Dataset, data: Dict):
+        """启动数据集导入任务"""
+        from app.models import Task as TaskModel, TaskType
+        from app.tasks.dataset_import_tasks import import_dataset_task
+        
+        # 创建任务记录
+        task = TaskModel(
+            name=f"导入数据集: {data.get('import_url', 'Unknown')}",
+            type=TaskType.DATA_IMPORT,
+            config={
+                'dataset_id': dataset.id,
+                'import_method': data.get('import_method'),
+                'import_url': data.get('import_url'),
+                'created_by': 'system'
+            }
+        )
+        
+        db.session.add(task)
+        db.session.flush()  # 获取task.id
+        
+        # 启动Celery任务
+        celery_task = import_dataset_task.delay(
+            dataset_id=dataset.id,
+            import_method=data.get('import_method'),
+            import_url=data.get('import_url'),
+            task_id=task.id
+        )
+        
+        # 更新任务的Celery ID
+        task.config['celery_task_id'] = celery_task.id
+        
+        db.session.commit()
+        
+        return task 

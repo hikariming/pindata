@@ -112,16 +112,17 @@ def get_datasets():
         'schema': {
             'type': 'object',
             'properties': {
-                'name': {'type': 'string', 'description': '数据集名称'},
-                'owner': {'type': 'string', 'description': '拥有者'},
+                'name': {'type': 'string', 'description': '数据集名称（导入时可选）'},
+                'owner': {'type': 'string', 'description': '拥有者（导入时可选）'},
                 'description': {'type': 'string', 'description': '描述'},
                 'license': {'type': 'string', 'description': '许可证'},
                 'task_type': {'type': 'string', 'description': '任务类型'},
                 'language': {'type': 'string', 'description': '语言'},
                 'featured': {'type': 'boolean', 'description': '是否推荐'},
-                'tags': {'type': 'array', 'items': {'type': 'string'}, 'description': '标签列表'}
-            },
-            'required': ['name', 'owner']
+                'tags': {'type': 'array', 'items': {'type': 'string'}, 'description': '标签列表'},
+                'import_method': {'type': 'string', 'enum': ['huggingface', 'modelscope'], 'description': '导入方法'},
+                'import_url': {'type': 'string', 'description': '导入URL或路径'}
+            }
         }
     }],
     'responses': {
@@ -132,52 +133,21 @@ def get_datasets():
 def create_dataset():
     """创建新数据集"""
     try:
-        # 验证数据
-        schema = DatasetCreateSchema()
-        data = schema.load(request.get_json() or {})
-    except ValidationError as err:
-        return jsonify({'error': '参数错误', 'details': err.messages}), 400
-    
-    # 检查名称是否已存在
-    existing = Dataset.query.filter_by(name=data['name'], owner=data['owner']).first()
-    if existing:
-        return jsonify({'error': '该拥有者下已存在同名数据集'}), 400
-    
-    # 创建数据集
-    dataset = Dataset(
-        name=data['name'],
-        owner=data['owner'],
-        description=data.get('description', ''),
-        license=data.get('license'),
-        task_type=data.get('task_type'),
-        language=data.get('language'),
-        featured=data.get('featured', False),
-        size='0B',  # 初始大小
-        downloads=0,
-        likes=0
-    )
-    
-    db.session.add(dataset)
-    db.session.flush()  # 获取dataset.id
-    
-    # 添加标签
-    tags = data.get('tags', [])
-    for tag_name in tags:
-        tag = DatasetTag(dataset_id=dataset.id, name=tag_name)
-        db.session.add(tag)
-    
-    # 创建初始版本
-    initial_version = DatasetVersion(
-        dataset_id=dataset.id,
-        version='v1.0',
-        pipeline_config={},
-        stats={}
-    )
-    db.session.add(initial_version)
-    
-    db.session.commit()
-    
-    return jsonify(dataset.to_dict()), 201
+        from app.services.dataset_service import DatasetService
+        
+        # 获取请求数据
+        data = request.get_json() or {}
+        
+        # 使用服务层创建数据集
+        dataset_service = DatasetService()
+        dataset = dataset_service.create_dataset(data)
+        
+        return jsonify(dataset.to_dict()), 201
+        
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': '创建数据集失败', 'details': str(e)}), 500
 
 
 @api_v1.route('/datasets/<int:dataset_id>', methods=['GET'])
@@ -505,4 +475,64 @@ def get_datasets_stats():
         'total_likes': total_likes,
         'task_type_stats': [{'task_type': stat[0], 'count': stat[1]} for stat in task_type_stats if stat[0]],
         'language_stats': [{'language': stat[0], 'count': stat[1]} for stat in language_stats if stat[0]]
+    })
+
+
+@api_v1.route('/datasets/<int:dataset_id>/import-status', methods=['GET'])
+@swag_from({
+    'tags': ['数据集'],
+    'summary': '获取数据集导入状态',
+    'parameters': [{
+        'name': 'dataset_id',
+        'in': 'path',
+        'type': 'integer',
+        'required': True,
+        'description': '数据集ID'
+    }],
+    'responses': {
+        200: {'description': '成功获取导入状态'},
+        404: {'description': '数据集不存在'}
+    }
+})
+def get_dataset_import_status(dataset_id):
+    """获取数据集导入状态"""
+    from app.models import Task as TaskModel, TaskType
+    from app.celery_app import celery
+    
+    dataset = Dataset.query.get_or_404(dataset_id)
+    
+    # 查找关联的导入任务
+    import_task = TaskModel.query.filter_by(
+        type=TaskType.DATA_IMPORT
+    ).filter(
+        TaskModel.config['dataset_id'].astext == str(dataset_id)
+    ).order_by(TaskModel.created_at.desc()).first()
+    
+    if not import_task:
+        return jsonify({
+            'status': 'not_found',
+            'message': '未找到导入任务'
+        }), 404
+    
+    # 获取Celery任务状态
+    celery_task_id = import_task.config.get('celery_task_id')
+    celery_status = {}
+    
+    if celery_task_id:
+        try:
+            celery_task = celery.AsyncResult(celery_task_id)
+            celery_status = {
+                'state': celery_task.state,
+                'info': celery_task.info if celery_task.info else {}
+            }
+        except Exception as e:
+            celery_status = {
+                'state': 'UNKNOWN',
+                'info': {'error': str(e)}
+            }
+    
+    return jsonify({
+        'task': import_task.to_dict(),
+        'celery_status': celery_status,
+        'dataset': dataset.to_dict()
     }) 

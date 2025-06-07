@@ -239,7 +239,7 @@ class StorageService:
             return False
     
     def upload_file_from_path(self, local_file_path: str, object_name: str, 
-                            content_type: str = None) -> int:
+                            content_type: str = None, bucket_name: str = None) -> int:
         """
         从本地文件路径上传文件到 MinIO
         
@@ -247,6 +247,7 @@ class StorageService:
             local_file_path: 本地文件路径
             object_name: MinIO中的对象名
             content_type: 文件类型
+            bucket_name: 指定的bucket名称，如果为None则使用默认配置
             
         Returns:
             int: 文件大小
@@ -257,8 +258,16 @@ class StorageService:
             # 获取文件大小
             file_size = os.path.getsize(local_file_path)
             
+            # 确定要使用的bucket
+            if bucket_name is None:
+                bucket_name = current_app.config['MINIO_BUCKET_NAME']
+            
+            # 确保bucket存在
+            if not client.bucket_exists(bucket_name):
+                client.make_bucket(bucket_name)
+                logger.info(f"创建bucket: {bucket_name}")
+            
             # 上传到 MinIO
-            bucket_name = current_app.config['MINIO_BUCKET_NAME']
             client.fput_object(
                 bucket_name,
                 object_name,

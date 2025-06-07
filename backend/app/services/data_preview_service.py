@@ -64,7 +64,7 @@ class DataPreviewService:
             # 从MinIO下载文件内容
             with tempfile.NamedTemporaryFile() as tmp_file:
                 storage_service.download_file(
-                    file.minio_bucket,
+                    file.minio_bucket or 'datasets',  # 默认使用datasets bucket
                     file.minio_object_name,
                     tmp_file.name
                 )
@@ -239,7 +239,7 @@ class DataPreviewService:
             if file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):
                 with tempfile.NamedTemporaryFile() as tmp_file:
                     storage_service.download_file(
-                        file.minio_bucket,
+                        file.minio_bucket or 'datasets',  # 默认使用datasets bucket
                         file.minio_object_name,
                         tmp_file.name
                     )
