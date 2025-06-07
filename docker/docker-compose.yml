@@ -49,6 +49,84 @@ services:
     networks:
       - llama_network
 
+  # PinData API 服务
+  pindata-api:
+    image: hikariming/pindata-api:v0.01
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: pindata_api
+    ports:
+      - "8897:8897"
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/llama_dataset
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ../backend:/app
+      - api_data:/app/data
+    depends_on:
+      - db
+      - redis
+      - minio
+    restart: unless-stopped
+    networks:
+      - llama_network
+    command: ["python", "run.py"]
+
+  # PinData Celery Worker 服务
+  pindata-celery:
+    image: hikariming/pindata-api:v0.01
+    build:
+      context: ../backend
+      dockerfile: Dockerfile  
+    container_name: pindata_celery
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/llama_dataset
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+    volumes:
+      - ../backend:/app
+      - celery_data:/app/data
+    depends_on:
+      - db
+      - redis
+      - minio
+    restart: unless-stopped
+    networks:
+      - llama_network
+    command: ["./start_celery_threads.sh"]
+
+  # PinData Frontend 服务
+  pindata-frontend:
+    image: hikariming/pindata-frontend:v0.01
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: pindata_frontend
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - pindata-api
+    restart: unless-stopped
+    networks:
+      - llama_network
+
 # 数据卷
 volumes:
   postgres_data:
@@ -56,6 +134,10 @@ volumes:
   minio_data:
     driver: local
   redis_data:
+    driver: local
+  api_data:
+    driver: local
+  celery_data:
     driver: local
 
 # 网络
