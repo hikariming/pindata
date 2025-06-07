@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "source": "./index.html",
   "type": "module",
-  "name": "llama-dataset",
+  "name": "pindata",
   "description": "A React project for managing and analyzing datasets with LLaMA",
   "scripts": {
     "dev": "vite",

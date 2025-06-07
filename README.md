@@ -1,12 +1,12 @@
-# LLaMA-DataSet - 大模型训练数据集管理系统
+# ping - 大模型训练数据集管理系统
 
-![LLaMA-DataSet Logo](https://via.placeholder.com/150?text=)
+![pinda ta Logo](https://via.placeholder.com/150?text=)
 
-LLaMA-DataSet是一个开源的大模型训练数据集管理系统，专注于简化数据集的创建、处理、版本控制和转换流程。系统采用管道化数据处理和插件化架构设计，支持从各种文档格式中提取文本语料，并将其转换为适合大模型训练的格式（如纯文本块或Alpaca对话格式）。
+pinsdata是一个开源的大模型训练数据集管理系统，专注于简化数据集的创建、处理、版本控制和转换流程。系统采用管道化数据处理和插件化架构设计，支持从各种文档格式中提取文本语料，并将其转换为适合大模型训练的格式（如纯文本块或Alpaca对话格式）。
 
 ## 设计理念
 
-LLaMA-DataSet的设计基于三大核心理念：
+pindata的设计基于三大核心理念：
 
 1. **管道化数据流**
    - 受MongoDB管道概念启发，数据处理被分解为可组合的步骤
@@ -25,7 +25,7 @@ LLaMA-DataSet的设计基于三大核心理念：
 
 ## 系统架构
 
-LLaMA-DataSet采用分层架构设计，确保各模块职责清晰：
+pindata采用分层架构设计，确保各模块职责清晰：
 
 ```
 ┌───────────────────────┐
@@ -146,8 +146,8 @@ LLaMA-DataSet采用分层架构设计，确保各模块职责清晰：
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/LLaMA-DataSet.git
-cd LLaMA-DataSet
+git clone https://github.com/yourusername/pindata.git
+cd pindata
 
 # 启动服务
 docker-compose up -d
@@ -251,7 +251,7 @@ python run.py      # 启动服务
 
 ## 许可证
 
-LLaMA-DataSet 采用 [Apache License 2.0](LICENSE) 开源协议。
+pindata 采用 [Apache License 2.0](LICENSE) 开源协议。
 
 
 

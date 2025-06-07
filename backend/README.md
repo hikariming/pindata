@@ -1,4 +1,4 @@
-# LLaMA-DataSet 后端服务
+# pindata 后端服务
 
 ## 项目结构
 
@@ -56,8 +56,8 @@ cd ..
 docker-compose up -d
 
 # 或单独构建运行
-docker build -t llama-dataset-backend .
-docker run -p 5000:5000 llama-dataset-backend
+docker build -t pindata-backend .
+docker run -p 5000:5000 pindata-backend
 ```
 
 ## API文档

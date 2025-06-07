@@ -46,7 +46,7 @@ def upgrade():
     # 创建系统日志表
     op.create_table('system_logs',
         sa.Column('id', sa.String(36), primary_key=True),
-        sa.Column('level', sa.Enum('DEBUG', 'INFO', 'WARN', 'ERROR', name='loglevel'), nullable=False),
+        sa.Column('level', sa.Enum('debug', 'info', 'warn', 'error', name='loglevel'), nullable=False),
         sa.Column('message', sa.Text(), nullable=False),
         sa.Column('source', sa.String(100), nullable=False),
         sa.Column('details', sa.Text()),

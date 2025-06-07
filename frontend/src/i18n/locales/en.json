@@ -1,5 +1,5 @@
 {
-  "appName": "LLaMA-DataSet",
+  "appName": "pindata",
   "navigation": {
     "overview": "Overview",
     "datasets": "Datasets",
@@ -12,7 +12,7 @@
     "collapse": "Collapse Sidebar"
   },
   "overview": {
-    "welcome": "Welcome to LLaMA-DataSet",
+    "welcome": "Welcome to pindata",
     "welcomeDescription": "Get started by exploring your datasets, managing tasks, and monitoring storage usage.",
     "systemOverview": "System Overview",
     "recentActivity": "Recent Activity",

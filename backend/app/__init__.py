@@ -30,7 +30,7 @@ def create_app(config_name='development'):
     
     # 初始化Swagger
     app.config['SWAGGER'] = {
-        'title': 'LLaMA-DataSet API',
+        'title': 'pindata API',
         'uiversion': 3,
         'version': '1.0.0',
         'description': '大模型训练数据集管理系统API'
