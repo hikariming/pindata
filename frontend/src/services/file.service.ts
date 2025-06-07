@@ -1,7 +1,7 @@
 import { apiClient } from '../lib/api-client';
 import { config } from '../lib/config';
-import { ApiResponse } from '../types/api';
-import { LibraryFile } from '../types/library';
+import { ApiResponse, PaginatedResponse } from '../types/api';
+import { LibraryFile, Library } from '../types/library';
 
 export class FileService {
   
@@ -11,6 +11,45 @@ export class FileService {
   static async getFileDetail(libraryId: string, fileId: string): Promise<LibraryFile> {
     const response = await apiClient.get<ApiResponse<LibraryFile>>(`/api/v1/libraries/${libraryId}/files/${fileId}`);
     return response.data!;
+  }
+
+  /**
+   * 获取所有数据集合（Libraries）
+   */
+  static async getLibraries(): Promise<Library[]> {
+    try {
+      const response = await apiClient.get<PaginatedResponse<Library>>('/api/v1/libraries', {
+        per_page: 100 // 修改为API允许的最大值
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error('获取数据集合失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取指定数据集合中已转换的MD文件
+   */
+  static async getLibraryMarkdownFiles(libraryId: string): Promise<LibraryFile[]> {
+    try {
+      const response = await apiClient.get<PaginatedResponse<LibraryFile>>(`/api/v1/libraries/${libraryId}/files`, {
+        process_status: 'completed',
+        per_page: 100 // 修改为API允许的最大值
+      });
+      
+      // 过滤出已转换为markdown的文件
+      const allFiles = response.data || [];
+      const markdownFiles = allFiles.filter(file => 
+        file.process_status === 'completed' && 
+        (file.converted_format === 'markdown' || file.file_type === 'markdown' || file.filename.endsWith('.md'))
+      );
+      
+      return markdownFiles;
+    } catch (error) {
+      console.error('获取MD文件列表失败:', error);
+      throw error;
+    }
   }
 
   /**
