@@ -55,11 +55,16 @@ interface DatasetTask {
   processedSamples?: number;
 }
 
+/**
+ * @deprecated 此组件使用模拟数据，未连接真实的后端API
+ * 实际任务管理请使用 /tasks 页面
+ */
 export const DatasetTasks = (): JSX.Element => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('all');
 
+  // TODO: 连接真实的数据集任务API
   const [tasks] = useState<DatasetTask[]>([
     {
       id: '1',

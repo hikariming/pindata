@@ -357,7 +357,8 @@ def download_dataset(dataset_id):
 @api_v1.route('/datasets/<int:dataset_id>/versions', methods=['GET'])
 @swag_from({
     'tags': ['数据集版本'],
-    'summary': '获取数据集版本列表',
+    'summary': '获取数据集版本列表（已废弃，使用增强版本API）',
+    'deprecated': True,
     'parameters': [{
         'name': 'dataset_id',
         'in': 'path',
@@ -380,7 +381,8 @@ def get_dataset_versions(dataset_id):
 @api_v1.route('/datasets/<int:dataset_id>/versions', methods=['POST'])
 @swag_from({
     'tags': ['数据集版本'],
-    'summary': '创建数据集版本',
+    'summary': '创建数据集版本（已废弃，使用增强版本API）',
+    'deprecated': True,
     'parameters': [
         {
             'name': 'dataset_id',

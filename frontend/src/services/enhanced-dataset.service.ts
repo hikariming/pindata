@@ -213,57 +213,6 @@ export class EnhancedDatasetService {
     return response.data || [];
   }
 
-  /**
-   * 搜索版本
-   */
-  static async searchVersions(
-    datasetId: number,
-    query: string,
-    params?: DatasetVersionQueryParams
-  ): Promise<{
-    versions: EnhancedDatasetVersion[];
-    total: number;
-  }> {
-    // 这个API需要后端实现，目前返回空数组
-    return {
-      versions: [],
-      total: 0
-    };
-  }
-
-  /**
-   * 获取版本统计信息
-   */
-  static async getVersionStats(datasetId: number): Promise<{
-    total_versions: number;
-    default_version?: string;
-    latest_version?: string;
-    total_files: number;
-    total_size: string;
-    authors: string[];
-    version_types: Record<string, number>;
-  }> {
-    // 这个API需要后端实现，先返回模拟数据
-    return {
-      total_versions: 0,
-      total_files: 0,
-      total_size: '0B',
-      authors: [],
-      version_types: {}
-    };
-  }
-
-  /**
-   * 批量操作版本
-   */
-  static async batchUpdateVersions(
-    versionIds: string[],
-    action: 'deprecate' | 'restore' | 'delete',
-    options?: Record<string, any>
-  ): Promise<{ success: boolean; message: string }> {
-    // 这个API需要后端实现
-    throw new Error('批量操作功能暂未实现');
-  }
 
   /**
    * 导出版本信息
@@ -548,35 +497,6 @@ ${version.files.map(file => `  - filename: "${file.filename}"
     return response.data!;
   }
 
-  /**
-   * 获取文件分析统计
-   */
-  static async getFileAnalytics(versionId: string): Promise<{
-    version: EnhancedDatasetVersion;
-    type_statistics: Array<{
-      file_type: string;
-      count: number;
-      total_size: number;
-      total_size_formatted: string;
-      average_size: number;
-      average_size_formatted: string;
-    }>;
-    size_distribution: Array<{
-      range: string;
-      count: number;
-    }>;
-    summary: {
-      total_files: number;
-      total_size: number;
-      total_size_formatted: string;
-      average_file_size: number;
-    };
-  }> {
-    const response = await apiClient.get<ApiResponse<any>>(
-      `/api/v1/dataset-versions/${versionId}/analytics`
-    );
-    return response.data!;
-  }
 
   /**
    * 获取数据集的可用文件列表（用于创建版本时选择）
