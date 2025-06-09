@@ -12,8 +12,6 @@ import {
   XIcon,
   BrainIcon,
   DatabaseIcon,
-  SettingsIcon,
-  InfoIcon,
   Loader2Icon
 } from 'lucide-react';
 
@@ -26,14 +24,7 @@ interface CreateLibraryProps {
   onSuccess?: () => void;
 }
 
-interface ConversionSettings {
-  enableAutoConversion: boolean;
-  supportedFormats: string[];
-  outputFormat: 'markdown' | 'plain_text';
-  preserveFormatting: boolean;
-  extractImages: boolean;
-  extractTables: boolean;
-}
+
 
 export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.Element => {
   const { t } = useTranslation();
@@ -48,25 +39,6 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
   });
   
   const [newTag, setNewTag] = useState('');
-  const [conversionSettings, setConversionSettings] = useState<ConversionSettings>({
-    enableAutoConversion: true,
-    supportedFormats: ['pdf', 'docx', 'pptx', 'xlsx'],
-    outputFormat: 'markdown',
-    preserveFormatting: true,
-    extractImages: true,
-    extractTables: true,
-  });
-
-  const supportedFormats = [
-    { id: 'pdf', name: 'PDF文档', description: '便携式文档格式' },
-    { id: 'docx', name: 'Word文档', description: 'Microsoft Word文档' },
-    { id: 'pptx', name: 'PowerPoint', description: 'Microsoft PowerPoint演示文稿' },
-    { id: 'xlsx', name: 'Excel表格', description: 'Microsoft Excel工作表' },
-    { id: 'txt', name: '文本文件', description: '纯文本文件' },
-    { id: 'md', name: 'Markdown', description: 'Markdown标记语言' },
-    { id: 'html', name: 'HTML', description: '超文本标记语言' },
-    { id: 'rtf', name: 'RTF文档', description: '富文本格式' },
-  ];
 
   const commonTags = ['论文', '文档', '技术', '法律', '财报', '研究', '培训', '知识库'];
 
@@ -87,19 +59,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
     });
   };
 
-  const handleFormatToggle = (formatId: string, checked: boolean) => {
-    if (checked) {
-      setConversionSettings({
-        ...conversionSettings,
-        supportedFormats: [...conversionSettings.supportedFormats, formatId]
-      });
-    } else {
-      setConversionSettings({
-        ...conversionSettings,
-        supportedFormats: conversionSettings.supportedFormats.filter(f => f !== formatId)
-      });
-    }
-  };
+
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
@@ -284,139 +244,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
           </div>
         </Card>
 
-        {/* 转换设置 */}
-        <Card className="border-[#d1dbe8] bg-white p-6">
-          <div className="flex items-center mb-4">
-            <SettingsIcon className="w-5 h-5 text-[#1977e5] mr-2" />
-            <h3 className="text-lg font-semibold text-[#0c141c]">转换设置</h3>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox"
-                id="autoConversion"
-                checked={conversionSettings.enableAutoConversion}
-                onChange={(e) => 
-                  setConversionSettings({ 
-                    ...conversionSettings, 
-                    enableAutoConversion: e.target.checked 
-                  })
-                }
-                className="w-4 h-4 text-[#1977e5] border-[#d1dbe8] rounded focus:ring-[#1977e5]"
-              />
-              <label htmlFor="autoConversion" className="text-sm font-medium text-[#0c141c]">
-                启用自动转换
-              </label>
-              <InfoIcon className="w-4 h-4 text-[#4f7096]" />
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[#0c141c]">
-                输出格式
-              </label>
-              <select 
-                value={conversionSettings.outputFormat} 
-                onChange={(e) => 
-                  setConversionSettings({ 
-                    ...conversionSettings, 
-                    outputFormat: e.target.value as 'markdown' | 'plain_text' 
-                  })
-                }
-                className="w-full px-3 py-2 border border-[#d1dbe8] rounded-md focus:border-[#1977e5] focus:outline-none bg-white"
-              >
-                <option value="markdown">Markdown (.md)</option>
-                <option value="plain_text">纯文本 (.txt)</option>
-              </select>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-[#0c141c]">
-                支持的文件格式
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {supportedFormats.map((format) => (
-                  <div key={format.id} className="flex items-start space-x-2">
-                    <input 
-                      type="checkbox"
-                      id={format.id}
-                      checked={conversionSettings.supportedFormats.includes(format.id)}
-                      onChange={(e) => handleFormatToggle(format.id, e.target.checked)}
-                      className="w-4 h-4 text-[#1977e5] border-[#d1dbe8] rounded focus:ring-[#1977e5] mt-0.5"
-                    />
-                    <div>
-                      <label htmlFor={format.id} className="text-sm font-medium text-[#0c141c]">
-                        {format.name}
-                      </label>
-                      <p className="text-xs text-[#4f7096]">{format.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-[#0c141c]">
-                转换选项
-              </label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox"
-                    id="preserveFormatting"
-                    checked={conversionSettings.preserveFormatting}
-                    onChange={(e) => 
-                      setConversionSettings({ 
-                        ...conversionSettings, 
-                        preserveFormatting: e.target.checked 
-                      })
-                    }
-                    className="w-4 h-4 text-[#1977e5] border-[#d1dbe8] rounded focus:ring-[#1977e5]"
-                  />
-                  <label htmlFor="preserveFormatting" className="text-sm text-[#0c141c]">
-                    保留原始格式
-                  </label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox"
-                    id="extractImages"
-                    checked={conversionSettings.extractImages}
-                    onChange={(e) => 
-                      setConversionSettings({ 
-                        ...conversionSettings, 
-                        extractImages: e.target.checked 
-                      })
-                    }
-                    className="w-4 h-4 text-[#1977e5] border-[#d1dbe8] rounded focus:ring-[#1977e5]"
-                  />
-                  <label htmlFor="extractImages" className="text-sm text-[#0c141c]">
-                    提取图片内容
-                  </label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox"
-                    id="extractTables"
-                    checked={conversionSettings.extractTables}
-                    onChange={(e) => 
-                      setConversionSettings({ 
-                        ...conversionSettings, 
-                        extractTables: e.target.checked 
-                      })
-                    }
-                    className="w-4 h-4 text-[#1977e5] border-[#d1dbe8] rounded focus:ring-[#1977e5]"
-                  />
-                  <label htmlFor="extractTables" className="text-sm text-[#0c141c]">
-                    提取表格数据
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
 
         {/* 操作按钮 */}
         <div className="flex justify-end gap-3">
