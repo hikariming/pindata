@@ -977,3 +977,85 @@ class EnhancedDatasetService:
             db.session.rollback()
             logger.error(f"使用现有文件创建版本失败: {str(e)}")
             raise 
+
+    @staticmethod
+    def clone_version(
+        source_version_id: str,
+        new_version: str,
+        commit_message: str,
+        author: str
+    ) -> EnhancedDatasetVersion:
+        """
+        克隆版本（类似git branch）
+        
+        Args:
+            source_version_id: 源版本ID
+            new_version: 新版本号
+            commit_message: 提交信息
+            author: 作者
+            
+        Returns:
+            创建的新版本对象
+        """
+        try:
+            # 获取源版本
+            source_version = EnhancedDatasetVersion.query.get_or_404(source_version_id)
+            
+            # 检查新版本号是否已存在
+            existing_version = EnhancedDatasetVersion.query.filter_by(
+                dataset_id=source_version.dataset_id,
+                version=new_version
+            ).first()
+            if existing_version:
+                raise ValueError(f"版本 {new_version} 已存在")
+            
+            # 创建新版本对象
+            cloned_version = EnhancedDatasetVersion(
+                dataset_id=source_version.dataset_id,
+                version=new_version,
+                version_type=source_version.version_type,
+                parent_version_id=source_version_id,  # 设置父版本为源版本
+                commit_message=commit_message,
+                author=author,
+                pipeline_config=source_version.pipeline_config.copy() if source_version.pipeline_config else {},
+                version_metadata=source_version.version_metadata.copy() if source_version.version_metadata else {},
+                total_size=source_version.total_size,
+                file_count=source_version.file_count,
+                data_checksum=source_version.data_checksum
+            )
+            
+            db.session.add(cloned_version)
+            db.session.flush()  # 获取新版本ID
+            
+            # 获取源版本的所有文件
+            source_files = EnhancedDatasetFile.query.filter_by(
+                version_id=source_version_id
+            ).all()
+            
+            # 为新版本创建文件记录的副本
+            for source_file in source_files:
+                # 创建文件记录的副本，但指向新版本
+                cloned_file = EnhancedDatasetFile(
+                    version_id=cloned_version.id,
+                    filename=source_file.filename,
+                    file_path=f"datasets/{source_version.dataset_id}/versions/{cloned_version.id}/{source_file.filename}",
+                    file_type=source_file.file_type,
+                    file_size=source_file.file_size,
+                    checksum=source_file.checksum,
+                    minio_bucket=source_file.minio_bucket,
+                    minio_object_name=source_file.minio_object_name,  # 引用相同的存储对象
+                    file_metadata=source_file.file_metadata.copy() if source_file.file_metadata else {},
+                    preview_data=source_file.preview_data.copy() if source_file.preview_data else {}
+                )
+                
+                db.session.add(cloned_file)
+            
+            db.session.commit()
+            
+            logger.info(f"版本克隆成功: {source_version.version} -> {new_version} (数据集: {source_version.dataset_id})")
+            return cloned_version
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"克隆版本失败: {str(e)}")
+            raise 

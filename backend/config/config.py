@@ -8,61 +8,105 @@ load_dotenv()
 class Config:
     """基础配置类"""
     # Flask配置
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+    SECRET_KEY = os.getenv('SECRET_KEY')
     
     # 数据库配置
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/llama_dataset')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
+    # 数据库连接池配置
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': int(os.getenv('DB_POOL_SIZE', '10')),
+        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '30')),
+        'pool_recycle': int(os.getenv('DB_POOL_RECYCLE', '3600')),
+        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '20')),
+        'pool_pre_ping': os.getenv('DB_POOL_PRE_PING', 'true').lower() == 'true',
+        'connect_args': {
+            'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '10')),
+        } if os.getenv('DATABASE_URL', '').startswith('postgresql') else {}
+    }
+    
+    # 数据库自动初始化配置
+    AUTO_CREATE_DATABASE = os.getenv('AUTO_CREATE_DATABASE', 'true').lower() == 'true'
+    DATABASE_INIT_RETRY_COUNT = int(os.getenv('DATABASE_INIT_RETRY_COUNT', '3'))
+    DATABASE_INIT_RETRY_DELAY = int(os.getenv('DATABASE_INIT_RETRY_DELAY', '5'))
+    
     # Redis配置
-    REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    REDIS_URL = os.getenv('REDIS_URL')
     
     # MinIO配置
-    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'localhost:9000')
-    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY', 'minioadmin')
-    MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY', 'minioadmin')
+    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
+    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
+    MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY')
     MINIO_SECURE = os.getenv('MINIO_SECURE', 'false').lower() == 'true'
-    MINIO_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME', 'llama-dataset')
+    MINIO_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
     
     # Celery配置
-    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
-    CELERY_TASK_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_TIMEZONE = 'UTC'
-    CELERY_ENABLE_UTC = True
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+    CELERY_TASK_SERIALIZER = os.getenv('CELERY_TASK_SERIALIZER')
+    CELERY_RESULT_SERIALIZER = os.getenv('CELERY_RESULT_SERIALIZER')
+    CELERY_ACCEPT_CONTENT = [os.getenv('CELERY_ACCEPT_CONTENT')]
+    CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE')
+    CELERY_ENABLE_UTC = os.getenv('CELERY_ENABLE_UTC', 'true').lower() == 'true'
     
     # API配置
-    API_PREFIX = os.getenv('API_PREFIX', '/api/v1')
-    PAGINATION_PAGE_SIZE = int(os.getenv('PAGINATION_PAGE_SIZE', '20'))
+    API_PREFIX = os.getenv('API_PREFIX')
+    PAGINATION_PAGE_SIZE = int(os.getenv('PAGINATION_PAGE_SIZE'))
     
     # JWT配置
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-jwt-secret')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', '3600')))
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES')))
     
     # CORS配置
-    CORS_ORIGINS = "*"
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS')
     
     # 文件上传配置
-    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB
-    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'pptx', 'doc', 'ppt'}
+    MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH'))
+    ALLOWED_EXTENSIONS = set(os.getenv('ALLOWED_EXTENSIONS').split(','))
+    
+    # 健康检查配置
+    HEALTH_CHECK_ENABLED = os.getenv('HEALTH_CHECK_ENABLED', 'true').lower() == 'true'
 
 class DevelopmentConfig(Config):
     """开发环境配置"""
     DEBUG = True
     TESTING = False
+    
+    # 开发环境使用更小的连接池
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        **Config.SQLALCHEMY_ENGINE_OPTIONS,
+        'pool_size': 5,
+        'max_overflow': 10
+    }
 
 class TestingConfig(Config):
     """测试环境配置"""
     DEBUG = False
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    
+    # 测试环境关闭自动创建数据库
+    AUTO_CREATE_DATABASE = False
+    
+    # 测试环境使用最小连接池
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 1,
+        'max_overflow': 0,
+        'pool_pre_ping': False
+    }
 
 class ProductionConfig(Config):
     """生产环境配置"""
     DEBUG = False
     TESTING = False
+    
+    # 生产环境使用更大的连接池
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        **Config.SQLALCHEMY_ENGINE_OPTIONS,
+        'pool_size': int(os.getenv('DB_POOL_SIZE', '20')),
+        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '40'))
+    }
 
 # 配置映射
 config = {

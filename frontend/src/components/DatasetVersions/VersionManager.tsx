@@ -355,6 +355,7 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                           datasetId={datasetId}
                           selectedFileIds={selectedExistingFileIds}
                           onSelectionChange={setSelectedExistingFileIds}
+                          inline={true}
                         />
                         {selectedExistingFileIds.length > 0 && (
                           <div className="mt-2 text-sm text-gray-600">
