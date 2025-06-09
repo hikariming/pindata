@@ -4,11 +4,11 @@ services:
   # PostgreSQL 数据库
   db:
     image: postgres:15-alpine
-    container_name: llama_postgres
+    container_name: pindata_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: llama_dataset
+      POSTGRES_DB: pindata_dataset
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -16,12 +16,12 @@ services:
       - "5432:5432"
     restart: unless-stopped
     networks:
-      - llama_network
+      - pindata_network
 
   # MinIO 对象存储
   minio:
     image: minio/minio:latest
-    container_name: llama_minio
+    container_name: pindata_minio
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -33,12 +33,12 @@ services:
     command: server /data --console-address ":9001"
     restart: unless-stopped
     networks:
-      - llama_network
+      - pindata_network
 
   # Redis 缓存
   redis:
     image: redis:7-alpine
-    container_name: llama_redis
+    container_name: pindata_redis
     ports:
       - "6379:6379"
     volumes:
@@ -47,7 +47,7 @@ services:
     command: redis-server /usr/local/etc/redis/redis.conf
     restart: unless-stopped
     networks:
-      - llama_network
+      - pindata_network
 
   # PinData API 服务
   pindata-api:
@@ -61,7 +61,7 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://postgres:password@db:5432/llama_dataset
+      - DATABASE_URL=postgresql://postgres:password@db:5432/pindata_dataset
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
@@ -77,7 +77,7 @@ services:
       - minio
     restart: unless-stopped
     networks:
-      - llama_network
+      - pindata_network
     command: ["python", "run.py"]
 
   # PinData Celery Worker 服务
@@ -90,7 +90,7 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://postgres:password@db:5432/llama_dataset
+      - DATABASE_URL=postgresql://postgres:password@db:5432/pindata_dataset
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
@@ -107,7 +107,7 @@ services:
       - minio
     restart: unless-stopped
     networks:
-      - llama_network
+      - pindata_network
     command: ["./start_celery_threads.sh"]
 
   # PinData Frontend 服务
@@ -125,7 +125,7 @@ services:
       - pindata-api
     restart: unless-stopped
     networks:
-      - llama_network
+      - pindata_network
 
 # 数据卷 - 使用本地目录映射
 # volumes:
@@ -137,5 +137,5 @@ services:
 
 # 网络
 networks:
-  llama_network:
+  pindata_network:
     driver: bridge

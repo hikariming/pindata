@@ -56,3 +56,7 @@ logs/
 # OS generated files
 .DS_Store
 Thumbs.db 
+
+
+# docker
+docker/data/
