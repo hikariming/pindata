@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: llama_dataset
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -29,7 +29,7 @@ services:
       - "9000:9000"     # API 端口
       - "9001:9001"     # 控制台端口
     volumes:
-      - minio_data:/data
+      - ./data/minio:/data
     command: server /data --console-address ":9001"
     restart: unless-stopped
     networks:
@@ -42,7 +42,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - ./data/redis:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     restart: unless-stopped
@@ -70,7 +70,7 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
     volumes:
       - ../backend:/app
-      - api_data:/app/data
+      - ./data/api:/app/data
     depends_on:
       - db
       - redis
@@ -100,7 +100,7 @@ services:
       - OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
     volumes:
       - ../backend:/app
-      - celery_data:/app/data
+      - ./data/celery:/app/data
     depends_on:
       - db
       - redis
@@ -127,18 +127,13 @@ services:
     networks:
       - llama_network
 
-# 数据卷
-volumes:
-  postgres_data:
-    driver: local
-  minio_data:
-    driver: local
-  redis_data:
-    driver: local
-  api_data:
-    driver: local
-  celery_data:
-    driver: local
+# 数据卷 - 使用本地目录映射
+# volumes:
+#   postgres_data: ./data/postgres
+#   minio_data: ./data/minio
+#   redis_data: ./data/redis
+#   api_data: ./data/api
+#   celery_data: ./data/celery
 
 # 网络
 networks:
