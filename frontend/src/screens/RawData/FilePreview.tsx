@@ -22,11 +22,14 @@ import {
   ZapIcon,
   BrainIcon,
   FileSearchIcon,
-  Loader2Icon
+  Loader2Icon,
+  FileEditIcon
 } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { fileService, libraryService } from '../../services';
 import { LibraryFile } from '../../types/library';
+import { useFileConversion } from '../../hooks/useFileConversion';
+import { ConvertToMarkdownDialog, ConversionConfig } from '../RawData/LibraryDetails/components/ConvertToMarkdownDialog';
 
 export const FilePreview = (): JSX.Element => {
   const { libraryId, fileId } = useParams();
@@ -43,6 +46,18 @@ export const FilePreview = (): JSX.Element => {
   const [originalContent, setOriginalContent] = useState<string>('');
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [previewMethod, setPreviewMethod] = useState<'text' | 'image' | 'unsupported' | null>(null);
+  // 新增转换相关状态
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  
+  // 使用转换hook
+  const { convertFiles, loading: convertLoading } = useFileConversion();
+
+  // 显示通知的函数
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   // 获取文件详情
   useEffect(() => {
@@ -60,7 +75,8 @@ export const FilePreview = (): JSX.Element => {
       setError(null);
       const fileData = await fileService.getFileDetail(libraryId!, fileId!);
       setFile(fileData);
-      setEditName(fileData.filename);
+      // 修复：优先使用original_filename显示中文名，filename作为备选
+      setEditName(fileData.original_filename || fileData.filename);
       
       // 如果有转换后的文件，预加载markdown内容
       if (fileData.converted_object_name && fileData.process_status === 'completed') {
@@ -187,26 +203,18 @@ export const FilePreview = (): JSX.Element => {
     }
   };
 
-  const getQualityScore = (file: LibraryFile) => {
-    // 基于文件大小、字数等计算质量评分
-    let score = 5; // 基础分
-    
-    if (file.word_count && file.word_count > 1000) score += 2;
-    if (file.word_count && file.word_count > 5000) score += 1;
-    if (file.page_count && file.page_count > 10) score += 1;
-    if (file.process_status === 'completed') score += 1;
-    
-    return Math.min(score, 10);
-  };
+
 
   const handleSaveName = async () => {
-    if (file && editName.trim() && editName.trim() !== file.filename) {
+    const currentName = file?.original_filename || file?.filename || '';
+    if (file && editName.trim() && editName.trim() !== currentName) {
       try {
         const updatedFile = await fileService.updateFileName(libraryId!, fileId!, editName.trim());
         setFile(updatedFile);
         setIsEditing(false);
       } catch (err) {
         console.error('更新文件名失败:', err);
+        showNotification('error', '更新文件名失败');
       }
     } else {
       setIsEditing(false);
@@ -227,7 +235,7 @@ export const FilePreview = (): JSX.Element => {
   const handleDownloadMarkdown = async () => {
     if (file?.converted_object_name) {
       try {
-        const filename = `${file.filename.replace(/\.[^/.]+$/, '')}.md`;
+        const filename = `${(file.original_filename || file.filename).replace(/\.[^/.]+$/, '')}.md`;
         await fileService.downloadMarkdownFile(file.converted_object_name, filename);
       } catch (err) {
         console.error('下载Markdown文件失败:', err);
@@ -242,6 +250,28 @@ export const FilePreview = (): JSX.Element => {
       } catch (err) {
         console.error('下载原始文件失败:', err);
       }
+    }
+  };
+
+  // 处理转换为MD
+  const handleConvertToMD = () => {
+    setShowConvertDialog(true);
+  };
+
+  // 确认转换
+  const handleConvertConfirm = async (config: ConversionConfig) => {
+    if (!file || !libraryId) return;
+    
+    const job = await convertFiles(libraryId, [file.id], config);
+    if (job) {
+      showNotification('success', '转换任务已提交，正在处理中...');
+      setShowConvertDialog(false);
+      // 刷新文件详情以获取最新状态
+      setTimeout(() => {
+        fetchFileDetails();
+      }, 2000);
+    } else {
+      showNotification('error', '转换任务提交失败');
     }
   };
 
@@ -319,12 +349,12 @@ export const FilePreview = (): JSX.Element => {
                     <Button size="sm" onClick={handleSaveName}>保存</Button>
                     <Button size="sm" variant="outline" onClick={() => {
                       setIsEditing(false);
-                      setEditName(file.filename);
+                      setEditName(file.original_filename || file.filename);
                     }}>取消</Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-[#0c141c]">{file.filename}</h1>
+                    <h1 className="text-2xl font-bold text-[#0c141c]">{file.original_filename || file.filename}</h1>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -348,11 +378,6 @@ export const FilePreview = (): JSX.Element => {
                 <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(file.process_status)}`}>
                   {getStatusLabel(file.process_status)}
                 </span>
-                {file.process_status === 'completed' && (
-                  <span className="px-3 py-1 rounded-full text-sm font-medium border text-green-600 bg-green-50 border-green-200">
-                    质量评分: {getQualityScore(file)}/10
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -367,6 +392,16 @@ export const FilePreview = (): JSX.Element => {
                 下载MD
               </Button>
             )}
+            {/* 转换为MD按钮 */}
+            <Button 
+              variant="outline" 
+              className="border-[#1977e5] text-[#1977e5] hover:bg-[#1977e5] hover:text-white"
+              onClick={handleConvertToMD}
+              disabled={convertLoading}
+            >
+              <FileEditIcon className="w-4 h-4 mr-2" />
+              {convertLoading ? '转换中...' : '转换为MD'}
+            </Button>
             <Button variant="outline" className="border-[#d1dbe8]" onClick={handleDownloadOriginal}>
               <DownloadIcon className="w-4 h-4 mr-2" />
               下载原文件
@@ -514,12 +549,7 @@ export const FilePreview = (): JSX.Element => {
                     {file.word_count && file.word_count > 1000 ? '高' : '中等'}
                   </span>
                 </div>
-                <div className="pt-2 border-t border-[#e8edf2]">
-                  <div className="flex justify-between">
-                    <span className="text-[#4f7096] font-medium">综合评分</span>
-                    <span className="text-[#1977e5] font-bold">{getQualityScore(file)}/10</span>
-                  </div>
-                </div>
+
               </div>
             </Card>
           </div>
@@ -562,7 +592,7 @@ export const FilePreview = (): JSX.Element => {
               ) : previewMethod === 'image' ? (
                 <img 
                   src={originalContent} 
-                  alt={file.filename} 
+                  alt={file.original_filename || file.filename} 
                   style={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', margin: 'auto', border: '1px solid #e8edf2', objectFit: 'contain' }} 
                   onError={() => {
                       setPreviewMethod('unsupported');
@@ -662,7 +692,7 @@ export const FilePreview = (): JSX.Element => {
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-[#4f7096]">文件名</label>
-                  <div className="text-[#0c141c]">{file.filename}</div>
+                  <div className="text-[#0c141c]">{file.original_filename || file.filename}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-[#4f7096]">原始文件名</label>
@@ -713,6 +743,35 @@ export const FilePreview = (): JSX.Element => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* 转换为MD弹窗 */}
+      {showConvertDialog && file && (
+        <ConvertToMarkdownDialog
+          open={showConvertDialog}
+          onClose={() => setShowConvertDialog(false)}
+          files={[file]}
+          onConfirm={handleConvertConfirm}
+          loading={convertLoading}
+        />
+      )}
+
+      {/* 通知组件 */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          notification.type === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        } border`}>
+          <div className="flex items-center">
+            {notification.type === 'success' ? (
+              <CheckCircleIcon className="w-5 h-5 mr-2" />
+            ) : (
+              <AlertCircleIcon className="w-5 h-5 mr-2" />
+            )}
+            {notification.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

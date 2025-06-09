@@ -57,6 +57,12 @@ export interface AIModel {
   speed: 'fast' | 'medium' | 'variable';
 }
 
+export interface TaskInfo {
+  taskId: number;
+  datasetId: number;
+  datasetName: string;
+}
+
 export interface SmartDatasetCreatorState {
   // 步骤状态
   currentStep: number;
@@ -71,6 +77,9 @@ export interface SmartDatasetCreatorState {
   datasetDescription: string;
   processingConfig: ProcessingConfig;
   availableLLMConfigs: LLMConfig[];
+  
+  // 任务状态
+  taskInfo: TaskInfo | null;
   
   // UI状态
   isLoading: boolean;
@@ -121,6 +130,9 @@ export interface SmartDatasetCreatorActions {
   setError: (error: string | null) => void;
   setShowFormatDetails: (show: boolean) => void;
   setSelectedFormat: (format: string | null) => void;
+  
+  // 任务管理
+  setTaskInfo: (taskInfo: TaskInfo | null) => void;
   
   // 业务逻辑
   resetState: () => void;

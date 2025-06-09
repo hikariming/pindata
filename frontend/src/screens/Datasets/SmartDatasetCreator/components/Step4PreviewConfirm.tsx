@@ -42,10 +42,7 @@ export const Step4PreviewConfirm: React.FC = () => {
   
   // 数据集生成相关状态
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState<any>(null);
-  const [generationResult, setGenerationResult] = useState<any>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [taskId, setTaskId] = useState<number | null>(null);
   
   const {
     selectedFiles,
@@ -291,8 +288,6 @@ export const Step4PreviewConfirm: React.FC = () => {
     try {
       setIsGenerating(true);
       setGenerationError(null);
-      setGenerationResult(null);
-      setGenerationStatus(null);
 
       // 首先创建数据集
       const datasetResponse = await fetch(`${config.apiBaseUrl}/datasets`, {
@@ -350,69 +345,22 @@ export const Step4PreviewConfirm: React.FC = () => {
       }
 
       const generateResult = await generateResponse.json();
-      setTaskId(generateResult.task_id);
+      
+      // 保存任务信息到store
+      useSmartDatasetCreatorStore.getState().setTaskInfo({
+        taskId: generateResult.task_id,
+        datasetId: dataset.id,
+        datasetName: datasetName
+      });
 
-      // 开始轮询任务状态
-      pollGenerationStatus(dataset.id);
+      // 直接跳转到Step5
+      useSmartDatasetCreatorStore.getState().setCurrentStep(5);
 
     } catch (error: any) {
       console.error('生成数据集失败:', error);
       setGenerationError(error.message || '生成数据集失败');
       setIsGenerating(false);
     }
-  };
-
-  const pollGenerationStatus = async (datasetId: number) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await fetch(`${config.apiBaseUrl}/datasets/${datasetId}/generation-status`);
-        if (!response.ok) {
-          throw new Error('获取生成状态失败');
-        }
-
-        const statusData = await response.json();
-        const task = statusData.task;
-        const celeryStatus = statusData.celery_status;
-
-        // 更新状态
-        if (celeryStatus.info) {
-          setGenerationStatus(celeryStatus.info);
-        }
-
-        // 检查任务是否完成
-        if (task.status === 'completed') {
-          clearInterval(pollInterval);
-          setIsGenerating(false);
-          setGenerationResult(task.result);
-        } else if (task.status === 'failed') {
-          clearInterval(pollInterval);
-          setIsGenerating(false);
-          setGenerationError(task.error_message || '数据集生成失败');
-        }
-
-      } catch (error: any) {
-        console.error('轮询状态失败:', error);
-        clearInterval(pollInterval);
-        setIsGenerating(false);
-        setGenerationError('获取生成状态失败');
-      }
-    }, 2000); // 每2秒轮询一次
-
-    // 设置超时，避免无限轮询
-    setTimeout(() => {
-      clearInterval(pollInterval);
-      if (isGenerating) {
-        setIsGenerating(false);
-        setGenerationError('生成超时，请检查任务状态');
-      }
-    }, 30 * 60 * 1000); // 30分钟超时
-  };
-
-  const handleStartNewGeneration = () => {
-    setGenerationResult(null);
-    setGenerationError(null);
-    setGenerationStatus(null);
-    setTaskId(null);
   };
 
   const handleRetryGeneration = () => {
@@ -993,100 +941,7 @@ export const Step4PreviewConfirm: React.FC = () => {
             </div>
           )}
 
-          {/* 生成进度 */}
-          {isGenerating && generationStatus && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">数据集生成中...</span>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-blue-700">进度</span>
-                  <span className="text-blue-700">
-                    {generationStatus.processed_files || 0} / {generationStatus.total_files || selectedFiles.length}
-                  </span>
-                </div>
-                <div className="w-full bg-blue-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${((generationStatus.processed_files || 0) / (generationStatus.total_files || selectedFiles.length)) * 100}%` 
-                    }}
-                  />
-                </div>
-                
-                {generationStatus.current_file && (
-                  <p className="text-sm text-blue-700">
-                    正在处理: {generationStatus.current_file}
-                  </p>
-                )}
-                
-                {generationStatus.generated_entries && (
-                  <p className="text-sm text-blue-700">
-                    已生成条目: {generationStatus.generated_entries}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* 生成完成 */}
-          {generationResult && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckIcon className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">数据集生成完成！</span>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-green-800">
-                    {generationResult.processed_files}
-                  </p>
-                  <p className="text-xs text-green-600">处理文件</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-green-800">
-                    {generationResult.total_generated_entries}
-                  </p>
-                  <p className="text-xs text-green-600">生成条目</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-green-800">
-                    {Math.round(generationResult.duration / 60)}
-                  </p>
-                  <p className="text-xs text-green-600">耗时(分钟)</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-green-800">
-                    {((generationResult.conversion_results?.filter((r: any) => r.status === 'success').length || 0) / generationResult.processed_files * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-xs text-green-600">成功率</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.href = `/datasets/${generationResult.dataset_id}`}
-                  className="border-green-300 text-green-700 hover:bg-green-100"
-                >
-                  查看数据集
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleStartNewGeneration}
-                  className="border-green-300 text-green-700 hover:bg-green-100"
-                >
-                  生成新数据集
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* 生成失败 */}
           {generationError && (

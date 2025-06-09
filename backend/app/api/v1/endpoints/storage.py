@@ -13,6 +13,21 @@ logger = logging.getLogger(__name__)
 storage_bp = Blueprint('storage', __name__)
 api = Api(storage_bp)
 
+def safe_filename_for_disposition(filename):
+    """
+    安全地编码文件名用于 Content-Disposition 响应头
+    处理中文字符，避免 UnicodeEncodeError
+    """
+    try:
+        # 首先尝试使用 ASCII 编码
+        filename.encode('ascii')
+        # 如果成功，直接返回
+        return f'attachment; filename="{filename}"'
+    except UnicodeEncodeError:
+        # 如果包含非 ASCII 字符，使用 RFC 2231 编码
+        encoded_filename = urllib.parse.quote(filename.encode('utf-8'))
+        return f"attachment; filename*=UTF-8''{encoded_filename}"
+
 class StorageDownloadResource(Resource):
     """存储下载资源"""
     
@@ -64,8 +79,9 @@ class StorageDownloadResource(Resource):
                 logger.error(error_msg)
                 return error_response(error_msg), 404
             
-            # 获取文件扩展名
+            # 获取文件扩展名和基础文件名
             file_ext = os.path.splitext(object_name)[1].lower()
+            base_filename = os.path.basename(object_name)
             
             # 设置MIME类型
             mime_types = {
@@ -90,26 +106,28 @@ class StorageDownloadResource(Resource):
                 
                 response = make_response(content)
                 response.headers['Content-Type'] = content_type
-                response.headers['Content-Disposition'] = f'attachment; filename="{os.path.basename(object_name)}"'
+                response.headers['Content-Disposition'] = safe_filename_for_disposition(base_filename)
                 return response
             else:
                 # 其他文件以二进制形式返回
-                response = send_file(
-                    downloaded_file,
-                    mimetype=content_type,
-                    as_attachment=True,
-                    download_name=os.path.basename(object_name)
-                )
-                
-                # 注册清理函数
-                @response.call_on_close
-                def cleanup():
+                # 为了避免 send_file 的中文文件名问题，我们手动构建响应
+                try:
+                    with open(downloaded_file, 'rb') as f:
+                        file_data = f.read()
+                    os.unlink(downloaded_file)
+                    
+                    response = make_response(file_data)
+                    response.headers['Content-Type'] = content_type
+                    response.headers['Content-Disposition'] = safe_filename_for_disposition(base_filename)
+                    return response
+                except Exception as e:
+                    # 如果手动处理失败，回退到 send_file（不过先清理临时文件）
                     try:
                         os.unlink(downloaded_file)
                     except:
                         pass
-                
-                return response
+                    logger.error(f"手动处理文件失败，错误: {str(e)}")
+                    raise
                 
         except Exception as e:
             logger.error(f"下载文件失败: {str(e)}")

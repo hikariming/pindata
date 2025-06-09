@@ -170,20 +170,20 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
     try {
       // 使用真实的 API 上传
       const uploadResults = [];
+      const successFiles: File[] = [];
+      
       for (const uploadFile of validFiles) {
         try {
           const result = await realUpload(uploadFile);
           uploadResults.push(...result);
+          // 上传成功后记录文件
+          successFiles.push(uploadFile.file);
         } catch (error) {
           console.error(`上传文件 ${uploadFile.file.name} 失败:`, error);
         }
       }
       
-      // 调用上传回调，传递原始文件列表
-      const successFiles = validFiles.filter(uf => 
-        uploadFiles.find(f => f.id === uf.id)?.status === 'success'
-      ).map(uf => uf.file);
-      
+      // 只有当有成功上传的文件时才调用回调
       if (successFiles.length > 0) {
         onUpload(successFiles);
       }

@@ -32,6 +32,9 @@ const initialState: SmartDatasetCreatorState = {
   },
   availableLLMConfigs: [],
   
+  // 任务状态
+  taskInfo: null,
+  
   // UI状态
   isLoading: false,
   loadingFiles: false,
@@ -209,7 +212,7 @@ export const useSmartDatasetCreatorStore = create<SmartDatasetCreatorState & Sma
           // 选中整个集合：添加所有MD文件到选中列表
           const newFiles: SelectedFile[] = collection.markdownFiles.map(file => ({
             id: file.id,
-            name: file.filename,
+            name: file.original_filename || file.filename,
             path: file.minio_object_name,
             size: file.file_size,
             type: 'markdown',
@@ -249,7 +252,7 @@ export const useSmartDatasetCreatorStore = create<SmartDatasetCreatorState & Sma
           if (!updatedSelectedFiles.find(f => f.id === fileId)) {
             const newFile: SelectedFile = {
               id: file.id,
-              name: file.filename,
+              name: file.original_filename || file.filename,
               path: file.minio_object_name,
               size: file.file_size,
               type: 'markdown',
@@ -603,6 +606,11 @@ ${formatDetails.example}
 
       setSelectedFormat: (format: string | null) => {
         set({ selectedFormat: format });
+      },
+
+      // 任务管理
+      setTaskInfo: (taskInfo) => {
+        set({ taskInfo });
       },
 
       // 业务逻辑

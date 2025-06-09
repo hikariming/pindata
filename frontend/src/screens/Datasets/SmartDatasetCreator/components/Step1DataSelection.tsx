@@ -148,7 +148,7 @@ export const Step1DataSelection: React.FC = () => {
                               />
                               <FileTextIcon className="w-4 h-4 text-[#059669]" />
                               <div className="flex-1">
-                                <div className="font-medium text-[#0c141c] text-sm">{file.filename}</div>
+                                <div className="font-medium text-[#0c141c] text-sm">{file.original_filename || file.filename}</div>
                                 <div className="text-xs text-[#4f7096]">
                                   {file.file_size_human} • 
                                   {file.process_status_label} • 

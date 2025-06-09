@@ -64,12 +64,15 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
     setTimeout(() => setNotification(null), 3000); // 3秒后自动隐藏
   };
 
-  const handleUpload = (files: File[]) => {
+  const handleUpload = async (files: File[]) => {
     console.log('上传文件:', files);
     setShowUpload(false);
-    // 刷新文件列表
-    refreshFiles();
     showNotification('success', `成功上传 ${files.length} 个文件`);
+    
+    // 延迟一点时间后刷新文件列表，确保服务器已处理完上传
+    setTimeout(() => {
+      refreshFiles();
+    }, 1000);
   };
 
   const handleDeleteFile = async (fileId: string, fileName: string) => {
