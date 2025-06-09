@@ -72,6 +72,7 @@ export class DatasetService {
 
   /**
    * 获取数据集版本列表
+   * @deprecated 使用 enhancedDatasetService.getVersionTree() 替代
    */
   static async getDatasetVersions(datasetId: string | number): Promise<DatasetVersion[]> {
     const response = await apiClient.get<DatasetVersion[]>(`/api/v1/datasets/${datasetId}/versions`);
@@ -80,6 +81,7 @@ export class DatasetService {
 
   /**
    * 创建数据集版本
+   * @deprecated 使用 enhancedDatasetService.createDatasetVersion() 替代
    */
   static async createDatasetVersion(
     datasetId: string | number,
