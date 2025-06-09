@@ -158,7 +158,6 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp config.example.env .env
-python migrations/init_db.py
 python run.py
 
 # Frontend development (new terminal)
