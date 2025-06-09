@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { ArrowLeftIcon, WandIcon } from 'lucide-react';
@@ -15,6 +16,7 @@ import {
 } from './components';
 
 export const SmartDatasetCreator: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentStep, progress, resetState } = useSmartDatasetCreatorStore();
 
@@ -61,7 +63,7 @@ export const SmartDatasetCreator: React.FC = () => {
         <Link to="/datasets">
           <Button variant="outline" className="border-[#d1dbe8] flex items-center gap-2">
             <ArrowLeftIcon className="w-4 h-4" />
-            返回数据集列表
+            {t('datasets.create.backToList')}
           </Button>
         </Link>
       </div>
@@ -70,10 +72,10 @@ export const SmartDatasetCreator: React.FC = () => {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <WandIcon className="w-8 h-8 text-[#1977e5]" />
-          <h1 className="text-2xl font-bold text-[#0c141c]">智能数据集创建器</h1>
+          <h1 className="text-2xl font-bold text-[#0c141c]">{t('smartDatasetCreator.title')}</h1>
         </div>
         <p className="text-[#4f7096] text-lg max-w-3xl">
-          使用AI技术从原始数据自动生成高质量的训练数据集，支持多种数据集类型和格式。
+          {t('smartDatasetCreator.description')}
         </p>
       </div>
 

@@ -61,7 +61,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
       setCurrentVersion(preview.version);
     } catch (err) {
       console.error('获取数据集详情失败:', err);
-      setError(err instanceof Error ? err.message : '获取数据集详情失败');
+      setError(err instanceof Error ? err.message : t('datasets.error'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
       setCurrentVersion(newPreviewData.version);
     } catch (err) {
       console.error('版本切换失败:', err);
-      setError(err instanceof Error ? err.message : '版本切换失败');
+      setError(err instanceof Error ? err.message : t('datasets.error'));
     }
   };
 
@@ -154,7 +154,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
       <div className="w-full max-w-[1200px] p-6">
         <div className="flex items-center justify-center py-12">
           <Loader2Icon className="w-8 h-8 animate-spin text-[#1977e5]" />
-          <span className="ml-2 text-[#4f7096]">加载中...</span>
+          <span className="ml-2 text-[#4f7096]">{t('datasets.loading')}</span>
         </div>
       </div>
     );
@@ -171,7 +171,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
             className="ml-4"
             onClick={fetchDatasetDetail}
           >
-            重试
+            {t('datasets.retry')}
           </Button>
         </div>
       </div>
@@ -182,7 +182,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
     return (
       <div className="w-full max-w-[1200px] p-6">
         <div className="flex items-center justify-center py-12">
-          <span className="text-[#4f7096]">数据集不存在</span>
+          <span className="text-[#4f7096]">{t('datasets.noDatasets')}</span>
         </div>
       </div>
     );
@@ -195,7 +195,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
         <Link to="/datasets">
           <Button variant="outline" size="sm">
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
-            返回列表
+            {t('datasets.detail.backToList')}
           </Button>
         </Link>
         <div className="flex items-center gap-3">
@@ -204,7 +204,7 @@ export const DatasetDetailScreen = (): JSX.Element => {
             {dataset.owner}/{dataset.name}
           </h1>
           {dataset.featured && (
-            <Badge className="bg-[#ff6b35] text-white">推荐</Badge>
+            <Badge className="bg-[#ff6b35] text-white">{t('datasets.recommended')}</Badge>
           )}
         </div>
       </div>
@@ -214,19 +214,19 @@ export const DatasetDetailScreen = (): JSX.Element => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="preview" className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
-            数据预览
+            {t('datasets.detail.dataPreview')}
           </TabsTrigger>
           <TabsTrigger value="versions" className="flex items-center gap-2">
             <GitBranchIcon className="w-4 h-4" />
-            版本管理
+            {t('datasets.detail.versionManagement')}
           </TabsTrigger>
           <TabsTrigger value="info" className="flex items-center gap-2">
             <Info className="w-4 h-4" />
-            详细信息
+            {t('datasets.detail.detailInfo')}
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
-            设置
+            {t('datasets.detail.settings')}
           </TabsTrigger>
         </TabsList>
 
@@ -253,38 +253,38 @@ export const DatasetDetailScreen = (): JSX.Element => {
 
         <TabsContent value="info" className="space-y-4">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">数据集详细信息</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('datasets.detail.detailInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">数据集ID</label>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.datasetId')}</label>
                   <p className="mt-1">{dataset.id}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">名称</label>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.name')}</label>
                   <p className="mt-1">{dataset.name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">状态</label>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.status')}</label>
                   <p className="mt-1">
                     <Badge variant="default">
-                      已发布
+                      {t('datasets.detail.published')}
                     </Badge>
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">创建时间</label>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.createdAt')}</label>
                   <p className="mt-1">{dataset.created_at ? new Date(dataset.created_at).toLocaleString('zh-CN') : dataset.created}</p>
                 </div>
               </div>
               
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">当前版本</label>
-                  <p className="mt-1">{currentVersion?.version || '暂无版本'}</p>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.currentVersion')}</label>
+                  <p className="mt-1">{currentVersion?.version || t('datasets.detail.noVersion')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">版本类型</label>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.versionType')}</label>
                   <p className="mt-1">
                     {currentVersion && (
                       <Badge variant="outline">
@@ -294,11 +294,11 @@ export const DatasetDetailScreen = (): JSX.Element => {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">文件数量</label>
-                  <p className="mt-1">{currentVersion?.file_count || 0} 个文件</p>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.fileCount')}</label>
+                  <p className="mt-1">{currentVersion?.file_count || 0} {t('datasets.detail.files')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">总大小</label>
+                  <label className="text-sm font-medium text-gray-600">{t('datasets.detail.totalSize')}</label>
                   <p className="mt-1">{currentVersion?.total_size_formatted || '0B'}</p>
                 </div>
               </div>
@@ -306,26 +306,26 @@ export const DatasetDetailScreen = (): JSX.Element => {
 
             {dataset.description && (
               <div className="mt-6">
-                <label className="text-sm font-medium text-gray-600">描述</label>
+                <label className="text-sm font-medium text-gray-600">{t('datasets.detail.description')}</label>
                 <p className="mt-2 text-gray-700">{dataset.description}</p>
               </div>
             )}
 
             {currentVersion && (
               <div className="mt-6">
-                <label className="text-sm font-medium text-gray-600">版本信息</label>
+                <label className="text-sm font-medium text-gray-600">{t('datasets.detail.versionInfo')}</label>
                 <div className="mt-2 p-4 bg-gray-50 rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">提交哈希:</span>
+                      <span className="font-medium">{t('datasets.detail.commitHash')}:</span>
                       <span className="ml-2 font-mono">{currentVersion.commit_hash}</span>
                     </div>
                     <div>
-                      <span className="font-medium">作者:</span>
+                      <span className="font-medium">{t('datasets.detail.author')}:</span>
                       <span className="ml-2">{currentVersion.author}</span>
                     </div>
                     <div className="md:col-span-2">
-                      <span className="font-medium">提交信息:</span>
+                      <span className="font-medium">{t('datasets.detail.commitMessage')}:</span>
                       <span className="ml-2">{currentVersion.commit_message}</span>
                     </div>
                   </div>
@@ -337,9 +337,9 @@ export const DatasetDetailScreen = (): JSX.Element => {
 
         <TabsContent value="settings" className="space-y-4">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">数据集设置</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('datasets.detail.settings')}</h3>
             <div className="text-gray-500">
-              设置功能开发中...
+              {t('datasets.detail.settingsInDevelopment')}
             </div>
           </Card>
         </TabsContent>

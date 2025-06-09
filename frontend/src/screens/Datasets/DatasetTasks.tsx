@@ -158,11 +158,11 @@ export const DatasetTasks = (): JSX.Element => {
     };
 
     const labels = {
-      pending: '等待中',
-      running: '进行中',
-      completed: '已完成',
-      failed: '失败',
-      paused: '已暂停'
+      pending: t('datasets.tasks.pending'),
+      running: t('datasets.tasks.running'),
+      completed: t('datasets.tasks.completed'),
+      failed: t('datasets.tasks.failed'),
+      paused: t('datasets.tasks.paused')
     };
 
     return (
@@ -187,9 +187,9 @@ export const DatasetTasks = (): JSX.Element => {
 
   const getTypeLabel = (type: DatasetTask['type']) => {
     const labels = {
-      extract: '文件提取',
-      download: '网络下载',
-      distill: '模型蒸馏'
+      extract: t('datasets.tasks.fileExtraction'),
+      download: t('datasets.tasks.networkDownload'),
+      distill: t('datasets.tasks.modelDistillation')
     };
     return labels[type];
   };
@@ -205,11 +205,11 @@ export const DatasetTasks = (): JSX.Element => {
     const diffMins = Math.round(diffMs / 60000);
     
     if (diffMins < 60) {
-      return `${diffMins} 分钟`;
+      return t('datasets.tasks.minutes', { count: diffMins });
     } else {
       const hours = Math.floor(diffMins / 60);
       const mins = diffMins % 60;
-      return `${hours} 小时 ${mins} 分钟`;
+      return t('datasets.tasks.hours', { count: hours, mins });
     }
   };
 
@@ -230,7 +230,7 @@ export const DatasetTasks = (): JSX.Element => {
         <Link to="/datasets">
           <Button variant="outline" className="border-[#d1dbe8] flex items-center gap-2">
             <ArrowLeftIcon className="w-4 h-4" />
-            返回数据集列表
+            {t('datasets.tasks.backToList')}
           </Button>
         </Link>
       </div>
@@ -241,15 +241,15 @@ export const DatasetTasks = (): JSX.Element => {
           <div className="flex items-center gap-3">
             <DatabaseIcon className="w-8 h-8 text-[#1977e5]" />
             <div>
-              <h1 className="text-2xl font-bold text-[#0c141c]">数据集任务</h1>
+              <h1 className="text-2xl font-bold text-[#0c141c]">{t('datasets.tasks.title')}</h1>
               <p className="text-[#4f7096] text-lg">
-                监控和管理数据集创建任务的进度
+                {t('datasets.tasks.subtitle')}
               </p>
             </div>
           </div>
           <Button className="bg-[#1977e5] hover:bg-[#1565c0] flex items-center gap-2">
             <RefreshCw className="w-4 h-4" />
-            刷新状态
+            {t('datasets.tasks.refreshStatus')}
           </Button>
         </div>
       </div>
@@ -262,7 +262,7 @@ export const DatasetTasks = (): JSX.Element => {
               <LoaderIcon className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-[#4f7096]">进行中</p>
+              <p className="text-sm text-[#4f7096]">{t('datasets.tasks.running')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {tasks.filter(t => t.status === 'running').length}
               </p>
@@ -276,7 +276,7 @@ export const DatasetTasks = (): JSX.Element => {
               <CheckCircleIcon className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-[#4f7096]">已完成</p>
+              <p className="text-sm text-[#4f7096]">{t('datasets.tasks.completed')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {tasks.filter(t => t.status === 'completed').length}
               </p>
@@ -290,7 +290,7 @@ export const DatasetTasks = (): JSX.Element => {
               <ClockIcon className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-[#4f7096]">等待中</p>
+              <p className="text-sm text-[#4f7096]">{t('datasets.tasks.pending')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {tasks.filter(t => t.status === 'pending').length}
               </p>
@@ -304,7 +304,7 @@ export const DatasetTasks = (): JSX.Element => {
               <XCircleIcon className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-[#4f7096]">失败</p>
+              <p className="text-sm text-[#4f7096]">{t('datasets.tasks.failed')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {tasks.filter(t => t.status === 'failed').length}
               </p>
@@ -316,11 +316,11 @@ export const DatasetTasks = (): JSX.Element => {
       {/* 任务列表 */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="all">全部任务</TabsTrigger>
-          <TabsTrigger value="running">进行中</TabsTrigger>
-          <TabsTrigger value="completed">已完成</TabsTrigger>
-          <TabsTrigger value="failed">失败</TabsTrigger>
-          <TabsTrigger value="pending">等待中</TabsTrigger>
+          <TabsTrigger value="all">{t('datasets.tasks.allTasks')}</TabsTrigger>
+          <TabsTrigger value="running">{t('datasets.tasks.running')}</TabsTrigger>
+          <TabsTrigger value="completed">{t('datasets.tasks.completed')}</TabsTrigger>
+          <TabsTrigger value="failed">{t('datasets.tasks.failed')}</TabsTrigger>
+          <TabsTrigger value="pending">{t('datasets.tasks.pending')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
@@ -329,12 +329,12 @@ export const DatasetTasks = (): JSX.Element => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>任务信息</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>进度</TableHead>
-                    <TableHead>时间</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('datasets.tasks.taskInfo')}</TableHead>
+                    <TableHead>{t('datasets.tasks.type')}</TableHead>
+                    <TableHead>{t('datasets.tasks.status')}</TableHead>
+                    <TableHead>{t('datasets.tasks.progress')}</TableHead>
+                    <TableHead>{t('datasets.tasks.time')}</TableHead>
+                    <TableHead>{t('datasets.tasks.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -352,7 +352,7 @@ export const DatasetTasks = (): JSX.Element => {
                           </div>
                           {task.errorMessage && (
                             <div className="text-sm text-red-600 mt-1">
-                              错误: {task.errorMessage}
+                              {t('datasets.tasks.error')}: {task.errorMessage}
                             </div>
                           )}
                         </div>
@@ -398,20 +398,20 @@ export const DatasetTasks = (): JSX.Element => {
                       
                       <TableCell>
                         <div className="text-sm space-y-1">
-                          <div>开始: {formatTime(task.startTime)}</div>
+                          <div>{t('datasets.tasks.startTime')}: {formatTime(task.startTime)}</div>
                           {task.completedTime && (
                             <div className="text-green-600">
-                              完成: {formatTime(task.completedTime)}
+                              {t('datasets.tasks.completedTime')}: {formatTime(task.completedTime)}
                             </div>
                           )}
                           {task.estimatedTime && task.status === 'running' && (
                             <div className="text-[#4f7096]">
-                              预计: {formatTime(task.estimatedTime)}
+                              {t('datasets.tasks.estimatedTime')}: {formatTime(task.estimatedTime)}
                             </div>
                           )}
                           {task.completedTime && (
                             <div className="text-[#4f7096]">
-                              耗时: {calculateDuration(task.startTime, task.completedTime)}
+                              {t('datasets.tasks.duration')}: {calculateDuration(task.startTime, task.completedTime)}
                             </div>
                           )}
                         </div>
@@ -435,36 +435,36 @@ export const DatasetTasks = (): JSX.Element => {
                               {task.status === 'running' && (
                                 <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'pause')}>
                                   <PauseIcon className="w-4 h-4 mr-2" />
-                                  暂停
+                                  {t('datasets.tasks.pause')}
                                 </DropdownMenuItem>
                               )}
                               {task.status === 'paused' && (
                                 <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'resume')}>
                                   <PlayIcon className="w-4 h-4 mr-2" />
-                                  继续
+                                  {t('datasets.tasks.resume')}
                                 </DropdownMenuItem>
                               )}
                               {(task.status === 'running' || task.status === 'paused') && (
                                 <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'stop')}>
                                   <Square className="w-4 h-4 mr-2" />
-                                  停止
+                                  {t('datasets.tasks.stop')}
                                 </DropdownMenuItem>
                               )}
                               {task.status === 'failed' && (
                                 <DropdownMenuItem onClick={() => handleTaskAction(task.id, 'retry')}>
                                   <RefreshCw className="w-4 h-4 mr-2" />
-                                  重试
+                                  {t('datasets.tasks.retry')}
                                 </DropdownMenuItem>
                               )}
                               {task.status === 'completed' && (
                                 <DropdownMenuItem>
                                   <DownloadIcon className="w-4 h-4 mr-2" />
-                                  下载结果
+                                  {t('datasets.tasks.downloadResult')}
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem className="text-red-600">
                                 <TrashIcon className="w-4 h-4 mr-2" />
-                                删除任务
+                                {t('datasets.tasks.deleteTask')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -477,7 +477,7 @@ export const DatasetTasks = (): JSX.Element => {
               
               {filteredTasks.length === 0 && (
                 <div className="text-center py-8 text-[#4f7096]">
-                  暂无{activeTab === 'all' ? '' : getStatusBadge(activeTab as any).props.children}任务
+                  {t('datasets.tasks.noTasks', { status: activeTab === 'all' ? '' : activeTab })}
                 </div>
               )}
             </div>
