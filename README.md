@@ -1,3 +1,5 @@
+
+
 <div align="center">
 
 # 🔮 PinData
@@ -22,6 +24,9 @@
 ---
 
 ## ✨ What is PinData?
+
+
+![PinData Poster](./poster.png)
 
 PinData is a **modern, open-source dataset management platform** designed specifically for large language model (LLM) training workflows. It simplifies the process of converting raw documents into structured training datasets, supporting document-to-markdown conversion and intelligent dataset generation.
 
@@ -101,9 +106,6 @@ cd pindata
 
 # Start all services
 docker-compose up -d
-
-# Wait for services to initialize (30-60 seconds)
-docker-compose logs -f backend
 
 # Access the application
 open http://localhost:3000

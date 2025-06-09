@@ -4,7 +4,7 @@
 
 [![English](https://img.shields.io/badge/Lang-English-blue)](README.md) | [![中文](https://img.shields.io/badge/Lang-中文-red)](README_CN.md)
 
-*面向大语言模型的智能数据集管理平台*
+*面向大语言模型训练数据的智能数据集管理平台*
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8+-green.svg)
@@ -23,13 +23,16 @@
 
 ## ✨ 什么是 PinData？
 
-PinData 是一个专为大语言模型（LLM）训练工作流设计的**现代化开源数据集管理平台**。它通过直观的流水线方法，将从原始文档到结构化训练数据的复杂准备过程变得简单高效。
+![PinData Poster](./poster.png)
+
+PinData 是一个专为大语言模型（LLM）训练工作流设计的**现代化开源数据集管理平台**。它简化了将原始文档转换为结构化训练数据集的过程，支持文档到 Markdown 的转换和智能数据集生成。
 
 ### 🎯 为什么选择 PinData？
 
-- **📚 多格式支持**：智能处理 DOCX、PPTX、PDF 文件，提取高质量文本
-- **🔌 插件生态系统**：可扩展架构，支持自定义解析器、清洗器和蒸馏器
+- **📚 多格式支持**：智能处理 DOCX、PPTX、PDF 文件，提取高质量文本转为 Markdown
+- **🤖 智能数据集生成**：通过 LLM 集成将处理后的内容转换为训练就绪格式
 - **📊 Git 风格版本控制**：完整的数据集血缘追踪，支持版本比较和回滚
+- **🔗 多平台集成**：支持 HuggingFace、ModelScope 和其他数据平台
 - **🚀 生产就绪**：基于 Docker、Celery 和现代 Web 技术构建，具备扩展性
 
 ---
@@ -57,20 +60,19 @@ PinData 是一个专为大语言模型（LLM）训练工作流设计的**现代�
 
 ```mermaid
 graph TD
-    A[📄 原始文档] --> B[🔄 流水线引擎]
-    B --> C[🔍 解析器插件]
-    C --> D[🧹 清洗器插件]
-    D --> E[⚗️ 蒸馏器插件]
-    E --> F[📊 结构化数据集]
+    A[📄 原始文档] --> B[📝 文档解析器]
+    B --> C[📋 Markdown 文件]
+    C --> D[🤖 LLM 蒸馏器]
+    D --> E[📊 训练数据集]
     
-    G[🎛️ Web 界面] --> H[🚀 Flask API]
-    H --> I[🗄️ PostgreSQL]
-    H --> J[📦 MinIO 存储]
-    H --> K[⏰ Celery 任务]
+    F[🎛️ Web 界面] --> G[🚀 Flask API]
+    G --> H[🗄️ PostgreSQL]
+    G --> I[📦 MinIO 存储]
+    G --> J[⏰ Celery 任务]
     
     style A fill:#e1f5fe
-    style F fill:#e8f5e8
-    style G fill:#fff3e0
+    style E fill:#e8f5e8
+    style F fill:#fff3e0
 ```
 
 ### 核心组件
@@ -81,7 +83,7 @@ graph TD
 | **API 层** | Flask + SQLAlchemy | RESTful API 与 ORM |
 | **任务队列** | Celery + Redis | 长时间运行任务的异步处理 |
 | **存储系统** | MinIO + PostgreSQL | 对象存储 + 元数据管理 |
-| **插件系统** | Python 动态加载 | 可扩展的处理流水线 |
+| **文档处理** | MarkItDown + LangChain | 文档解析和 LLM 集成 |
 
 ---
 
@@ -102,42 +104,43 @@ cd pindata
 # 启动所有服务
 docker-compose up -d
 
-# 等待服务初始化（30-60秒）
-docker-compose logs -f backend
-
 # 访问应用
 open http://localhost:3000
 ```
 
 ### 3 步创建您的第一个数据集
 
-1. **📁 上传文档**：拖拽您的 DOCX、PPTX 或 PDF 文件
-2. **⚙️ 配置流水线**：选择解析器 → 清洗器 → 蒸馏器
-3. **🎯 生成数据集**：观看文档转换为结构化训练数据
+1. **📁 上传文档**：拖拽您的 DOCX、PPTX 或 PDF 文件创建文档库
+2. **📝 转换为 Markdown**：将文档处理为干净、结构化的 Markdown 文件
+3. **🎯 生成数据集**：使用 LLM 驱动的蒸馏功能创建训练就绪的数据集
 
 ---
 
 ## 💡 核心功能
 
+### 📄 文档到 Markdown 转换
+- **多格式支持**：使用 MarkItDown 处理 DOCX、PPTX、PDF 文件
+- **智能文本提取**：智能解析并保持结构完整性
+- **批量处理**：通过异步任务高效处理多个文档
 
-### 📊 智能数据集管理
-- **版本树**：可视化数据集演进的分支和合并
-- **差异查看器**：并排比较数据集以追踪变化
-- **元数据追踪**：自动记录血缘和处理历史
+### 🤖 LLM 驱动的数据集生成
+- **智能蒸馏**：使用 LLM API 将 markdown 内容转换为训练数据集
+- **多供应商支持**：支持 OpenAI、Google Gemini、Anthropic Claude
+- **自定义格式**：生成各种格式的数据集（Alpaca、纯文本、JSON）
 
-### 🔌 可扩展插件系统（开发中）
+### 📊 数据集管理与版本控制
+- **版本控制**：Git 风格的数据集版本管理，完整血缘追踪
+- **多平台支持**：与 HuggingFace Datasets、ModelScope 集成
+- **文档库组织**：管理文档集合和衍生数据集
+
+### 🔌 可扩展架构（开发中）
 ```python
-# 创建自定义蒸馏器
+# 未来：创建自定义蒸馏器
 class MyCustomDistiller(BaseDistiller):
-    def distill(self, text_blocks, config):
-        # 您的自定义逻辑
+    def distill(self, content, config):
+        # 您的自定义处理逻辑
         return processed_data
 ```
-
-### 🌍 多格式输出
-- **纯文本**：用于通用训练的干净文本块
-- **Alpaca 格式**：用于聊天模型的指令-响应对
-- **JSON/CSV**：满足特定需求的自定义结构化格式
 
 ---
 
@@ -165,28 +168,29 @@ cd backend
 ./start_celery.sh
 ```
 
-### 自定义插件开发
+### 当前开发重点
 
-1. **创建插件**：继承 `plugins/` 中的基类
-2. **注册插件**：添加到插件注册表
-3. **测试**：使用内置测试框架
-4. **部署**：开发环境支持热重载
+项目正在积极开发核心功能：
+- 文档解析和 markdown 转换
+- LLM 集成数据集生成
+- 数据集版本管理
+- 多平台数据源集成
 
 ---
 
 ## 📊 发展路线图
 
 ### 🎯 当前版本 (1.0)
-- ✅ 文档解析（DOCX、PPTX、PDF）
-- ✅ 流水线配置和执行
+- ✅ 文档解析（DOCX、PPTX、PDF）到 Markdown
+- ✅ LLM 驱动的数据集生成
 - ✅ 数据集版本管理
 - ✅ Web 界面
-- ✅ 插件系统基础
+- ✅ 多平台数据集成（HuggingFace、ModelScope）
 
 ### 🚧 下一版本 (1.1)
-- 🔄 增强的 PDF 处理与 OCR
-- 📤 批量数据集导出/导入
-- 🎨 插件市场
+- 🔄 增强的 PDF 处理与 OCR 支持
+- 📤 高级数据集导出/导入功能
+- 🔌 自定义处理器插件系统
 - 📈 数据质量分析仪表板
 - 🔍 高级搜索和过滤
 
@@ -195,7 +199,7 @@ cd backend
 - 🤖 AI 辅助数据清洗和增强
 - ☁️ 云原生部署选项
 - 👥 团队协作功能
-- 🔗 与流行 ML 平台集成
+- 🔗 增强的 ML 平台集成
 
 ---
 
@@ -208,7 +212,7 @@ cd backend
 - ✨ **功能请求**：有好想法？我们很乐意听到！
 - 💻 **代码贡献**：为修复和功能提交拉取请求
 - 📚 **文档完善**：帮助改进我们的文档和示例
-- 🔌 **插件开发**：与社区分享您的自定义处理器
+- 🧪 **测试**：帮助测试新功能和集成
 
 ### 开始贡献
 1. Fork 仓库
@@ -235,6 +239,6 @@ PinData 是在 [Apache License 2.0](LICENSE) 下发布的开源软件。
 
 **由 PinData 团队用 ❤️ 制作**
 
-[⭐ 在 GitHub 上给我们 Star](https://github.com/yourusername/pindata) • 
+[⭐ 在 GitHub 上给我们 Star](https://github.com/yourusername/pindata)
 
 </div>
