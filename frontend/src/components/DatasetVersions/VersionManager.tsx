@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Checkbox } from '../ui/checkbox';
 import {
   GitBranch,
   GitCommit,
@@ -18,7 +19,9 @@ import {
   FileText,
   Diff,
   Plus,
-  AlertCircle
+  AlertCircle,
+  File,
+  Search
 } from 'lucide-react';
 import { enhancedDatasetService } from '../../services/enhanced-dataset.service';
 import {
@@ -27,12 +30,24 @@ import {
   CloneVersionRequest,
   VersionType
 } from '../../types/enhanced-dataset';
-import { FileSelector } from './FileSelector';
 
 interface VersionManagerProps {
   datasetId: number;
   currentVersion?: EnhancedDatasetVersion;
   onVersionChange?: (version: EnhancedDatasetVersion) => void;
+}
+
+interface DatasetFile {
+  id: string;
+  filename: string;
+  file_type: string;
+  file_size: number;
+  file_size_formatted: string;
+  version_info: {
+    version: string;
+    is_default: boolean;
+    created_at: string;
+  };
 }
 
 export const VersionManager: React.FC<VersionManagerProps> = ({
@@ -44,7 +59,10 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedExistingFileIds, setSelectedExistingFileIds] = useState<string[]>([]);
-  const [creationMode, setCreationMode] = useState<'upload' | 'existing' | 'mixed'>('upload');
+  const [availableFiles, setAvailableFiles] = useState<DatasetFile[]>([]);
+  const [fileSearchTerm, setFileSearchTerm] = useState('');
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [creationMode, setCreationMode] = useState<'upload' | 'existing'>('upload');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [cloneSourceVersion, setCloneSourceVersion] = useState<EnhancedDatasetVersion | null>(null);
@@ -69,6 +87,12 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
     loadVersions();
   }, [datasetId]);
 
+  useEffect(() => {
+    if (isCreateDialogOpen && creationMode === 'existing') {
+      loadAvailableFiles();
+    }
+  }, [isCreateDialogOpen, creationMode, datasetId]);
+
   const loadVersions = async () => {
     try {
       setLoading(true);
@@ -81,10 +105,37 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
     }
   };
 
+  const loadAvailableFiles = async () => {
+    try {
+      setLoadingFiles(true);
+      const response = await enhancedDatasetService.getAvailableFiles(datasetId, {
+        page: 1,
+        pageSize: 100, // 获取足够多的文件
+        search: fileSearchTerm || undefined
+      });
+      setAvailableFiles(response.files || []);
+    } catch (error) {
+      console.error('加载可用文件失败:', error);
+      setAvailableFiles([]);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setSelectedFiles(files);
     setCreateForm(prev => ({ ...prev, files }));
+  };
+
+  const handleExistingFileToggle = (fileId: string) => {
+    setSelectedExistingFileIds(prev => {
+      if (prev.includes(fileId)) {
+        return prev.filter(id => id !== fileId);
+      } else {
+        return [...prev, fileId];
+      }
+    });
   };
 
   const handleCreateVersion = async () => {
@@ -113,11 +164,6 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
         return;
       }
       
-      if (creationMode === 'mixed' && selectedExistingFileIds.length === 0 && selectedFiles.length === 0) {
-        alert('请选择现有文件或上传新文件');
-        return;
-      }
-      
       let newVersion: EnhancedDatasetVersion;
       
       if (creationMode === 'upload') {
@@ -126,7 +172,7 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
           datasetId,
           createForm
         );
-      } else if (creationMode === 'existing') {
+      } else {
         // 仅使用现有文件
         newVersion = await enhancedDatasetService.createVersionWithExistingFiles(
           datasetId,
@@ -136,19 +182,6 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
             author: createForm.author,
             version_type: createForm.version_type,
             existing_file_ids: selectedExistingFileIds
-          }
-        );
-      } else {
-        // 混合模式：现有文件 + 新文件
-        newVersion = await enhancedDatasetService.createVersionWithExistingFiles(
-          datasetId,
-          {
-            version: createForm.version,
-            commit_message: createForm.commit_message,
-            author: createForm.author,
-            version_type: createForm.version_type,
-            existing_file_ids: selectedExistingFileIds,
-            new_files: selectedFiles
           }
         );
       }
@@ -237,6 +270,10 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
     }
   };
 
+  const filteredFiles = availableFiles.filter(file =>
+    file.filename.toLowerCase().includes(fileSearchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       {/* 操作栏 */}
@@ -257,7 +294,7 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                   创建版本
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>创建新版本</DialogTitle>
                 </DialogHeader>
@@ -318,7 +355,7 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                   {/* 文件来源选择 */}
                   <div>
                     <label className="text-sm font-medium">文件来源</label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="grid grid-cols-2 gap-2 mt-2">
                       <Button
                         type="button"
                         variant={creationMode === 'upload' ? 'default' : 'outline'}
@@ -335,42 +372,88 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                       >
                         选择现有文件
                       </Button>
-                      <Button
-                        type="button"
-                        variant={creationMode === 'mixed' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setCreationMode('mixed')}
-                      >
-                        混合模式
-                      </Button>
                     </div>
                   </div>
                   
-                  {/* 现有文件选择器 */}
-                  {(creationMode === 'existing' || creationMode === 'mixed') && (
+                  {/* 现有文件选择 */}
+                  {creationMode === 'existing' && (
                     <div>
                       <label className="text-sm font-medium">选择现有文件</label>
-                      <div className="mt-2">
-                        <FileSelector
-                          datasetId={datasetId}
-                          selectedFileIds={selectedExistingFileIds}
-                          onSelectionChange={setSelectedExistingFileIds}
-                          inline={true}
-                        />
-                        {selectedExistingFileIds.length > 0 && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            已选择 {selectedExistingFileIds.length} 个现有文件
+                      
+                      {/* 搜索框 */}
+                      <div className="mt-2 mb-3">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <Input
+                            placeholder="搜索文件..."
+                            value={fileSearchTerm}
+                            onChange={(e) => {
+                              setFileSearchTerm(e.target.value);
+                              if (e.target.value !== fileSearchTerm) {
+                                // 重新加载文件以应用搜索
+                                setTimeout(() => loadAvailableFiles(), 300);
+                              }
+                            }}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* 文件列表 */}
+                      <div className="border rounded-lg max-h-60 overflow-y-auto">
+                        {loadingFiles ? (
+                          <div className="p-4 text-center text-gray-500">
+                            加载文件列表...
+                          </div>
+                        ) : filteredFiles.length === 0 ? (
+                          <div className="p-4 text-center text-gray-500">
+                            {fileSearchTerm ? '未找到匹配的文件' : '暂无可用文件'}
+                          </div>
+                        ) : (
+                          <div className="p-2 space-y-1">
+                            {filteredFiles.map((file) => (
+                              <div
+                                key={file.id}
+                                className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                              >
+                                <Checkbox
+                                  id={`file-${file.id}`}
+                                  checked={selectedExistingFileIds.includes(file.id)}
+                                  onCheckedChange={() => handleExistingFileToggle(file.id)}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2">
+                                    <File className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-sm font-medium truncate">
+                                      {file.filename}
+                                    </span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {file.file_type}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {file.file_size_formatted} · 来源版本: {file.version_info.version}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
+                      
+                      {selectedExistingFileIds.length > 0 && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          已选择 {selectedExistingFileIds.length} 个文件
+                        </div>
+                      )}
                     </div>
                   )}
                   
                   {/* 新文件上传 */}
-                  {(creationMode === 'upload' || creationMode === 'mixed') && (
+                  {creationMode === 'upload' && (
                     <div>
                       <label htmlFor="files" className="text-sm font-medium">
-                        {creationMode === 'mixed' ? '上传额外文件' : '上传文件'}
+                        上传文件 <span className="text-red-500">*</span>
                       </label>
                       <Input
                         id="files"
@@ -379,19 +462,23 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                         onChange={handleFileSelect}
                       />
                       {selectedFiles.length > 0 && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          已选择 {selectedFiles.length} 个新文件
+                        <div className="mt-2">
+                          <div className="text-sm text-gray-600 mb-2">
+                            已选择 {selectedFiles.length} 个文件:
+                          </div>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {selectedFiles.map((file, index) => (
+                              <div key={index} className="flex items-center space-x-2 text-sm">
+                                <File className="w-4 h-4 text-gray-400" />
+                                <span className="truncate">{file.name}</span>
+                                <span className="text-gray-500">
+                                  ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                    </div>
-                  )}
-
-                  {/* 文件总计 */}
-                  {(selectedFiles.length > 0 || selectedExistingFileIds.length > 0) && (
-                    <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      总计: {selectedFiles.length + selectedExistingFileIds.length} 个文件
-                      {selectedExistingFileIds.length > 0 && ` (现有: ${selectedExistingFileIds.length})`}
-                      {selectedFiles.length > 0 && ` (新增: ${selectedFiles.length})`}
                     </div>
                   )}
                   
@@ -401,7 +488,14 @@ export const VersionManager: React.FC<VersionManagerProps> = ({
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => setIsCreateDialogOpen(false)}
+                      onClick={() => {
+                        setIsCreateDialogOpen(false);
+                        // 重置状态
+                        setSelectedFiles([]);
+                        setSelectedExistingFileIds([]);
+                        setFileSearchTerm('');
+                        setCreationMode('upload');
+                      }}
                     >
                       取消
                     </Button>
