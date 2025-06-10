@@ -98,10 +98,11 @@ graph TD
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/pindata.git
+git clone https://github.com/hikariming/pindata.git
 cd pindata
 
 # 启动所有服务
+cd docker
 docker-compose up -d
 
 # 访问应用
