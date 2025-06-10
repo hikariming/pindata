@@ -227,6 +227,8 @@ cd backend
 
 PinData 是在 [Apache License 2.0](LICENSE) 下发布的开源软件。
 
+![微信群](./wechat_2025-06-10_175702_266.png)
+
 ---
 
 ## 🌟 Star 历史

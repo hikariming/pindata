@@ -237,6 +237,8 @@ PinData is open source software licensed under the [Apache License 2.0](LICENSE)
 
 ---
 
+![微信群](./wechat_2025-06-10_175702_266.png)
+
 <div align="center">
 
 **Made with ❤️ by the PinData Team**
