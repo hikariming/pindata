@@ -388,7 +388,7 @@ export const getAIModels = (t: (key: string) => string): AIModel[] => [
   { id: 'local-llm', name: t('smartDatasetCreator.constants.aiModels.localLlm'), provider: 'Local', quality: 'custom', speed: 'variable' }
 ];
 
-// 静态步骤配置
+// 静态步骤配置（用于类型检查和基础逻辑）
 export const STEPS = [
   { id: 1, name: 'Select Data', description: 'Choose files and collections for dataset creation' },
   { id: 2, name: 'Configure Dataset', description: 'Set dataset type, format and basic information' },

@@ -36,6 +36,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -79,6 +80,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
   onDataChange,
   onVersionChange 
 }) => {
+  const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<string>('all');
   const [isUploading, setIsUploading] = useState(false);
@@ -266,13 +268,13 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
         return (
           <div className="flex items-center justify-center py-8 text-gray-500">
             <FileTextIcon className="w-5 h-5 mr-2" />
-            <span>{preview.message || '预览功能开发中'}</span>
+            <span>{preview.message || t('dataPreview.previewDeveloping')}</span>
           </div>
         );
       default:
         return (
           <div className="flex items-center justify-center py-8 text-gray-500">
-            <span>暂不支持此类型的预览</span>
+            <span>{t('dataPreview.unsupportedPreview')}</span>
           </div>
         );
     }
@@ -280,7 +282,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
 
   const renderTabularPreview = (preview: any) => {
     if (!preview.items || preview.items.length === 0) {
-      return <div className="text-center py-4 text-gray-500">暂无数据</div>;
+      return <div className="text-center py-4 text-gray-500">{t('dataPreview.noDataToPreview')}</div>;
     }
 
     const columns = preview.stats?.columns || [];
@@ -290,13 +292,13 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
         {/* 统计信息 */}
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary">
-            总行数: {preview.stats?.total_rows || preview.total_items}
+            {t('dataPreview.totalRows')}: {preview.stats?.total_rows || preview.total_items}
           </Badge>
           <Badge variant="secondary">
-            列数: {preview.stats?.total_columns || columns.length}
+            {t('dataPreview.columns')}: {preview.stats?.total_columns || columns.length}
           </Badge>
           <Badge variant="secondary">
-            预览: {preview.preview_count} 行
+            {t('dataPreview.preview')}: {preview.preview_count} {t('dataPreview.rows')}
           </Badge>
         </div>
 
@@ -340,20 +342,20 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       <div className="space-y-4">
         <div className="flex gap-2">
           <Badge variant="secondary">
-            格式: {preview.format}
+            {t('dataPreview.format')}: {preview.format}
           </Badge>
           <Badge variant="secondary">
-            总条目: {preview.total_items}
+            {t('dataPreview.totalItems')}: {preview.total_items}
           </Badge>
           <Badge variant="secondary">
-            预览: {preview.preview_count} 条
+            {t('dataPreview.preview')}: {preview.preview_count} {t('dataPreview.items')}
           </Badge>
         </div>
 
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {preview.items.map((item: any) => (
             <div key={item.index} className="bg-gray-50 rounded p-3">
-              <div className="text-xs text-gray-500 mb-2">条目 #{item.index}</div>
+              <div className="text-xs text-gray-500 mb-2">{t('dataPreview.entry')} #{item.index}</div>
               <pre className="text-xs overflow-x-auto">
                 {JSON.stringify(item.data, null, 2)}
               </pre>
@@ -369,10 +371,10 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       <div className="space-y-4">
         <div className="flex gap-2">
           <Badge variant="secondary">
-            总行数: {preview.total_items}
+            {t('dataPreview.totalRows')}: {preview.total_items}
           </Badge>
           <Badge variant="secondary">
-            预览: {preview.preview_count} 行
+            {t('dataPreview.preview')}: {preview.preview_count} {t('dataPreview.rows')}
           </Badge>
         </div>
 
@@ -399,13 +401,13 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
         <div className="space-y-4">
           <div className="flex gap-2">
             <Badge variant="secondary">
-              尺寸: {item.metadata?.width} × {item.metadata?.height}
+              {t('dataPreview.size')}: {item.metadata?.width} × {item.metadata?.height}
             </Badge>
             <Badge variant="secondary">
-              模式: {item.metadata?.mode}
+              {t('dataPreview.mode')}: {item.metadata?.mode}
             </Badge>
             <Badge variant="secondary">
-              大小: {(item.metadata?.size / 1024).toFixed(1)} KB
+              {t('common.size')}: {(item.metadata?.size / 1024).toFixed(1)} KB
             </Badge>
           </div>
 
@@ -423,7 +425,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
     return (
       <div className="text-center py-8 text-gray-500">
         <ImageIcon className="w-8 h-8 mx-auto mb-2" />
-        <span>{preview.message || '图像预览功能开发中'}</span>
+        <span>{preview.message || t('dataPreview.imagePreviewDeveloping')}</span>
       </div>
     );
   };
@@ -444,14 +446,14 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       <Card className="p-6">
         <div className="text-center py-8 text-gray-500">
           <FileTextIcon className="w-8 h-8 mx-auto mb-2" />
-          <p>{data.preview?.message || '暂无可预览的数据'}</p>
+          <p>{data.preview?.message || t('dataPreview.noPreviewData')}</p>
           {onRefresh && (
             <Button 
               variant="outline" 
               className="mt-4"
               onClick={onRefresh}
             >
-              刷新预览
+              {t('dataPreview.refreshPreview')}
             </Button>
           )}
           {data.version && !data.version.is_deprecated && (
@@ -460,7 +462,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
               onClick={handleUploadClick}
             >
               <PlusIcon className="w-4 h-4 mr-2" />
-              添加文件
+              {t('dataPreview.addFiles')}
             </Button>
           )}
         </div>
@@ -474,15 +476,15 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       <Card className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold mb-2">数据预览</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('dataPreview.title')}</h3>
             <div className="space-y-1">
               <p className="text-sm text-gray-600">
-                数据集: {data.dataset?.name}
+                {t('dataPreview.dataset')}: {data.dataset?.name}
               </p>
               
               {/* 版本选择器 */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">版本:</span>
+                <span className="text-sm text-gray-600">{t('dataPreview.version')}:</span>
                 <div className="relative" data-version-selector>
                   <Button
                     variant="outline"
@@ -496,10 +498,10 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                     ) : (
                       <GitBranch className="w-3 h-3 mr-1" />
                     )}
-                    {isVersionChanging ? '切换中...' : (data.version?.version || '暂无版本')}
+                    {isVersionChanging ? t('dataPreview.switching') : (data.version?.version || t('dataPreview.noVersion'))}
                     {!isVersionChanging && data.version?.is_default && (
                       <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
-                        默认
+                        {t('dataPreview.default')}
                       </Badge>
                     )}
                     {!isVersionChanging && <ChevronDownIcon className="w-3 h-3 ml-1" />}
@@ -509,7 +511,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                     <div className="absolute top-8 left-0 z-50 w-80 bg-white border rounded-md shadow-lg">
                       <div className="p-2 border-b">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">选择版本</span>
+                          <span className="text-sm font-medium">{t('dataPreview.selectVersion')}</span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -523,7 +525,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                       <div className="max-h-64 overflow-y-auto">
                         {availableVersions.length === 0 ? (
                           <div className="p-3 text-sm text-gray-500 text-center">
-                            {isLoadingVersions ? '加载中...' : '暂无版本'}
+                            {isLoadingVersions ? t('dataPreview.loading') : t('dataPreview.noVersion')}
                           </div>
                         ) : (
                           availableVersions.map((version) => (
@@ -555,22 +557,22 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                                       </span>
                                       {version.id === data.version?.id && (
                                         <Badge variant="default" className="h-4 px-1 text-xs">
-                                          当前
+                                          {t('dataPreview.current')}
                                         </Badge>
                                       )}
                                       {version.is_default && (
                                         <Badge variant="secondary" className="h-4 px-1 text-xs">
-                                          默认
+                                          {t('dataPreview.default')}
                                         </Badge>
                                       )}
                                       {version.is_draft && (
                                         <Badge variant="outline" className="h-4 px-1 text-xs">
-                                          草稿
+                                          {t('dataPreview.draft')}
                                         </Badge>
                                       )}
                                       {version.is_deprecated && (
                                         <Badge variant="destructive" className="h-4 px-1 text-xs">
-                                          已废弃
+                                          {t('dataPreview.deprecated')}
                                         </Badge>
                                       )}
                                     </div>
@@ -579,7 +581,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                                     </div>
                                     <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                                       <span>{version.author}</span>
-                                      <span>{version.file_count} 个文件</span>
+                                      <span>{version.file_count} {t('dataPreview.files')}</span>
                                       <span>{version.total_size_formatted}</span>
                                       <span>{new Date(version.created_at).toLocaleDateString()}</span>
                                     </div>
@@ -597,7 +599,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                                     e.stopPropagation();
                                     handleDownloadVersion(version.id);
                                   }}
-                                  title="下载版本信息"
+                                  title={t('dataPreview.downloadFile')}
                                 >
                                   <DownloadIcon className="w-3 h-3" />
                                 </Button>
@@ -612,15 +614,15 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
               </div>
               
               <p className="text-sm text-gray-600">
-                总文件数: {data.preview.total_files} | 
-                预览文件数: {data.preview.preview_files}
+                {t('dataPreview.totalFiles')}: {data.preview.total_files} | 
+                {t('dataPreview.previewFiles')}: {data.preview.preview_files}
               </p>
               
               {/* 版本切换错误提示 */}
               {versionChangeError && (
                 <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700 mt-2">
                   <AlertCircleIcon className="w-4 h-4" />
-                  <span>版本切换失败: {versionChangeError}</span>
+                  <span>{t('dataPreview.versionSwitchFailed')}: {versionChangeError}</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -634,7 +636,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
               {data.version && (
                 <div className="flex gap-2 mt-2">
                   <Badge variant={data.version.is_default ? "default" : "secondary"}>
-                    {data.version.is_default ? '默认版本' : data.version.version_type}
+                    {data.version.is_default ? t('dataPreview.defaultVersion') : data.version.version_type}
                   </Badge>
                   <Badge variant="outline">
                     {data.version.author}
@@ -643,10 +645,10 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                     {data.version.total_size_formatted}
                   </Badge>
                   {data.version.is_draft && (
-                    <Badge variant="outline">草稿</Badge>
+                    <Badge variant="outline">{t('dataPreview.draft')}</Badge>
                   )}
                   {data.version.is_deprecated && (
-                    <Badge variant="destructive">已废弃</Badge>
+                    <Badge variant="destructive">{t('dataPreview.deprecated')}</Badge>
                   )}
                 </div>
               )}
@@ -656,7 +658,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
             {onRefresh && (
               <Button variant="outline" size="sm" onClick={onRefresh}>
                 <EyeIcon className="w-4 h-4 mr-2" />
-                刷新预览
+                {t('dataPreview.refreshPreview')}
               </Button>
             )}
             {data.version && (
@@ -665,7 +667,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                 size="sm"
                 onClick={() => enhancedDatasetService.exportVersionInfo(data.version!.id)}
               >
-                导出信息
+                {t('dataPreview.exportInfo')}
               </Button>
             )}
           </div>
@@ -682,7 +684,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部类型</SelectItem>
+                  <SelectItem value="all">{t('dataPreview.allTypes')}</SelectItem>
                   {fileTypes.map(type => (
                     <SelectItem key={type} value={type}>
                       {type}
@@ -699,7 +701,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                 onCheckedChange={handleSelectAll}
               />
               <span className="text-sm">
-                已选择 {selectedFiles.size} / {filteredFiles.length} 个文件
+                {t('dataPreview.selected')} {selectedFiles.size} / {filteredFiles.length} {t('dataPreview.files')}
               </span>
             </div>
           </div>
@@ -713,7 +715,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                 onClick={handleBatchDelete}
               >
                 <Trash2Icon className="w-4 h-4 mr-2" />
-                删除选中 ({selectedFiles.size})
+                {t('dataPreview.deleteSelected')} ({selectedFiles.size})
               </Button>
             )}
 
@@ -733,7 +735,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                   disabled={isUploading}
                 >
                   <PlusIcon className="w-4 h-4 mr-2" />
-                  {isUploading ? '上传中...' : '添加文件'}
+                  {isUploading ? t('dataPreview.uploading') : t('dataPreview.addFiles')}
                 </Button>
               </>
             )}
@@ -762,12 +764,12 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                   </p>
                   {filePreview.file.checksum && (
                     <p className="text-xs text-gray-400 font-mono">
-                      校验和: {filePreview.file.checksum.slice(0, 8)}...
+                      {t('dataPreview.checksum')}: {filePreview.file.checksum.slice(0, 8)}...
                     </p>
                   )}
                   {isUnsupported && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {filePreview.preview?.message || '暂不支持预览此文件类型'}
+                      {filePreview.preview?.message || t('dataPreview.unsupportedFileType')}
                     </p>
                   )}
                 </div>
@@ -782,7 +784,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                   )}
                 >
                   <DownloadIcon className="w-4 h-4 mr-2" />
-                  下载
+                  {t('dataPreview.downloadFile')}
                 </Button>
                 {data.version && !data.version.is_deprecated && (
                   <Button
@@ -814,18 +816,18 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
       {/* 版本信息卡片 */}
       {data.version && (
         <Card className="p-6">
-          <h4 className="font-semibold mb-3">版本信息</h4>
+          <h4 className="font-semibold mb-3">{t('dataPreview.versionInfo')}</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600">提交哈希:</span>
+              <span className="text-gray-600">{t('dataPreview.commitHash')}:</span>
               <span className="ml-2 font-mono">{data.version.commit_hash}</span>
             </div>
             <div>
-              <span className="text-gray-600">创建时间:</span>
+              <span className="text-gray-600">{t('dataPreview.createTime')}:</span>
               <span className="ml-2">{new Date(data.version.created_at).toLocaleString()}</span>
             </div>
             <div className="md:col-span-2">
-              <span className="text-gray-600">提交信息:</span>
+              <span className="text-gray-600">{t('dataPreview.commitMessage')}:</span>
               <span className="ml-2">{data.version.commit_message}</span>
             </div>
           </div>

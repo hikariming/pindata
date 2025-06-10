@@ -1,7 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { Card } from '../../../components/ui/card';
+import { Badge } from '../../../components/ui/badge';
+import { Progress } from '../../../components/ui/progress';
+import { Input } from '../../../components/ui/input';
+
+import {
+  ArrowLeftIcon,
+  UploadIcon,
+  FileTextIcon,
+  RefreshCwIcon,
+  Trash2Icon,
+  DownloadIcon,
+  SearchIcon,
+  FilterIcon,
+  AlertCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PlayIcon,
+  PauseIcon,
+  XCircleIcon,
+  FolderIcon,
+  FileIcon,
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -11,20 +34,16 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import { 
-  ArrowLeftIcon, 
-  FileIcon, 
-  FileTextIcon,
-  CheckCircleIcon,
-  ClockIcon,
+  FileIcon as LucideFileIcon, 
+  FileTextIcon as LucideFileTextIcon,
+  CheckCircleIcon as LucideCheckCircleIcon,
+  ClockIcon as LucideClockIcon,
   AlertTriangleIcon,
-  UploadIcon,
+  UploadIcon as LucideUploadIcon,
   MoreHorizontalIcon,
   TrashIcon,
   EyeIcon,
-  DownloadIcon,
-  RefreshCwIcon,
   FileEditIcon,
-  Trash2Icon,
   CheckSquareIcon,
   SquareIcon,
 } from 'lucide-react';
@@ -36,7 +55,6 @@ import { useLibraryFiles, useFileActions } from '../../../hooks/useLibraries';
 import { useFileConversion } from '../../../hooks/useFileConversion';
 import { ConvertToMarkdownDialog, ConversionConfig } from './components/ConvertToMarkdownDialog';
 import { ConversionProgress } from './components/ConversionProgress';
-import { useNavigate } from 'react-router-dom';
 
 interface LibraryDetailsProps {
   onBack: () => void;
@@ -67,7 +85,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const handleUpload = async (files: File[]) => {
     console.log('上传文件:', files);
     setShowUpload(false);
-    showNotification('success', `成功上传 ${files.length} 个文件`);
+    showNotification('success', t('libraryDetails.uploadSuccess', { count: files.length }));
     
     // 延迟一点时间后刷新文件列表，确保服务器已处理完上传
     setTimeout(() => {
@@ -76,13 +94,13 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   };
 
   const handleDeleteFile = async (fileId: string, fileName: string) => {
-    if (window.confirm(`确定要删除文件 "${fileName}" 吗？`)) {
+    if (window.confirm(t('libraryDetails.deleteConfirm', { fileName }))) {
       const success = await deleteFile(library.id, fileId);
       if (success) {
         refreshFiles(); // 刷新文件列表
-        showNotification('success', `文件 "${fileName}" 删除成功`);
+        showNotification('success', t('libraryDetails.deleteSuccess', { fileName }));
       } else {
-        showNotification('error', `文件 "${fileName}" 删除失败`);
+        showNotification('error', t('libraryDetails.deleteFailed', { fileName }));
       }
     }
   };
@@ -91,12 +109,12 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
     try {
       const success = await downloadFile(file.minio_object_name, file.original_filename);
       if (success) {
-        showNotification('success', `文件 "${file.original_filename}" 下载开始`);
+        showNotification('success', t('libraryDetails.downloadStart', { fileName: file.original_filename }));
       } else {
-        showNotification('error', `文件 "${file.original_filename}" 下载失败`);
+        showNotification('error', t('libraryDetails.downloadFailed', { fileName: file.original_filename }));
       }
     } catch (error) {
-      showNotification('error', `文件 "${file.original_filename}" 下载失败`);
+      showNotification('error', t('libraryDetails.downloadFailed', { fileName: file.original_filename }));
     }
   };
 
@@ -122,7 +140,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
     const selectedFilesList = files.filter(f => selectedFiles.has(f.id));
     const fileNames = selectedFilesList.map(f => f.original_filename).join('、');
     
-    if (window.confirm(`⚠️ 警告：您即将删除 ${selectedFiles.size} 个文件！\n\n文件列表：\n${fileNames}\n\n此操作不可撤销，确定要继续吗？`)) {
+    if (window.confirm(t('libraryDetails.batchDeleteConfirm', { count: selectedFiles.size, fileNames }))) {
       let successCount = 0;
       let failCount = 0;
       
@@ -139,9 +157,9 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
       setSelectedFiles(new Set());
       
       if (failCount === 0) {
-        showNotification('success', `成功删除 ${successCount} 个文件`);
+        showNotification('success', t('libraryDetails.batchDeleteSuccess', { count: successCount }));
       } else {
-        showNotification('error', `删除完成：成功 ${successCount} 个，失败 ${failCount} 个`);
+        showNotification('error', t('libraryDetails.batchDeletePartial', { successCount, failCount }));
       }
     }
   };
@@ -156,14 +174,14 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
     
     const job = await convertFiles(library.id, fileIds, config);
     if (job) {
-      showNotification('success', `已提交 ${selectedFiles.size} 个文件的转换任务`);
+      showNotification('success', t('libraryDetails.convertSubmitted', { count: selectedFiles.size }));
       setSelectedFiles(new Set());
       setShowConvertDialog(false);
       refreshFiles();
       // 添加到转换任务列表
       setConversionJobs(prev => [job, ...prev]);
     } else {
-      showNotification('error', '转换任务提交失败');
+      showNotification('error', t('libraryDetails.convertFailed'));
     }
   };
 
@@ -182,10 +200,10 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const handleCancelJob = async (jobId: string) => {
     const success = await cancelConversionJob(jobId);
     if (success) {
-      showNotification('success', '转换任务已取消');
+      showNotification('success', t('libraryDetails.cancelSuccess'));
       handleRefreshJobs();
     } else {
-      showNotification('error', '取消任务失败');
+      showNotification('error', t('libraryDetails.cancelFailed'));
     }
   };
 
@@ -222,13 +240,13 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
+        return <LucideCheckCircleIcon className="w-4 h-4 text-green-500" />;
       case 'processing':
-        return <ClockIcon className="w-4 h-4 text-blue-500" />;
+        return <LucideClockIcon className="w-4 h-4 text-blue-500" />;
       case 'failed':
         return <AlertTriangleIcon className="w-4 h-4 text-red-500" />;
       default:
-        return <ClockIcon className="w-4 h-4 text-gray-400" />;
+        return <LucideClockIcon className="w-4 h-4 text-gray-400" />;
     }
   };
 
@@ -293,7 +311,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
           onClick={() => setShowUpload(true)}
           className="bg-[#1977e5] hover:bg-[#1565c0] text-white"
         >
-          <UploadIcon className="w-4 h-4 mr-2" />
+          <LucideUploadIcon className="w-4 h-4 mr-2" />
           {t('rawData.uploadFiles')}
         </Button>
       </div>
@@ -321,7 +339,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
           <div className="flex items-center">
             <FileIcon className="w-6 h-6 text-[#1977e5] mr-2" />
             <div>
-              <p className="text-sm text-[#4f7096]">总文件数</p>
+              <p className="text-sm text-[#4f7096]">{t('libraryDetails.totalFiles')}</p>
               <p className="text-lg font-bold text-[#0c141c]">{files.length}</p>
             </div>
           </div>
@@ -329,9 +347,9 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         
         <Card className="border-[#d1dbe8] bg-white p-4">
           <div className="flex items-center">
-            <CheckCircleIcon className="w-6 h-6 text-[#10b981] mr-2" />
+            <LucideCheckCircleIcon className="w-6 h-6 text-[#10b981] mr-2" />
             <div>
-              <p className="text-sm text-[#4f7096]">已处理</p>
+              <p className="text-sm text-[#4f7096]">{t('libraryDetails.processed')}</p>
               <p className="text-lg font-bold text-[#0c141c]">
                 {files.filter(f => f.process_status === 'completed').length}
               </p>
@@ -341,9 +359,9 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         
         <Card className="border-[#d1dbe8] bg-white p-4">
           <div className="flex items-center">
-            <ClockIcon className="w-6 h-6 text-[#f59e0b] mr-2" />
+            <LucideClockIcon className="w-6 h-6 text-[#f59e0b] mr-2" />
             <div>
-              <p className="text-sm text-[#4f7096]">处理中</p>
+              <p className="text-sm text-[#4f7096]">{t('libraryDetails.processing')}</p>
               <p className="text-lg font-bold text-[#0c141c]">
                 {files.filter(f => f.process_status === 'processing').length}
               </p>
@@ -355,7 +373,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
           <div className="flex items-center">
             <AlertTriangleIcon className="w-6 h-6 text-[#ef4444] mr-2" />
             <div>
-              <p className="text-sm text-[#4f7096]">待处理</p>
+              <p className="text-sm text-[#4f7096]">{t('libraryDetails.pending')}</p>
               <p className="text-lg font-bold text-[#0c141c]">
                 {files.filter(f => f.process_status === 'pending').length}
               </p>
@@ -365,9 +383,9 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         
         <Card className="border-[#d1dbe8] bg-white p-4">
           <div className="flex items-center">
-            <FileTextIcon className="w-6 h-6 text-[#8b5cf6] mr-2" />
+            <LucideFileTextIcon className="w-6 h-6 text-[#8b5cf6] mr-2" />
             <div>
-              <p className="text-sm text-[#4f7096]">MD文件</p>
+              <p className="text-sm text-[#4f7096]">{t('libraryDetails.mdFiles')}</p>
               <p className="text-lg font-bold text-[#0c141c]">
                 {files.filter(f => f.converted_format === 'markdown').length}
               </p>
@@ -391,12 +409,12 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         <div className="p-4 border-b border-[#d1dbe8]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-[#0c141c]">文件列表</h3>
+              <h3 className="text-lg font-semibold text-[#0c141c]">{t('libraryDetails.fileList')}</h3>
               <p className="text-sm text-[#4f7096]">
-                共 {files.length} 个文件
+{t('libraryDetails.totalFilesCount', { count: files.length })}
                 {selectedFiles.size > 0 && (
                   <span className="ml-2 text-[#1977e5]">
-                    已选择 {selectedFiles.size} 个
+{t('libraryDetails.selectedCount', { count: selectedFiles.size })}
                   </span>
                 )}
               </p>
@@ -412,7 +430,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                     className="flex items-center gap-2 text-[#1977e5] border-[#1977e5] hover:bg-[#1977e5] hover:text-white"
                   >
                     <FileEditIcon className="w-4 h-4" />
-                    转换为MD ({selectedFiles.size})
+{t('libraryDetails.convertToMD')} ({selectedFiles.size})
                   </Button>
                   <Button
                     variant="outline"
@@ -422,7 +440,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                     className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-600 hover:text-white"
                   >
                     <Trash2Icon className="w-4 h-4" />
-                    批量删除 ({selectedFiles.size})
+                    {t('libraryDetails.batchDelete')} ({selectedFiles.size})
                   </Button>
                 </>
               )}
@@ -434,7 +452,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                 className="flex items-center gap-2"
               >
                 <RefreshCwIcon className={`w-4 h-4 ${filesLoading ? 'animate-spin' : ''}`} />
-                刷新
+{t('libraryDetails.refresh')}
               </Button>
             </div>
           </div>
@@ -443,25 +461,25 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         {filesLoading ? (
           <div className="p-8 text-center text-[#4f7096]">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1977e5] mx-auto mb-4"></div>
-            <p>加载文件列表中...</p>
+            <p>{t('libraryDetails.loadingFiles')}</p>
           </div>
         ) : filesError ? (
           <div className="p-8 text-center text-red-600">
             <AlertTriangleIcon className="w-12 h-12 mx-auto mb-4" />
-            <p>加载文件列表失败: {filesError}</p>
+            <p>{t('libraryDetails.loadFailed')}: {filesError}</p>
             <Button 
               onClick={refreshFiles} 
               className="mt-4"
               variant="outline"
             >
-              重试
+{t('libraryDetails.retry')}
             </Button>
           </div>
         ) : files.length === 0 ? (
           <div className="p-8 text-center text-[#4f7096]">
             <FileIcon className="w-12 h-12 mx-auto mb-4 text-[#d1dbe8]" />
-            <p>暂无文件</p>
-            <p className="text-xs mt-2">点击上方"上传文件"按钮开始添加文件</p>
+            <p>{t('libraryDetails.noFiles')}</p>
+            <p className="text-xs mt-2">{t('libraryDetails.uploadTip')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -477,15 +495,15 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                       }}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="w-4 h-4 text-[#1977e5] bg-gray-100 border-gray-300 rounded focus:ring-[#1977e5] focus:ring-2"
-                      aria-label="全选"
+                      aria-label={t('libraryDetails.selectAll')}
                     />
                   </TableHead>
-                  <TableHead>文件名</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>大小</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>上传时间</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead>{t('libraryDetails.fileName')}</TableHead>
+                  <TableHead>{t('libraryDetails.type')}</TableHead>
+                  <TableHead>{t('libraryDetails.size')}</TableHead>
+                  <TableHead>{t('libraryDetails.status')}</TableHead>
+                  <TableHead>{t('libraryDetails.uploadTime')}</TableHead>
+                  <TableHead className="text-right">{t('libraryDetails.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -497,7 +515,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                         checked={selectedFiles.has(file.id)}
                         onChange={(e) => handleSelectFile(file.id, e.target.checked)}
                         className="w-4 h-4 text-[#1977e5] bg-gray-100 border-gray-300 rounded focus:ring-[#1977e5] focus:ring-2"
-                        aria-label={`选择文件 ${file.original_filename}`}
+                        aria-label={`${t('libraryDetails.selectFile')} ${file.original_filename}`}
                       />
                     </TableCell>
                     <TableCell>
@@ -543,7 +561,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                           onClick={() => handleSingleFileConvert(file.id)}
                           disabled={convertLoading}
                           className="h-8 w-8 p-0 text-[#4f7096] hover:text-[#1977e5]"
-                          title="转换为MD"
+                          title={t('libraryDetails.convertToMDAction')}
                         >
                           <FileEditIcon className="w-4 h-4" />
                         </Button>
@@ -552,7 +570,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                           size="sm"
                           onClick={() => handleFileSelect(file)}
                           className="h-8 w-8 p-0 text-[#4f7096] hover:text-[#1977e5]"
-                          title="查看详情"
+                          title={t('libraryDetails.viewDetails')}
                         >
                           <EyeIcon className="w-4 h-4" />
                         </Button>
@@ -562,7 +580,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                           onClick={() => handleDeleteFile(file.id, file.original_filename)}
                           disabled={deleteLoading}
                           className="h-8 w-8 p-0 text-[#4f7096] hover:text-red-600"
-                          title="删除文件"
+                          title={t('libraryDetails.deleteFileAction')}
                         >
                           <TrashIcon className="w-4 h-4" />
                         </Button>
@@ -572,7 +590,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
                           onClick={() => handleDownloadFile(file)}
                           disabled={deleteLoading}
                           className="h-8 w-8 p-0 text-[#4f7096] hover:text-blue-600"
-                          title="下载文件"
+                          title={t('libraryDetails.downloadFileAction')}
                         >
                           <DownloadIcon className="w-4 h-4" />
                         </Button>
@@ -622,7 +640,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         } border`}>
           <div className="flex items-center">
             {notification.type === 'success' ? (
-              <CheckCircleIcon className="w-5 h-5 mr-2" />
+              <LucideCheckCircleIcon className="w-5 h-5 mr-2" />
             ) : (
               <AlertTriangleIcon className="w-5 h-5 mr-2" />
             )}

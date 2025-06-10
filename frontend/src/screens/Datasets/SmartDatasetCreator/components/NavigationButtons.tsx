@@ -1,10 +1,12 @@
 import React from 'react';
 import { Button } from '../../../../components/ui/button';
 import { PlayIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
-import { STEPS } from '../constants';
+import { getSteps } from '../constants';
 
 export const NavigationButtons: React.FC = () => {
+  const { t } = useTranslation();
   const {
     currentStep,
     selectedFiles,
@@ -36,7 +38,7 @@ export const NavigationButtons: React.FC = () => {
         disabled={currentStep === 1}
         className="border-[#d1dbe8]"
       >
-        上一步
+        {t('smartDatasetCreator.navigation.prevStep')}
       </Button>
       
       <div className="flex gap-3">
@@ -45,7 +47,7 @@ export const NavigationButtons: React.FC = () => {
           onClick={nextStep}
           disabled={!canProceed()}
         >
-          下一步
+          {t('smartDatasetCreator.navigation.nextStep')}
         </Button>
       </div>
     </div>
