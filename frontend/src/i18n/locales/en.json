@@ -504,6 +504,104 @@
           "name": "Generate Dataset",
           "description": "AI processes and generates dataset"
         }
+      },
+      "datasetTypes": {
+        "qaPairs": {
+          "name": "QA Pairs",
+          "description": "Generate question-answer pairs from document content, suitable for QA system training",
+          "useCase": "Smart customer service, knowledge Q&A, educational assistance",
+          "example": "{\"instruction\": \"What is artificial intelligence?\", \"input\": \"\", \"output\": \"Artificial intelligence is a branch of computer science...\"}"
+        },
+        "instructionTuning": {
+          "name": "Instruction Tuning",
+          "description": "Generate instruction-input-output triplets for instruction-following model training",
+          "useCase": "Smart office, document processing, personalized assistant",
+          "example": "{\"instruction\": \"Translate the following text to English\", \"input\": \"Hello World\", \"output\": \"Hello World\"}"
+        },
+        "textClassification": {
+          "name": "Text Classification",
+          "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
+          "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
+          "example": "{\"text\": \"This product is amazing!\", \"label\": \"positive\"}"
+        },
+        "dialogue": {
+          "name": "Dialogue Tuning",
+          "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
+          "useCase": "Smart customer service, chatbots, voice assistants",
+          "example": "{\"conversations\": [{\"role\": \"user\", \"content\": \"Hello\"}, {\"role\": \"assistant\", \"content\": \"Hello! How can I help you?\"}]}"
+        },
+        "domainAdaptation": {
+          "name": "Domain Adaptation",
+          "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
+          "useCase": "Medical diagnosis, legal consultation, financial analysis",
+          "example": "{\"instruction\": \"Analyze patient symptoms\", \"input\": \"Patient has chest pain for 3 hours\", \"output\": \"Recommend ECG examination...\", \"domain\": \"medical\"}"
+        },
+        "reasoning": {
+          "name": "Reasoning Tuning",
+          "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
+          "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
+          "example": "{\"instruction\": \"Solve math problem\", \"input\": \"3×5+2=?\", \"chain_of_thought\": \"First multiply: 3×5=15, then add 2: 15+2=17\", \"output\": \"17\"}"
+        },
+        "knowledgeDistillation": {
+          "name": "Knowledge Distillation",
+          "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
+          "useCase": "Model compression, edge deployment, cost optimization",
+          "example": "Training data generated based on GPT-4 output, used to train smaller models"
+        }
+      },
+      "formatDetails": {
+        "alpaca": {
+          "name": "Alpaca Format",
+          "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
+          "structure": "instruction + input + output",
+          "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
+          "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
+          "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"],
+          "example": "{\n  \"instruction\": \"Translate the following Chinese to English\",\n  \"input\": \"Hello, World!\",\n  \"output\": \"Hello, World!\"\n}"
+        },
+        "shareGPT": {
+          "name": "ShareGPT Format",
+          "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
+          "structure": "conversations + tools + roles",
+          "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
+          "disadvantages": ["Complex format", "Must follow role position rules"],
+          "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"],
+          "example": "{\n  \"conversations\": [\n    {\"role\": \"user\", \"content\": \"How's the weather today?\"},\n    {\"role\": \"assistant\", \"content\": \"Let me help you check the weather...\"}\n  ]\n}"
+        },
+        "openAI": {
+          "name": "OpenAI Format",
+          "description": "OpenAI API compatible format, simplified version of ShareGPT",
+          "structure": "messages + roles",
+          "advantages": ["API compatible", "Simple to use", "Widely supported"],
+          "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
+          "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"],
+          "example": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant\"},\n    {\"role\": \"user\", \"content\": \"Please introduce AI\"},\n    {\"role\": \"assistant\", \"content\": \"AI stands for Artificial Intelligence...\"}\n  ]\n}"
+        },
+        "alpacaCOT": {
+          "name": "Alpaca-COT Format",
+          "description": "Alpaca format with chain of thought, suitable for reasoning task training",
+          "structure": "instruction + input + chain_of_thought + output",
+          "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
+          "disadvantages": ["Complex data construction", "Requires professional annotation"],
+          "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"],
+          "example": "{\n  \"instruction\": \"Solve this math problem\",\n  \"input\": \"If a square has side length 5cm, find the area\",\n  \"chain_of_thought\": \"Square area formula is side length squared, so area = 5 × 5 = 25\",\n  \"output\": \"25 square centimeters\"\n}"
+        },
+        "csv": {
+          "name": "CSV Format",
+          "description": "Simple table format, suitable for classification and annotation tasks",
+          "structure": "text, label",
+          "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
+          "disadvantages": ["Limited functionality", "No complex structure support"],
+          "bestFor": ["Text classification", "Label annotation", "Simple tasks"],
+          "example": "text,label\n\"This product is great\",positive\n\"Poor service\",negative"
+        }
+      },
+      "aiModels": {
+        "gpt4": "GPT-4",
+        "gpt35Turbo": "GPT-3.5 Turbo",
+        "claude3": "Claude-3",
+        "geminiPro": "Gemini Pro",
+        "localLlm": "Local Model"
       }
     }
   },
