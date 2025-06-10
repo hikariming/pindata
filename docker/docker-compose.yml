@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pindata_dataset
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -59,15 +60,64 @@ services:
     ports:
       - "8897:8897"
     environment:
+      # Flask配置
       - FLASK_APP=run.py
       - FLASK_ENV=development
+      - SECRET_KEY=your-secret-key-change-in-production
+      
+      # 数据库配置
       - DATABASE_URL=postgresql://postgres:password@db:5432/pindata_dataset
+      
+      # 数据库连接池配置
+      - DB_POOL_SIZE=10
+      - DB_POOL_TIMEOUT=30
+      - DB_POOL_RECYCLE=3600
+      - DB_MAX_OVERFLOW=20
+      - DB_POOL_PRE_PING=true
+      - DB_CONNECT_TIMEOUT=10
+      
+      # 数据库自动初始化配置
+      - AUTO_CREATE_DATABASE=true
+      - DATABASE_INIT_RETRY_COUNT=3
+      - DATABASE_INIT_RETRY_DELAY=5
+      
+      # Redis配置
       - REDIS_URL=redis://redis:6379/0
+      
+      # MinIO配置
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
+      - MINIO_SECURE=false
+      - MINIO_BUCKET_NAME=pindata-bucket
+      
+      # Celery配置
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_TASK_SERIALIZER=json
+      - CELERY_RESULT_SERIALIZER=json
+      - CELERY_ACCEPT_CONTENT=json
+      - CELERY_TIMEZONE=UTC
+      - CELERY_ENABLE_UTC=true
+      
+      # API配置
+      - API_PREFIX=/api/v1
+      - PAGINATION_PAGE_SIZE=20
+      
+      # JWT配置
+      - JWT_SECRET_KEY=your-jwt-secret-key-change-in-production
+      - JWT_ACCESS_TOKEN_EXPIRES=3600
+      
+      # CORS配置
+      - CORS_ORIGINS=*
+      
+      # 文件上传配置
+      - MAX_CONTENT_LENGTH=104857600
+      - ALLOWED_EXTENSIONS=txt,pdf,docx,pptx,doc,ppt
+      
+      # 健康检查配置
+      - HEALTH_CHECK_ENABLED=true
+      
     volumes:
       - ../backend:/app
       - ./data/api:/app/data
@@ -88,16 +138,65 @@ services:
       dockerfile: Dockerfile  
     container_name: pindata_celery
     environment:
+      # Flask配置
       - FLASK_APP=run.py
       - FLASK_ENV=development
+      - SECRET_KEY=your-secret-key-change-in-production
+      
+      # 数据库配置
       - DATABASE_URL=postgresql://postgres:password@db:5432/pindata_dataset
+      
+      # 数据库连接池配置
+      - DB_POOL_SIZE=10
+      - DB_POOL_TIMEOUT=30
+      - DB_POOL_RECYCLE=3600
+      - DB_MAX_OVERFLOW=20
+      - DB_POOL_PRE_PING=true
+      - DB_CONNECT_TIMEOUT=10
+      
+      # 数据库自动初始化配置
+      - AUTO_CREATE_DATABASE=true
+      - DATABASE_INIT_RETRY_COUNT=3
+      - DATABASE_INIT_RETRY_DELAY=5
+      
+      # Redis配置
       - REDIS_URL=redis://redis:6379/0
+      
+      # MinIO配置
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
+      - MINIO_SECURE=false
+      - MINIO_BUCKET_NAME=pindata-bucket
+      
+      # Celery配置
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_TASK_SERIALIZER=json
+      - CELERY_RESULT_SERIALIZER=json
+      - CELERY_ACCEPT_CONTENT=json
+      - CELERY_TIMEZONE=UTC
+      - CELERY_ENABLE_UTC=true
       - OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+      
+      # API配置
+      - API_PREFIX=/api/v1
+      - PAGINATION_PAGE_SIZE=20
+      
+      # JWT配置
+      - JWT_SECRET_KEY=your-jwt-secret-key-change-in-production
+      - JWT_ACCESS_TOKEN_EXPIRES=3600
+      
+      # CORS配置
+      - CORS_ORIGINS=*
+      
+      # 文件上传配置
+      - MAX_CONTENT_LENGTH=104857600
+      - ALLOWED_EXTENSIONS=txt,pdf,docx,pptx,doc,ppt
+      
+      # 健康检查配置
+      - HEALTH_CHECK_ENABLED=true
+      
     volumes:
       - ../backend:/app
       - ./data/celery:/app/data
