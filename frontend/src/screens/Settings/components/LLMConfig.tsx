@@ -205,10 +205,13 @@ export const LLMConfigComponent = (): JSX.Element => {
       // 显示成功通知
       setNotification({
         type: 'success',
-        message: `${llmConfigs.find(c => c.id === configId)?.name} 连接测试成功！延迟: ${result.latency}ms`
+        message: t('settings.llm.testSuccessMessage', { 
+          configName: llmConfigs.find(c => c.id === configId)?.name,
+          latency: result.latency 
+        })
       });
     } catch (error: any) {
-      const errorMessage = error.message || '测试连接失败';
+      const errorMessage = error.message || t('settings.llm.testFailedMessage');
       setTestResult({
         configId,
         result: {
@@ -223,7 +226,7 @@ export const LLMConfigComponent = (): JSX.Element => {
       // 显示错误通知
       setNotification({
         type: 'error',
-        message: `${llmConfigs.find(c => c.id === configId)?.name} 连接测试失败`
+        message: `${llmConfigs.find(c => c.id === configId)?.name} ${t('settings.llm.testFailedMessage')}`
       });
     } finally {
       setTestingConfigId(null);
@@ -250,19 +253,19 @@ export const LLMConfigComponent = (): JSX.Element => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'connected':
-        return '连接成功';
+        return t('settings.llm.connectionSuccess');
       case 'auth_failed':
-        return 'API密钥认证失败';
+        return t('settings.llm.authFailed');
       case 'connection_failed':
-        return '连接失败';
+        return t('settings.llm.connectionFailed');
       case 'model_not_found':
-        return '模型不存在';
+        return t('settings.llm.modelNotFound');
       case 'rate_limited':
-        return '请求频率超限';
+        return t('settings.llm.rateLimited');
       case 'failed':
-        return '测试失败';
+        return t('settings.llm.testFailed');
       default:
-        return '未知错误';
+        return t('settings.llm.unknownError');
     }
   };
 
@@ -345,9 +348,9 @@ export const LLMConfigComponent = (): JSX.Element => {
       {/* 添加模型按钮 */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold text-[#0c141c]">模型配置列表</h3>
+          <h3 className="text-lg font-semibold text-[#0c141c]">{t('settings.llm.modelConfigList')}</h3>
           <p className="text-sm text-[#4f7096] mt-1">
-            管理您的大语言模型配置。点击"测试"按钮可以验证配置是否正确，系统会发送测试请求并显示详细结果。
+            {t('settings.llm.modelConfigDescription')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -361,35 +364,35 @@ export const LLMConfigComponent = (): JSX.Element => {
             ) : (
               <RefreshCwIcon className="w-4 h-4 mr-2" />
             )}
-            刷新
+            {t('settings.llm.refresh')}
           </Button>
           <Dialog open={isAddModelOpen} onOpenChange={setIsAddModelOpen}>
             <DialogTrigger asChild>
               <Button className="bg-[#1977e5] hover:bg-[#1462c4]">
                 <PlusIcon className="w-4 h-4 mr-2" />
-                添加模型
+                {t('settings.llm.addModel')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>添加新的模型配置</DialogTitle>
+                <DialogTitle>{t('settings.llm.addNewModel')}</DialogTitle>
                 <DialogDescription>
-                  配置新的大模型接口，支持OpenAI、Claude、Gemini以及自定义接口
+                  {t('settings.llm.addModelDescription')}
                 </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">配置名称</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.llm.configName')}</label>
                     <Input
-                      placeholder="例如：GPT-4 生产环境"
+                      placeholder={t('settings.llm.configNamePlaceholder')}
                       value={newConfig.name || ''}
                       onChange={(e) => setNewConfig({...newConfig, name: e.target.value})}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">模型提供商</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.llm.provider')}</label>
                     <Select
                       value={newConfig.provider || 'openai'}
                       onValueChange={(value: string) => {
@@ -417,7 +420,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                         <SelectItem value="custom">
                           <div className="flex items-center gap-2">
                             <SettingsIcon className="w-4 h-4" />
-                            <span>自定义接口</span>
+                            <span>{t('settings.llm.customInterface')}</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -427,22 +430,22 @@ export const LLMConfigComponent = (): JSX.Element => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">模型名称</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.llm.modelName')}</label>
                     <div className="space-y-2">
                       <Input
-                        placeholder="例如：gpt-4-vision-preview"
+                        placeholder={t('settings.llm.modelNamePlaceholder')}
                         value={newConfig.model_name || ''}
                         onChange={(e) => setNewConfig({...newConfig, model_name: e.target.value})}
                       />
                       <div className="text-xs text-[#4f7096]">
-                        您可以输入任何模型名称，包括自定义模型
+                        {t('settings.llm.modelNameTip')}
                       </div>
                       {(() => {
                         const provider = MODEL_PROVIDERS.find(p => p.type === newConfig.provider);
                         return provider?.models.length ? (
                           <details className="text-xs">
                             <summary className="cursor-pointer text-[#1977e5] hover:underline">
-                              查看推荐模型
+                              {t('settings.llm.viewSupportedModels')}
                             </summary>
                             <div className="mt-2 space-y-1">
                               {provider.models.map(model => (
@@ -461,7 +464,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">API密钥</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.llm.apiKeyLabel')}</label>
                     <Input
                       type="password"
                       placeholder="sk-..."
@@ -472,7 +475,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">API接口地址</label>
+                  <label className="block text-sm font-medium mb-2">{t('settings.llm.apiUrlLabel')}</label>
                   <Input
                     placeholder="https://api.example.com/v1"
                     value={newConfig.base_url || ''}
@@ -482,7 +485,7 @@ export const LLMConfigComponent = (): JSX.Element => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">温度参数</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.llm.temperatureParam')}</label>
                     <Input
                       type="number"
                       min="0"
@@ -493,7 +496,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">最大Token数</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.llm.maxTokensParam')}</label>
                     <Input
                       type="number"
                       min="1"
@@ -509,7 +512,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                       checked={newConfig.is_active || true}
                       onCheckedChange={(checked: boolean) => setNewConfig({...newConfig, is_active: checked})}
                     />
-                    <label className="text-sm font-medium">启用此配置</label>
+                    <label className="text-sm font-medium">{t('settings.llm.enableConfig')}</label>
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -518,22 +521,22 @@ export const LLMConfigComponent = (): JSX.Element => {
                       onCheckedChange={(checked: boolean) => setNewConfig({...newConfig, supports_vision: checked})}
                     />
                     <div className="flex items-center space-x-2">
-                      <label className="text-sm font-medium">支持视觉识别</label>
+                      <label className="text-sm font-medium">{t('settings.llm.visionSupport')}</label>
                       <InfoIcon className="w-4 h-4 text-[#4f7096]" />
                     </div>
                   </div>
                   <div className="text-xs text-[#4f7096] ml-6">
-                    启用后可以处理图像输入和视觉相关任务
+                    {t('settings.llm.visionSupportTip')}
                   </div>
                 </div>
               </div>
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddModelOpen(false)}>
-                  取消
+                  {t('settings.llm.cancel')}
                 </Button>
                 <Button onClick={handleAddModel}>
-                  添加配置
+                  {t('settings.llm.confirm')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -545,26 +548,26 @@ export const LLMConfigComponent = (): JSX.Element => {
       <Dialog open={!!editingConfig} onOpenChange={(open: boolean) => !open && setEditingConfig(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>编辑模型配置</DialogTitle>
+            <DialogTitle>{t('settings.llm.editModel')}</DialogTitle>
             <DialogDescription>
-              修改现有的模型配置参数
+              {t('settings.llm.editModelDescription')}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">配置名称</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.llm.configName')}</label>
                 <Input
-                  placeholder="例如：GPT-4 生产环境"
+                  placeholder={t('settings.llm.configNamePlaceholder')}
                   value={editConfig.name || ''}
                   onChange={(e) => setEditConfig({...editConfig, name: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">模型名称</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.llm.modelName')}</label>
                 <Input
-                  placeholder="例如：gpt-4-vision-preview"
+                  placeholder={t('settings.llm.modelNamePlaceholder')}
                   value={editConfig.model_name || ''}
                   onChange={(e) => setEditConfig({...editConfig, model_name: e.target.value})}
                 />
@@ -572,7 +575,7 @@ export const LLMConfigComponent = (): JSX.Element => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">API密钥</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.llm.apiKeyLabel')}</label>
               <Input
                 type="password"
                 placeholder="sk-..."
@@ -582,7 +585,7 @@ export const LLMConfigComponent = (): JSX.Element => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">API接口地址</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.llm.apiUrlLabel')}</label>
               <Input
                 placeholder="https://api.example.com/v1"
                 value={editConfig.base_url || ''}
@@ -592,7 +595,7 @@ export const LLMConfigComponent = (): JSX.Element => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">温度参数</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.llm.temperatureParam')}</label>
                 <Input
                   type="number"
                   min="0"
@@ -603,7 +606,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">最大Token数</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.llm.maxTokensParam')}</label>
                 <Input
                   type="number"
                   min="1"
@@ -619,7 +622,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                   checked={editConfig.is_active ?? true}
                   onCheckedChange={(checked: boolean) => setEditConfig({...editConfig, is_active: checked})}
                 />
-                <label className="text-sm font-medium">启用此配置</label>
+                <label className="text-sm font-medium">{t('settings.llm.enableConfig')}</label>
               </div>
               
               <div className="flex items-center space-x-2">
@@ -628,7 +631,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                   onCheckedChange={(checked: boolean) => setEditConfig({...editConfig, supports_vision: checked})}
                 />
                 <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium">支持视觉识别</label>
+                  <label className="text-sm font-medium">{t('settings.llm.visionSupport')}</label>
                   <InfoIcon className="w-4 h-4 text-[#4f7096]" />
                 </div>
               </div>
@@ -637,10 +640,10 @@ export const LLMConfigComponent = (): JSX.Element => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingConfig(null)}>
-              取消
+              {t('settings.llm.cancel')}
             </Button>
             <Button onClick={handleEditModel}>
-              保存修改
+              {t('settings.llm.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -650,17 +653,17 @@ export const LLMConfigComponent = (): JSX.Element => {
       <Dialog open={showDeleteDialog} onOpenChange={(open: boolean) => !open && closeDeleteDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{t('settings.llm.confirmDelete')}</DialogTitle>
             <DialogDescription>
-              您确定要删除这个模型配置吗？此操作无法撤销。
+              {t('settings.llm.deleteDescription')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={closeDeleteDialog}>
-              取消
+              {t('settings.llm.cancel')}
             </Button>
             <Button onClick={handleDeleteConfig} className="bg-red-600 hover:bg-red-700 text-white">
-              删除
+              {t('settings.llm.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -672,10 +675,10 @@ export const LLMConfigComponent = (): JSX.Element => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {testResult && getStatusIcon(testResult.result.status)}
-              连接测试结果
+              {t('settings.llm.testResult')}
             </DialogTitle>
             <DialogDescription>
-              {testResult && `配置 "${llmConfigs.find(c => c.id === testResult.configId)?.name}" 的测试结果`}
+              {testResult && t('settings.llm.testResult')}
             </DialogDescription>
           </DialogHeader>
           
@@ -700,17 +703,17 @@ export const LLMConfigComponent = (): JSX.Element => {
               {/* 详细信息 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">响应延迟</label>
+                  <label className="block text-sm font-medium mb-1">{t('settings.llm.responseLatency')}</label>
                   <div className="text-lg font-mono">
                     {testResult.result.latency}ms
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">测试时间</label>
+                  <label className="block text-sm font-medium mb-1">{t('settings.llm.testTime')}</label>
                   <div className="text-sm text-gray-600">
                     {testResult.result.test_time ? 
                       new Date(testResult.result.test_time).toLocaleString('zh-CN') : 
-                      '刚刚'
+                      t('common.justNow')
                     }
                   </div>
                 </div>
@@ -719,21 +722,21 @@ export const LLMConfigComponent = (): JSX.Element => {
               {/* 模型信息 */}
               {testResult.result.model_info && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">模型信息</label>
+                  <label className="block text-sm font-medium mb-2">{t('settings.llm.modelInfo')}</label>
                   <div className="bg-gray-50 p-3 rounded border space-y-2">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600">提供商:</span>
+                        <span className="text-gray-600">{t('settings.llm.provider')}:</span>
                         <span className="ml-2 font-medium">{testResult.result.model_info.provider}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">模型:</span>
+                        <span className="text-gray-600">{t('settings.llm.model')}:</span>
                         <span className="ml-2 font-medium">{testResult.result.model_info.model}</span>
                       </div>
                     </div>
                     {testResult.result.model_info.response_preview && (
                       <div>
-                        <span className="text-gray-600 text-sm">响应预览:</span>
+                        <span className="text-gray-600 text-sm">{t('settings.llm.responsePreview')}:</span>
                         <div className="mt-1 p-2 bg-white border rounded text-sm italic">
                           "{testResult.result.model_info.response_preview}"
                         </div>
@@ -746,7 +749,7 @@ export const LLMConfigComponent = (): JSX.Element => {
               {/* 错误详情 */}
               {!testResult.success && testResult.result.error_detail && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">错误详情</label>
+                  <label className="block text-sm font-medium mb-2">{t('settings.llm.errorDetails')}</label>
                   <div className="bg-red-50 p-3 rounded border border-red-200">
                     <code className="text-sm text-red-800">
                       {testResult.result.error_detail}
@@ -761,33 +764,28 @@ export const LLMConfigComponent = (): JSX.Element => {
                   <div className="flex items-start gap-2">
                     <InfoIcon className="w-5 h-5 text-blue-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-blue-900 mb-1">解决建议</h4>
+                      <h4 className="font-medium text-blue-900 mb-1">{t('settings.llm.suggestedSolutions')}</h4>
                       <ul className="text-sm text-blue-800 space-y-1">
-                        {testResult.result.status === 'auth_failed' && (
-                          <>
-                            <li>• 检查API密钥是否正确且有效</li>
-                            <li>• 确认API密钥具有所需权限</li>
-                          </>
-                        )}
-                        {testResult.result.status === 'connection_failed' && (
-                          <>
-                            <li>• 检查网络连接是否正常</li>
-                            <li>• 确认API接口地址是否正确</li>
-                            <li>• 检查防火墙设置</li>
-                          </>
-                        )}
-                        {testResult.result.status === 'model_not_found' && (
-                          <>
-                            <li>• 确认模型名称是否正确</li>
-                            <li>• 检查是否有该模型的访问权限</li>
-                          </>
-                        )}
-                        {testResult.result.status === 'rate_limited' && (
-                          <>
-                            <li>• 稍后重试</li>
-                            <li>• 检查API调用频率限制</li>
-                          </>
-                        )}
+                        {testResult.result.status === 'auth_failed' && 
+                          t('settings.llm.authFailedTips', { returnObjects: true }).map((tip: string, index: number) => (
+                            <li key={index}>• {tip}</li>
+                          ))
+                        }
+                        {testResult.result.status === 'connection_failed' && 
+                          t('settings.llm.connectionFailedTips', { returnObjects: true }).map((tip: string, index: number) => (
+                            <li key={index}>• {tip}</li>
+                          ))
+                        }
+                        {testResult.result.status === 'model_not_found' && 
+                          t('settings.llm.modelNotFoundTips', { returnObjects: true }).map((tip: string, index: number) => (
+                            <li key={index}>• {tip}</li>
+                          ))
+                        }
+                        {testResult.result.status === 'rate_limited' && 
+                          t('settings.llm.rateLimitedTips', { returnObjects: true }).map((tip: string, index: number) => (
+                            <li key={index}>• {tip}</li>
+                          ))
+                        }
                       </ul>
                     </div>
                   </div>
@@ -798,7 +796,7 @@ export const LLMConfigComponent = (): JSX.Element => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTestResult(false)}>
-              关闭
+              {t('settings.llm.close')}
             </Button>
             {testResult && (
               <Button onClick={() => handleTestConfig(testResult.configId)} disabled={testingConfigId === testResult.configId}>
@@ -807,7 +805,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                 ) : (
                   <PlayIcon className="w-4 h-4 mr-2" />
                 )}
-                重新测试
+                {t('settings.llm.retestConnection')}
               </Button>
             )}
           </DialogFooter>
@@ -819,11 +817,11 @@ export const LLMConfigComponent = (): JSX.Element => {
         {configsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2Icon className="w-6 h-6 animate-spin mr-2" />
-            <span>加载配置中...</span>
+            <span>{t('settings.llm.loading')}</span>
           </div>
         ) : llmConfigs.length === 0 ? (
           <div className="text-center py-8 text-[#4f7096]">
-            暂无配置，请添加第一个模型配置
+            {t('settings.llm.noConfigs')}
           </div>
         ) : (
           llmConfigs.map(config => (
@@ -838,13 +836,13 @@ export const LLMConfigComponent = (): JSX.Element => {
                       {config.name}
                       {config.is_default && (
                         <Badge variant="default" className="bg-[#1977e5]">
-                          默认
+                          {t('settings.llm.defaultLabel')}
                         </Badge>
                       )}
                       {config.supports_vision && (
                         <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50">
                           <InfoIcon className="w-3 h-3 mr-1" />
-                          视觉支持
+                          {t('settings.llm.visionSupportLabel')}
                         </Badge>
                       )}
                     </h4>
@@ -871,7 +869,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                     ) : (
                       <PlayIcon className="w-4 h-4 mr-1" />
                     )}
-                    测试
+                    {t('settings.llm.test')}
                   </Button>
                   <Button
                     variant="outline"
@@ -880,7 +878,7 @@ export const LLMConfigComponent = (): JSX.Element => {
                     disabled={config.is_default}
                   >
                     <ShieldCheckIcon className="w-4 h-4 mr-1" />
-                    {config.is_default ? '默认配置' : '设为默认'}
+                    {config.is_default ? t('settings.llm.defaultConfig') : t('settings.llm.setDefault')}
                   </Button>
                   <Button
                     variant="outline"
@@ -902,39 +900,39 @@ export const LLMConfigComponent = (): JSX.Element => {
 
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
                 <div>
-                  <span className="text-[#4f7096]">API地址</span>
+                  <span className="text-[#4f7096]">{t('settings.llm.apiUrl')}</span>
                   <div className="text-[#0c141c] font-medium truncate">
                     {config.base_url}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">温度</span>
+                  <span className="text-[#4f7096]">{t('settings.llm.temperature')}</span>
                   <div className="text-[#0c141c] font-medium">{config.temperature}</div>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">最大Token</span>
+                  <span className="text-[#4f7096]">{t('settings.llm.maxTokens')}</span>
                   <div className="text-[#0c141c] font-medium">{config.max_tokens}</div>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">视觉支持</span>
+                  <span className="text-[#4f7096]">{t('settings.llm.visionSupportStatus')}</span>
                   <div className="flex items-center gap-1">
                     {config.supports_vision ? (
                       <>
                         <CheckIcon className="w-4 h-4 text-green-600" />
-                        <span className="text-green-600 font-medium">支持</span>
+                        <span className="text-green-600 font-medium">{t('settings.llm.support')}</span>
                       </>
                     ) : (
                       <>
                         <XIcon className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-500 font-medium">不支持</span>
+                        <span className="text-gray-500 font-medium">{t('settings.llm.notSupport')}</span>
                       </>
                     )}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">状态</span>
+                  <span className="text-[#4f7096]">{t('settings.llm.status')}</span>
                   <div className={`font-medium ${config.is_active ? 'text-green-600' : 'text-gray-500'}`}>
-                    {config.is_active ? '已启用' : '已禁用'}
+                    {config.is_active ? t('settings.llm.enabled') : t('settings.llm.disabled')}
                   </div>
                 </div>
               </div>

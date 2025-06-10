@@ -119,12 +119,12 @@ export const SystemLogs = (): JSX.Element => {
       <div className="p-6 border-b border-[#d1dbe8]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#0c141c]">系统日志</h3>
+            <h3 className="text-lg font-semibold text-[#0c141c]">{t('settings.logs')}</h3>
             {stats && (
               <div className="flex items-center gap-4 mt-2 text-sm text-[#4f7096]">
-                <span>总计: {stats.total_logs}</span>
-                <span>错误: {stats.recent_errors}</span>
-                <span>信息: {stats.level_stats?.info || 0}</span>
+                <span>{t('settings.totalLogs')}: {stats.total_logs}</span>
+                <span>{t('settings.logLevels.error')}: {stats.recent_errors}</span>
+                <span>{t('settings.logLevels.info')}: {stats.level_stats?.info || 0}</span>
               </div>
             )}
           </div>
@@ -138,12 +138,12 @@ export const SystemLogs = (): JSX.Element => {
               {isLogPaused ? (
                 <>
                   <PlayIcon className="w-4 h-4 mr-2" />
-                  恢复
+                  {t('settings.logResume')}
                 </>
               ) : (
                 <>
                   <PauseIcon className="w-4 h-4 mr-2" />
-                  暂停
+                  {t('settings.logPause')}
                 </>
               )}
             </Button>
@@ -159,7 +159,7 @@ export const SystemLogs = (): JSX.Element => {
               ) : (
                 <RefreshCwIcon className="w-4 h-4 mr-2" />
               )}
-              刷新
+              {t('settings.llm.refresh')}
             </Button>
             <Button
               variant="outline"
@@ -168,7 +168,7 @@ export const SystemLogs = (): JSX.Element => {
               className="border-[#d1dbe8]"
             >
               <DownloadIcon className="w-4 h-4 mr-2" />
-              导出
+              {t('settings.exportLogs')}
             </Button>
             <Button
               variant="outline"
@@ -176,7 +176,7 @@ export const SystemLogs = (): JSX.Element => {
               onClick={handleCleanupLogs}
               className="border-[#d1dbe8] text-red-600 hover:text-red-700"
             >
-              清理日志
+              {t('settings.clearLogs')}
             </Button>
           </div>
         </div>
@@ -186,7 +186,7 @@ export const SystemLogs = (): JSX.Element => {
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7096] w-4 h-4" />
               <Input
-                placeholder="搜索日志..."
+                placeholder={t('settings.searchLogs')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleLogSearch()}
@@ -200,11 +200,11 @@ export const SystemLogs = (): JSX.Element => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部级别</SelectItem>
-              <SelectItem value="error">错误</SelectItem>
-              <SelectItem value="warn">警告</SelectItem>
-              <SelectItem value="info">信息</SelectItem>
-              <SelectItem value="debug">调试</SelectItem>
+              <SelectItem value="all">{t('settings.allLevels')}</SelectItem>
+              <SelectItem value="error">{t('settings.logLevels.error')}</SelectItem>
+              <SelectItem value="warn">{t('settings.logLevels.warn')}</SelectItem>
+              <SelectItem value="info">{t('settings.logLevels.info')}</SelectItem>
+              <SelectItem value="debug">{t('settings.logLevels.debug')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -218,7 +218,7 @@ export const SystemLogs = (): JSX.Element => {
         {logsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2Icon className="w-6 h-6 animate-spin mr-2" />
-            <span>加载日志中...</span>
+            <span>{t('settings.loadingLogs')}</span>
           </div>
         ) : (
           <div className="space-y-3">
@@ -263,7 +263,7 @@ export const SystemLogs = (): JSX.Element => {
         
         {!logsLoading && filteredLogs.length === 0 && (
           <div className="text-center py-8 text-[#4f7096]">
-            没有找到匹配的日志记录
+            {t('settings.noLogs')}
           </div>
         )}
       </div>
