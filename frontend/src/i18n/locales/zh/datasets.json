@@ -1,0 +1,36 @@
+{
+  "title": "数据集",
+  "totalDatasets": "{{count}} 个数据集",
+  "smartCreate": "智能创建",
+  "createDataset": "创建数据集",
+  "searchPlaceholder": "搜索数据集名称或描述...",
+  "taskType": "任务类型",
+  "allTaskTypes": "全部",
+  "nlp": "自然语言处理",
+  "qa": "问答系统",
+  "textClassification": "文本分类",
+  "loading": "加载中...",
+  "error": "错误",
+  "retry": "重试",
+  "noDatasets": "没有找到数据集",
+  "recommended": "推荐",
+  "detail": {
+    "backToList": "返回列表",
+    "dataPreview": "数据预览",
+    "versionManagement": "版本管理",
+    "detailInfo": "详细信息",
+    "settings": "设置",
+    "datasetId": "数据集ID",
+    "name": "名称",
+    "status": "状态",
+    "published": "已发布",
+    "createdAt": "创建时间"
+  },
+  "create": {
+    "title": "创建数据集",
+    "description": "数据集描述",
+    "backToList": "返回数据集列表",
+    "creating": "创建中...",
+    "importing": "导入中..."
+  }
+}

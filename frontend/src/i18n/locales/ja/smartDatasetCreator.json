@@ -1,0 +1,235 @@
+{
+  "title": "スマートデータセット作成ツール",
+  "description": "AI技術を活用して生データから高品質なトレーニングデータセットを自動生成し、複数のデータセットタイプと形式をサポートします。",
+  "constants": {
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "質問応答ペア",
+        "description": "文書内容から質問と回答のペアを生成し、QAシステムの訓練に適用",
+        "useCase": "スマートカスタマーサービス、知識Q&A、教育支援",
+        "category": "教師あり学習"
+      },
+      "instructionTuning": {
+        "name": "指示調整",
+        "description": "指示に従うモデル訓練のための指示-入力-出力三つ組を生成",
+        "useCase": "スマートオフィス、文書処理、パーソナライズドアシスタント",
+        "category": "教師あり学習"
+      },
+      "textClassification": {
+        "name": "テキスト分類",
+        "description": "文書の断片を抽出し、感情分析やコンテンツモデレーションなどの分類ラベルを生成",
+        "useCase": "感情分析、コンテンツモデレーション、ニュース分類、意図認識",
+        "category": "教師あり学習"
+      },
+      "dialogue": {
+        "name": "対話調整",
+        "description": "マルチターン対話データを生成し、対話の一貫性と文脈理解を向上",
+        "useCase": "スマートカスタマーサービス、チャットボット、音声アシスタント",
+        "category": "教師あり学習"
+      },
+      "domainAdaptation": {
+        "name": "ドメイン適応",
+        "description": "専門分野でのモデル性能向上のためのドメイン固有知識ファインチューニング",
+        "useCase": "医療診断、法律相談、金融分析",
+        "category": "教師あり学習"
+      },
+      "reasoning": {
+        "name": "推論調整",
+        "description": "思考の連鎖を含む推論データで、モデルの論理推論能力を訓練",
+        "useCase": "数学問題解決、コード生成、論理推論、複雑な分析",
+        "category": "推論訓練"
+      },
+      "knowledgeDistillation": {
+        "name": "知識蒸留",
+        "description": "大規模モデルから知識を抽出して小規模モデルを訓練し、性能とコストのバランスを取る",
+        "useCase": "モデル圧縮、エッジ展開、コスト最適化",
+        "category": "知識蒸留"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca形式",
+        "description": "スタンフォード大学がリリースした古典的な指示調整形式。シンプルな構造でシングルターンタスクに適用",
+        "structure": "instruction + input + output",
+        "advantages": ["シンプルな構造", "明確なタスク指向", "幅広いコミュニティサポート"],
+        "disadvantages": ["マルチターン対話は手動で連結が必要", "ツール呼び出しサポートなし"],
+        "bestFor": ["指示調整", "Q&Aシステム", "テキスト生成"]
+      },
+      "shareGPT": {
+        "name": "ShareGPT形式",
+        "description": "マルチターン対話とツール呼び出しをサポートする形式。実際のインタラクションシナリオに近い",
+        "structure": "conversations + tools + roles",
+        "advantages": ["マルチターン対話サポート", "ツール呼び出し機能", "役割管理"],
+        "disadvantages": ["複雑な形式", "役割位置ルールに従う必要"],
+        "bestFor": ["対話システム", "ツール呼び出し", "マルチモーダルインタラクション"]
+      },
+      "openAI": {
+        "name": "OpenAI形式",
+        "description": "OpenAI API互換形式。ShareGPTの簡略版",
+        "structure": "messages + roles",
+        "advantages": ["API互換", "使いやすい", "幅広いサポート"],
+        "disadvantages": ["比較的シンプルな機能", "拡張性に制限"],
+        "bestFor": ["API統合", "シンプルな対話", "クイックプロトタイピング"]
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT形式",
+        "description": "思考の連鎖を含むAlpaca形式。推論タスクの訓練に適用",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["推論プロセスをサポート", "明確な論理", "良い教育効果"],
+        "disadvantages": ["複雑なデータ構築", "専門的なアノテーションが必要"],
+        "bestFor": ["数学推論", "論理分析", "ステップ分解"]
+      },
+      "csv": {
+        "name": "CSV形式",
+        "description": "シンプルなテーブル形式。分類とアノテーションタスクに適用",
+        "structure": "text, label",
+        "advantages": ["シンプルで直感的", "編集しやすい", "多くのツールサポート"],
+        "disadvantages": ["機能制限", "複雑な構造をサポートしない"],
+        "bestFor": ["テキスト分類", "ラベルアノテーション", "シンプルなタスク"]
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "ローカルモデル"
+    },
+    "steps": {
+      "selectData": {
+        "name": "データを選択",
+        "description": "生データからファイルを選択"
+      },
+      "configDataset": {
+        "name": "データセットを設定",
+        "description": "データセットタイプと形式を選択"
+      },
+      "configModel": {
+        "name": "モデルを設定",
+        "description": "AIモデルと処理パラメータを設定"
+      },
+      "previewConfirm": {
+        "name": "プレビューと確認",
+        "description": "生成設定をプレビューして確認"
+      },
+      "generateDataset": {
+        "name": "データセットを生成",
+        "description": "AIが処理してデータセットを生成"
+      }
+    },
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "質問応答ペア",
+        "description": "文書内容から質問と回答のペアを生成し、QAシステムの訓練に適用",
+        "useCase": "スマートカスタマーサービス、知識Q&A、教育支援",
+        "example": "{\"instruction\": \"人工知能とは何ですか？\", \"input\": \"\", \"output\": \"人工知能はコンピュータサイエンスの分野です...\"}"
+      },
+      "instructionTuning": {
+        "name": "指示調整",
+        "description": "指示に従うモデル訓練のための指示-入力-出力三つ組を生成",
+        "useCase": "スマートオフィス、文書処理、パーソナライズドアシスタント",
+        "example": "{\"instruction\": \"以下のテキストを英語に翻訳してください\", \"input\": \"こんにちは世界\", \"output\": \"Hello World\"}"
+      },
+      "textClassification": {
+        "name": "テキスト分類",
+        "description": "文書の断片を抽出し、感情分析やコンテンツモデレーションなどの分類ラベルを生成",
+        "useCase": "感情分析、コンテンツモデレーション、ニュース分類、意図認識",
+        "example": "{\"text\": \"この商品は素晴らしい！\", \"label\": \"positive\"}"
+      },
+      "dialogue": {
+        "name": "対話調整",
+        "description": "マルチターン対話データを生成し、対話の一貫性と文脈理解を向上",
+        "useCase": "スマートカスタマーサービス、チャットボット、音声アシスタント",
+        "example": "{\"conversations\": [{\"role\": \"user\", \"content\": \"こんにちは\"}, {\"role\": \"assistant\", \"content\": \"こんにちは！何かお手伝いできることはありますか？\"}]}"
+      },
+      "domainAdaptation": {
+        "name": "ドメイン適応",
+        "description": "専門分野でのモデル性能向上のためのドメイン固有知識ファインチューニング",
+        "useCase": "医療診断、法律相談、金融分析",
+        "example": "{\"instruction\": \"患者の症状を分析\", \"input\": \"患者は3時間前から胸痛\", \"output\": \"心電図検査を推奨...\", \"domain\": \"医療\"}"
+      },
+      "reasoning": {
+        "name": "推論調整",
+        "description": "思考の連鎖を含む推論データで、モデルの論理推論能力を訓練",
+        "useCase": "数学問題解決、コード生成、論理推論、複雑な分析",
+        "example": "{\"instruction\": \"数学問題を解く\", \"input\": \"3×5+2=?\", \"chain_of_thought\": \"まず掛け算：3×5=15、次に足し算：15+2=17\", \"output\": \"17\"}"
+      },
+      "knowledgeDistillation": {
+        "name": "知識蒸留",
+        "description": "大規模モデルから知識を抽出して小規模モデルを訓練し、性能とコストのバランスを取る",
+        "useCase": "モデル圧縮、エッジ展開、コスト最適化",
+        "example": "GPT-4の出力に基づいて生成された訓練データ、小規模モデルの訓練に使用"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca形式",
+        "description": "スタンフォード大学がリリースした古典的な指示調整形式。シンプルな構造でシングルターンタスクに適用",
+        "structure": "instruction + input + output",
+        "advantages": ["シンプルな構造", "明確なタスク指向", "幅広いコミュニティサポート"],
+        "disadvantages": ["マルチターン対話は手動で連結が必要", "ツール呼び出しサポートなし"],
+        "bestFor": ["指示調整", "Q&Aシステム", "テキスト生成"],
+        "example": "{\n  \"instruction\": \"以下の日本語を英語に翻訳してください\",\n  \"input\": \"こんにちは、世界！\",\n  \"output\": \"Hello, World!\"\n}"
+      },
+      "shareGPT": {
+        "name": "ShareGPT形式",
+        "description": "マルチターン対話とツール呼び出しをサポートする形式。実際のインタラクションシナリオに近い",
+        "structure": "conversations + tools + roles",
+        "advantages": ["マルチターン対話サポート", "ツール呼び出し機能", "役割管理"],
+        "disadvantages": ["複雑な形式", "役割位置ルールに従う必要"],
+        "bestFor": ["対話システム", "ツール呼び出し", "マルチモーダルインタラクション"],
+        "example": "{\n  \"conversations\": [\n    {\"role\": \"user\", \"content\": \"今日の天気はどうですか？\"},\n    {\"role\": \"assistant\", \"content\": \"天気を確認します...\"}\n  ]\n}"
+      },
+      "openAI": {
+        "name": "OpenAI形式",
+        "description": "OpenAI API互換形式。ShareGPTの簡略版",
+        "structure": "messages + roles",
+        "advantages": ["API互換", "使いやすい", "幅広いサポート"],
+        "disadvantages": ["比較的シンプルな機能", "拡張性に制限"],
+        "bestFor": ["API統合", "シンプルな対話", "クイックプロトタイピング"],
+        "example": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"あなたは役立つアシスタントです\"},\n    {\"role\": \"user\", \"content\": \"AIについて紹介してください\"},\n    {\"role\": \"assistant\", \"content\": \"AIは人工知能の略で...\"}\n  ]\n}"
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT形式",
+        "description": "思考の連鎖を含むAlpaca形式。推論タスクの訓練に適用",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["推論プロセスをサポート", "明確な論理", "良い教育効果"],
+        "disadvantages": ["複雑なデータ構築", "専門的なアノテーションが必要"],
+        "bestFor": ["数学推論", "論理分析", "ステップ分解"],
+        "example": "{\n  \"instruction\": \"この数学問題を解いてください\",\n  \"input\": \"正方形の辺の長さが5cmの場合、面積を求めてください\",\n  \"chain_of_thought\": \"正方形の面積の公式は辺の長さの二乗なので、面積 = 5 × 5 = 25\",\n  \"output\": \"25平方センチメートル\"\n}"
+      },
+      "csv": {
+        "name": "CSV形式",
+        "description": "シンプルなテーブル形式。分類とアノテーションタスクに適用",
+        "structure": "text, label",
+        "advantages": ["シンプルで直感的", "編集しやすい", "多くのツールサポート"],
+        "disadvantages": ["機能制限", "複雑な構造をサポートしない"],
+        "bestFor": ["テキスト分類", "ラベルアノテーション", "シンプルなタスク"],
+        "example": "text,label\n\"この製品は素晴らしい\",positive\n\"サービスが悪い\",negative"
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "ローカルモデル"
+    }
+  },
+  "step1": {
+    "title": "MDデータファイルを選択",
+    "loading": "データコレクションを読み込み中...",
+    "selectedCount": "{{selected}} / {{total}} 個のMDファイルを選択",
+    "refresh": "更新",
+    "noMdFiles": "このコレクションには変換済みのMDファイルがありません",
+    "preview": "プレビュー",
+    "selectedFiles": {
+      "title": "選択されたファイル",
+      "count": "{{count}} 個のファイル"
+    },
+    "noCollections": {
+      "title": "利用可能なデータコレクションがありません",
+      "description": "生データ管理でデータコレクションを作成し、ファイルをアップロードしてください"
+    }
+  }
+}

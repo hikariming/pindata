@@ -1,0 +1,116 @@
+{
+  "title": "タスク管理",
+  "description": "すべてのバックグラウンドデータ処理タスクを監視・管理します",
+  "statistics": {
+    "totalTasks": "総タスク数",
+    "running": "実行中",
+    "pending": "保留中",
+    "completed": "完了",
+    "failed": "失敗"
+  },
+  "tabs": {
+    "taskList": "タスクリスト",
+    "taskQueue": "タスクキュー",
+    "systemMonitor": "システムモニター"
+  },
+  "actions": {
+    "pauseSelected": "選択したものを一時停止",
+    "cancelSelected": "選択したものをキャンセル",
+    "refresh": "更新",
+    "autoRefreshStatus": "10秒ごとに自動更新中"
+  },
+  "filters": {
+    "searchPlaceholder": "タスク名、ライブラリ、またはデータセットを検索...",
+    "allStatuses": "すべてのステータス",
+    "allTypes": "すべてのタイプ",
+    "typeLabels": {
+      "fileConversion": "ファイル変換",
+      "datasetGeneration": "データセット生成",
+      "dataDistillation": "データ蒸留",
+      "batchProcessing": "バッチ処理",
+      "modelTraining": "モデル訓練",
+      "dataPreprocessing": "データ前処理"
+    }
+  },
+  "table": {
+    "taskInfo": "タスク情報",
+    "type": "タイプ",
+    "status": "ステータス",
+    "progress": "進行状況",
+    "priority": "優先度",
+    "duration": "所要時間",
+    "creator": "作成者",
+    "actions": "アクション"
+  },
+  "status": {
+    "pending": "保留中",
+    "running": "実行中",
+    "completed": "完了",
+    "failed": "失敗",
+    "cancelled": "キャンセル済み",
+    "unknown": "不明"
+  },
+  "priority": {
+    "low": "低",
+    "medium": "中",
+    "high": "高",
+    "urgent": "緊急"
+  },
+  "duration": {
+    "minutes": "{{count}}分",
+    "hoursMinutes": "{{hours}}時間{{minutes}}分"
+  },
+  "progress": {
+    "processed": "処理済み",
+    "processing": "処理中",
+    "currentItem": "現在：{{item}}",
+    "estimatedRemaining": "推定残り時間：{{time}}",
+    "errors": "エラー：{{count}}",
+    "warnings": "警告：{{count}}",
+    "aiProcessing": "AI処理中..."
+  },
+  "operations": {
+    "viewDetails": "詳細を表示",
+    "pauseTask": "タスクを一時停止",
+    "resumeTask": "タスクを再開",
+    "retryTask": "タスクを再試行",
+    "cancelTask": "タスクをキャンセル",
+    "deleteTask": "タスクを削除",
+    "downloadResult": "結果をダウンロード"
+  },
+  "messages": {
+    "noTasks": "タスクはありません",
+    "noMatchingTasks": "一致するタスクが見つかりません",
+    "loading": "タスクデータを読み込み中...",
+    "deletionSuccess": "{{count}}個のタスクを正常に削除しました{{failed}}",
+    "cancellationSuccess": "{{count}}個のタスクを正常にキャンセルしました{{failed}}",
+    "operationSuccess": "{{operation}}タスクが成功しました",
+    "operationFailed": "{{operation}}タスクが失敗しました"
+  },
+  "pagination": {
+    "showing": "{{start}} - {{end}}を表示中、全{{total}}項目",
+    "previous": "前へ",
+    "next": "次へ",
+    "page": "{{current}} / {{total}}ページ"
+  },
+  "details": {
+    "title": "タスク詳細",
+    "basicInfo": "基本情報",
+    "progressInfo": "進行状況情報",
+    "taskLogs": "タスクログ",
+    "taskName": "タスク名",
+    "taskType": "タスクタイプ",
+    "startTime": "開始時間",
+    "endTime": "終了時間",
+    "creator": "作成者",
+    "priority": "優先度",
+    "overallProgress": "全体進行状況",
+    "processedItems": "処理済み項目",
+    "totalItems": "総項目数",
+    "errorCount": "エラー数",
+    "warningCount": "警告数",
+    "realTimeUpdate": "リアルタイム更新中",
+    "taskExecuting": "タスク実行中、ログは自動的に更新されます...",
+    "close": "閉じる"
+  }
+}

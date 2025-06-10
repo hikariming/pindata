@@ -1,0 +1,32 @@
+{
+  "title": "智能数据集创建器",
+  "description": "使用AI技术从原始数据自动生成高质量的训练数据集，支持多种数据集类型和格式。",
+  "stepIndicator": {
+    "progress": "步骤 {{current}} / {{total}}",
+    "completed": "已完成"
+  },
+  "navigation": {
+    "prevStep": "上一步",
+    "nextStep": "下一步"
+  },
+  "steps": {
+    "selectData": "选择数据源",
+    "configureDataset": "配置数据集",
+    "configureModel": "模型配置",
+    "preview": "预览确认",
+    "generate": "生成数据集"
+  },
+  "dataSelection": {
+    "title": "选择原始数据文件",
+    "selectAll": "全选",
+    "filesSelected": "已选择 {{selected}} / {{total}} 个文件",
+    "refresh": "刷新",
+    "preview": "预览"
+  },
+  "generation": {
+    "title": "AI正在生成数据集",
+    "progress": "{{progress}}% 完成",
+    "completed": "数据集生成完成！",
+    "redirecting": "正在跳转到数据集管理页面..."
+  }
+}

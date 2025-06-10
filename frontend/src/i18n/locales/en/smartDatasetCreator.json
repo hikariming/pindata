@@ -1,0 +1,145 @@
+{
+  "stepIndicator": {
+    "progress": "Step {{current}} / {{total}}",
+    "completed": "Completed"
+  },
+  "navigation": {
+    "prevStep": "Previous",
+    "nextStep": "Next"
+  },
+  "title": "Smart Dataset Creator",
+  "description": "Use AI technology to automatically generate high-quality training datasets from raw data, supporting multiple dataset types and formats.",
+  "constants": {
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "QA Pairs",
+        "description": "Generate question-answer pairs from document content, suitable for QA system training",
+        "useCase": "Smart customer service, knowledge Q&A, educational assistance",
+        "category": "supervised"
+      },
+      "instructionTuning": {
+        "name": "Instruction Tuning",
+        "description": "Generate instruction-input-output triplets for instruction-following model training",
+        "useCase": "Smart office, document processing, personalized assistant",
+        "category": "supervised"
+      },
+      "textClassification": {
+        "name": "Text Classification",
+        "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
+        "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
+        "category": "supervised"
+      },
+      "dialogue": {
+        "name": "Dialogue Tuning",
+        "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
+        "useCase": "Smart customer service, chatbots, voice assistants",
+        "category": "supervised"
+      },
+      "domainAdaptation": {
+        "name": "Domain Adaptation",
+        "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
+        "useCase": "Medical diagnosis, legal consultation, financial analysis",
+        "category": "supervised"
+      },
+      "reasoning": {
+        "name": "Reasoning Tuning",
+        "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
+        "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
+        "category": "reasoning"
+      },
+      "knowledgeDistillation": {
+        "name": "Knowledge Distillation",
+        "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
+        "useCase": "Model compression, edge deployment, cost optimization",
+        "category": "distillation"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca Format",
+        "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
+        "structure": "instruction + input + output",
+        "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
+        "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
+        "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"]
+      },
+      "shareGPT": {
+        "name": "ShareGPT Format",
+        "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
+        "structure": "conversations + tools + roles",
+        "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
+        "disadvantages": ["Complex format", "Must follow role position rules"],
+        "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"]
+      },
+      "openAI": {
+        "name": "OpenAI Format",
+        "description": "OpenAI API compatible format, simplified version of ShareGPT",
+        "structure": "messages + roles",
+        "advantages": ["API compatible", "Simple to use", "Widely supported"],
+        "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
+        "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"]
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT Format",
+        "description": "Alpaca format with chain of thought, suitable for reasoning task training",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
+        "disadvantages": ["Complex data construction", "Requires professional annotation"],
+        "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"]
+      },
+      "csv": {
+        "name": "CSV Format",
+        "description": "Simple table format, suitable for classification and annotation tasks",
+        "structure": "text, label",
+        "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
+        "disadvantages": ["Limited functionality", "No complex structure support"],
+        "bestFor": ["Text classification", "Label annotation", "Simple tasks"]
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "Local Model"
+    },
+    "steps": {
+      "selectData": {
+        "name": "Select Data",
+        "description": "Select files from raw data"
+      },
+      "configDataset": {
+        "name": "Configure Dataset",
+        "description": "Select dataset type and format"
+      },
+      "configModel": {
+        "name": "Configure Model",
+        "description": "Configure AI model and processing parameters"
+      },
+      "previewConfirm": {
+        "name": "Preview & Confirm",
+        "description": "Preview generation settings and confirm"
+      },
+      "generateDataset": {
+        "name": "Generate Dataset",
+        "description": "AI processes and generates dataset"
+      }
+    }
+  },
+  "step1": {
+    "title": "Select MD Data Files",
+    "loading": "Loading data collections...",
+    "selectedCount": "Selected {{selected}} / {{total}} MD files",
+    "refresh": "Refresh",
+    "noMdFiles": "No converted MD files in this collection",
+    "preview": "Preview",
+    "selectedFiles": {
+      "title": "Selected Files",
+      "count": "{{count}} files"
+    },
+    "noCollections": {
+      "title": "No available data collections",
+      "description": "Please create a data collection and upload files in raw data management first"
+    }
+  }
+}

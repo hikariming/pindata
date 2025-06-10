@@ -1,0 +1,46 @@
+{
+  "welcome": "Welcome to pindata",
+  "welcomeDescription": "Get started by exploring your datasets, managing tasks, and monitoring storage usage.",
+  "systemOverview": "System Overview",
+  "recentActivity": "Recent Activity",
+  "quickActions": "Quick Actions",
+  "systemNotifications": "System Notifications",
+  "comingSoon": "Coming Soon",
+  "pluginsDevelopment": "Plugin support is currently under development",
+  "features": {
+    "dataImport": {
+      "title": "Data Import and Processing",
+      "description": "Support for importing raw data in multiple formats including CSV, JSON, Excel, etc. Intelligent data preprocessing, automatic data type recognition, and generation of high-quality training datasets."
+    },
+    "datasetManagement": {
+      "title": "Multi-platform Dataset Management",
+      "description": "Seamless integration with mainstream platforms like Hugging Face Hub and ModelScope. One-click import of popular open-source datasets with version management and update synchronization."
+    },
+    "taskScheduling": {
+      "title": "Smart Task Scheduling",
+      "description": "Automated data processing pipeline supporting batch operations and scheduled tasks. Real-time task status monitoring with detailed execution logs and performance metrics."
+    },
+    "storageSharing": {
+      "title": "Storage and Sharing",
+      "description": "Cloud storage supporting secure storage and backup of large-scale datasets. Team collaboration features with dataset sharing and permission management."
+    }
+  },
+  "quickStart": {
+    "title": "Quick Start Guide",
+    "step1": {
+      "title": "Import Data",
+      "description": "Local files or HF, ModelScope platforms"
+    },
+    "step2": {
+      "title": "Process Data",
+      "description": "Cleaning, transformation and quality check"
+    },
+    "step3": {
+      "title": "Generate Dataset",
+      "description": "Train dataset and export"
+    }
+  },
+  "error": {
+    "loadingOverview": "Error loading overview data: {{error}}"
+  }
+}
