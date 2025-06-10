@@ -48,11 +48,11 @@ const DatasetCreationSuccess: React.FC<DatasetCreationSuccessProps> = ({ createM
         <Card className="border-[#d1dbe8]">
           <div className="p-8 text-center">
             <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-[#0c141c] mb-2">数据集创建成功！</h2>
-            <p className="text-[#4f7096] mb-4">正在跳转到数据集列表...</p>
+            <h2 className="text-2xl font-bold text-[#0c141c] mb-2">{t('datasets.create.success.title')}</h2>
+            <p className="text-[#4f7096] mb-4">{t('datasets.create.success.redirecting')}</p>
             <div className="flex items-center justify-center gap-2">
               <Loader2Icon className="w-4 h-4 animate-spin" />
-              <span className="text-sm text-[#4f7096]">加载中...</span>
+              <span className="text-sm text-[#4f7096]">{t('datasets.loading')}</span>
             </div>
           </div>
         </Card>
@@ -65,10 +65,11 @@ const DatasetCreationSuccess: React.FC<DatasetCreationSuccessProps> = ({ createM
         <Card className="border-[#d1dbe8]">
           <div className="p-8 text-center">
             <CloudDownloadIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-[#0c141c] mb-2">导入任务已启动！</h2>
+            <h2 className="text-2xl font-bold text-[#0c141c] mb-2">{t('datasets.create.success.importStarted')}</h2>
             <p className="text-[#4f7096] mb-4">
-              数据集正在从{createMethod === 'huggingface' ? 'Hugging Face' : '魔搭社区'}导入，
-              您可以在任务管理页面查看进度。
+              {t('datasets.create.success.importMessage', {
+                source: createMethod === 'huggingface' ? 'Hugging Face' : '魔搭社区'
+              })}
             </p>
             <div className="flex items-center justify-center gap-3 mt-6">
               <Button 
@@ -76,13 +77,13 @@ const DatasetCreationSuccess: React.FC<DatasetCreationSuccessProps> = ({ createM
                 className="border-[#d1dbe8]"
                 onClick={() => navigate('/tasks')}
               >
-                查看任务进度
+                {t('datasets.create.success.viewTaskProgress')}
               </Button>
               <Button 
                 className="bg-[#1977e5] hover:bg-[#1565c0]"
                 onClick={() => navigate('/datasets')}
               >
-                返回数据集列表
+                {t('datasets.create.success.backToDatasetList')}
               </Button>
             </div>
           </div>
@@ -119,14 +120,14 @@ export const CreateDataset = (): JSX.Element => {
     // 空数据集需要填写基本信息
     if (createMethod === 'empty') {
       if (!datasetName.trim() || !description.trim() || !owner.trim()) {
-        setError('数据集名称、拥有者和描述为必填项');
+        setError(t('datasets.create.creationFailed'));
         return;
       }
     }
 
     // 导入数据集需要URL
     if ((createMethod === 'huggingface' || createMethod === 'modelscope') && !importUrl.trim()) {
-      setError('请提供有效的导入URL或路径');
+      setError(t('datasets.create.creationFailed'));
       return;
     }
 
@@ -161,7 +162,7 @@ export const CreateDataset = (): JSX.Element => {
       
     } catch (err: any) {
       console.error('创建数据集失败:', err);
-      setError(err.message || '创建数据集时发生错误，请重试');
+      setError(err.message || t('datasets.create.creationFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -179,7 +180,7 @@ export const CreateDataset = (): JSX.Element => {
         <Link to="/datasets">
           <Button variant="outline" className="border-[#d1dbe8] flex items-center gap-2">
             <ArrowLeftIcon className="w-4 h-4" />
-            返回数据集列表
+            {t('datasets.create.backToList')}
           </Button>
         </Link>
       </div>
@@ -188,10 +189,10 @@ export const CreateDataset = (): JSX.Element => {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <DatabaseIcon className="w-8 h-8 text-[#1977e5]" />
-          <h1 className="text-2xl font-bold text-[#0c141c]">创建数据集</h1>
+          <h1 className="text-2xl font-bold text-[#0c141c]">{t('datasets.create.title')}</h1>
         </div>
         <p className="text-[#4f7096] text-lg max-w-3xl">
-          选择您想要的数据集创建方式，然后填写相关信息。
+          {t('datasets.create.subtitle')}
         </p>
       </div>
 
@@ -201,7 +202,7 @@ export const CreateDataset = (): JSX.Element => {
           <div className="p-4">
             <div className="flex items-center gap-2">
               <AlertCircleIcon className="w-5 h-5 text-red-500" />
-              <span className="text-red-700 font-medium">创建失败</span>
+              <span className="text-red-700 font-medium">{t('datasets.create.creationFailed')}</span>
             </div>
             <p className="text-red-600 mt-1">{error}</p>
           </div>
@@ -211,7 +212,7 @@ export const CreateDataset = (): JSX.Element => {
       {/* 创建方式选择 */}
       <Card className="border-[#d1dbe8] mb-6">
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-[#0c141c] mb-4">选择创建方式</h2>
+          <h2 className="text-lg font-semibold text-[#0c141c] mb-4">{t('datasets.create.selectMethod')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* 方式1: 创建空数据集 */}
             <div 
@@ -234,9 +235,9 @@ export const CreateDataset = (): JSX.Element => {
                   <div className="w-2 h-2 bg-[#1977e5] rounded-full"></div>
                 )}
               </div>
-              <h3 className="font-semibold text-[#0c141c] mb-2">创建空数据集</h3>
+              <h3 className="font-semibold text-[#0c141c] mb-2">{t('datasets.create.createEmpty')}</h3>
               <p className="text-[#4f7096] text-sm">
-                创建一个新的空数据集目录，您可以稍后上传和管理数据文件。
+                {t('datasets.create.createEmptyDesc')}
               </p>
             </div>
 
@@ -261,9 +262,9 @@ export const CreateDataset = (): JSX.Element => {
                   <div className="w-2 h-2 bg-[#ff6b35] rounded-full"></div>
                 )}
               </div>
-              <h3 className="font-semibold text-[#0c141c] mb-2">Hugging Face 导入</h3>
+              <h3 className="font-semibold text-[#0c141c] mb-2">{t('datasets.create.importHuggingface')}</h3>
               <p className="text-[#4f7096] text-sm">
-                从 Hugging Face Hub 导入现有数据集，支持URL或数据集路径。
+                {t('datasets.create.importHuggingfaceDesc')}
               </p>
             </div>
 
@@ -288,9 +289,9 @@ export const CreateDataset = (): JSX.Element => {
                   <div className="w-2 h-2 bg-[#7c3aed] rounded-full"></div>
                 )}
               </div>
-              <h3 className="font-semibold text-[#0c141c] mb-2">魔搭社区导入</h3>
+              <h3 className="font-semibold text-[#0c141c] mb-2">{t('datasets.create.importModelscope')}</h3>
               <p className="text-[#4f7096] text-sm">
-                从魔搭社区导入中文优化的数据集，专注于中文AI应用场景。
+                {t('datasets.create.importModelscopeDesc')}
               </p>
             </div>
           </div>
@@ -305,12 +306,12 @@ export const CreateDataset = (): JSX.Element => {
             <Card className="border-[#d1dbe8] mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-semibold text-[#0c141c] mb-4">
-                  {createMethod === 'huggingface' ? 'Hugging Face' : '魔搭社区'} 数据集导入
+                  {t('datasets.create.importInfo')}
                 </h2>
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-[#0c141c]">
-                      数据集URL或路径 *
+                      {t('datasets.create.datasetUrl')} *
                     </label>
                     <a
                       href={createMethod === 'huggingface' ? 'https://huggingface.co/datasets/' : 'https://www.modelscope.cn/datasets'}
@@ -318,7 +319,7 @@ export const CreateDataset = (): JSX.Element => {
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-sm text-[#1977e5] hover:text-[#1565c0] hover:underline transition-colors"
                     >
-                      <span>访问 {createMethod === 'huggingface' ? 'Hugging Face' : '魔搭社区'}</span>
+                      <span>{createMethod === 'huggingface' ? t('datasets.create.visitHuggingface') : t('datasets.create.visitModelscope')}</span>
                       <ExternalLinkIcon className="w-3 h-3" />
                     </a>
                   </div>
@@ -326,8 +327,8 @@ export const CreateDataset = (): JSX.Element => {
                     className="border-[#d1dbe8]"
                     placeholder={
                       createMethod === 'huggingface' 
-                        ? "例如: squad 或 https://huggingface.co/datasets/squad" 
-                        : "例如: open-r1/Mixture-of-Thoughts 或完整URL"
+                        ? t('datasets.create.urlPlaceholder')
+                        : t('datasets.create.modelscopeUrlPlaceholder')
                     }
                     value={importUrl}
                     onChange={(e) => setImportUrl(e.target.value)}
@@ -335,8 +336,8 @@ export const CreateDataset = (): JSX.Element => {
                   />
                   <p className="text-xs text-[#4f7096] mt-1">
                     {createMethod === 'huggingface' 
-                      ? "支持数据集名称（如 open-r1/Mixture-of-Thoughts"
-                      : "支持路径格式（如 open-r1/Mixture-of-Thoughts）或完整URL，系统将自动获取数据集信息"
+                      ? t('datasets.create.urlHint')
+                      : t('datasets.create.modelscopeUrlHint')
                     }
                   </p>
                 </div>
@@ -348,15 +349,15 @@ export const CreateDataset = (): JSX.Element => {
           {createMethod === 'empty' && (
             <Card className="border-[#d1dbe8] mb-6">
               <div className="p-6">
-                <h2 className="text-lg font-semibold text-[#0c141c] mb-4">基本信息</h2>
+                <h2 className="text-lg font-semibold text-[#0c141c] mb-4">{t('datasets.create.basicInfo')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      数据集名称 *
+                      {t('datasets.create.datasetName')} *
                     </label>
                     <Input
                       className="border-[#d1dbe8]"
-                      placeholder="输入数据集名称..."
+                      placeholder={t('datasets.create.datasetNamePlaceholder')}
                       value={datasetName}
                       onChange={(e) => setDatasetName(e.target.value)}
                       disabled={isLoading}
@@ -364,20 +365,20 @@ export const CreateDataset = (): JSX.Element => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      拥有者 *
+                      {t('datasets.create.owner')} *
                     </label>
                     <Input
                       className="border-[#d1dbe8]"
-                      placeholder="输入拥有者用户名或组织名..."
+                      placeholder={t('datasets.create.ownerPlaceholder')}
                       value={owner}
                       onChange={(e) => setOwner(e.target.value)}
                       disabled={isLoading}
                     />
-                    <p className="text-xs text-[#4f7096] mt-1">拥有者和数据集名称的组合必须唯一</p>
+                    <p className="text-xs text-[#4f7096] mt-1">{t('datasets.create.ownerHint')}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      许可证
+                      {t('datasets.create.license')}
                     </label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -400,7 +401,7 @@ export const CreateDataset = (): JSX.Element => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                      任务类型
+                      {t('datasets.create.taskType')}
                     </label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -415,16 +416,16 @@ export const CreateDataset = (): JSX.Element => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-full">
                         <DropdownMenuItem onClick={() => setTaskType('Natural Language Processing')}>
-                          自然语言处理
+                          {t('datasets.nlp')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTaskType('Question Answering')}>
-                          问答系统
+                          {t('datasets.qa')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTaskType('Text Classification')}>
-                          文本分类
+                          {t('datasets.textClassification')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTaskType('Computer Vision')}>
-                          计算机视觉
+                          {t('datasets.computerVision')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -432,11 +433,11 @@ export const CreateDataset = (): JSX.Element => {
                 </div>
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                    标签
+                    {t('datasets.create.tags')}
                   </label>
                   <Input
                     className="border-[#d1dbe8]"
-                    placeholder="用逗号分隔标签，如：nlp, 中文, 问答..."
+                    placeholder={t('datasets.create.tagsPlaceholder')}
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                     disabled={isLoading}
@@ -444,11 +445,11 @@ export const CreateDataset = (): JSX.Element => {
                 </div>
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                    描述 *
+                    {t('datasets.create.description')} *
                   </label>
                   <Textarea
                     className="border-[#d1dbe8] min-h-[100px]"
-                    placeholder="描述您的数据集内容、用途和特点..."
+                    placeholder={t('datasets.create.descriptionPlaceholder')}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isLoading}
@@ -477,30 +478,30 @@ export const CreateDataset = (): JSX.Element => {
                   <InfoIcon className="w-5 h-5 text-[#1977e5] mt-0.5" />
                   <div>
                     <h5 className="font-medium text-[#0c141c] mb-1">
-                      {createMethod === 'empty' && '创建说明'}
-                      {createMethod === 'huggingface' && '导入说明'}
-                      {createMethod === 'modelscope' && '导入说明'}
+                      {createMethod === 'empty' && t('datasets.create.createExplanation')}
+                      {createMethod === 'huggingface' && t('datasets.create.importExplanation')}
+                      {createMethod === 'modelscope' && t('datasets.create.importExplanation')}
                     </h5>
                     <ul className="text-sm text-[#4f7096] space-y-1">
                       {createMethod === 'empty' && (
                         <>
-                          <li>• 系统将为您创建一个新的空数据集目录</li>
-                          <li>• 您可以稍后通过文件管理界面上传数据文件</li>
-                          <li>• 支持多种格式：JSON、CSV、Parquet、TXT等</li>
+                          {t('datasets.create.emptyDatasetSteps', { returnObjects: true }).map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
                         </>
                       )}
                       {createMethod === 'huggingface' && (
                         <>
-                          <li>• 系统将从Hugging Face Hub下载指定数据集</li>
-                          <li>• 数据集信息（名称、描述等）将自动从源获取</li>
-                          <li>• 导入过程可能需要几分钟，取决于数据集大小</li>
+                          {t('datasets.create.huggingfaceSteps', { returnObjects: true }).map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
                         </>
                       )}
                       {createMethod === 'modelscope' && (
                         <>
-                          <li>• 系统将从魔搭社区下载指定数据集</li>
-                          <li>• 数据集信息（名称、描述等）将自动从源获取</li>
-                          <li>• 导入过程可能需要几分钟，取决于数据集大小</li>
+                          {t('datasets.create.modelscopeSteps', { returnObjects: true }).map((step, index) => (
+                            <li key={index}>{step}</li>
+                          ))}
                         </>
                       )}
                     </ul>
@@ -518,7 +519,7 @@ export const CreateDataset = (): JSX.Element => {
               onClick={() => setCreateMethod(null)}
               disabled={isLoading}
             >
-              重新选择
+              {t('datasets.create.reselect')}
             </Button>
             <Button 
               className="bg-[#1977e5] hover:bg-[#1565c0] flex items-center gap-2"
@@ -533,13 +534,13 @@ export const CreateDataset = (): JSX.Element => {
               {isLoading ? (
                 <>
                   <Loader2Icon className="w-4 h-4 animate-spin" />
-                  {createMethod === 'empty' ? '创建中...' : '导入中...'}
+                  {createMethod === 'empty' ? t('datasets.create.creating') : t('datasets.create.importing')}
                 </>
               ) : (
                 <>
                   {createMethod === 'empty' && <FolderPlusIcon className="w-4 h-4" />}
                   {(createMethod === 'huggingface' || createMethod === 'modelscope') && <CloudDownloadIcon className="w-4 h-4" />}
-                  {createMethod === 'empty' ? '创建数据集' : '导入数据集'}
+                  {createMethod === 'empty' ? t('datasets.create.createEmpty') : t('datasets.create.importInfo')}
                 </>
               )}
             </Button>

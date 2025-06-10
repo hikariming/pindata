@@ -79,7 +79,7 @@ export const Datasets = (): JSX.Element => {
       
     } catch (err) {
       console.error('获取数据集失败:', err);
-      setError(err instanceof Error ? err.message : '获取数据集失败');
+      setError(err instanceof Error ? err.message : t('datasets.error'));
     } finally {
       setLoading(false);
     }
@@ -202,18 +202,18 @@ export const Datasets = (): JSX.Element => {
           <div className="flex items-center gap-3">
             <DatabaseIcon className="w-6 h-6 text-[#1977e5]" />
             <h2 className="text-[24px] font-bold leading-7 text-[#0c141c]">
-              数据集
+              {t('datasets.title')}
             </h2>
           </div>
           <Badge variant="secondary" className="text-[#4f7096] bg-[#f0f4f8]">
-            {formatNumber(totalDatasets)} 个数据集
+            {t('datasets.totalDatasets', { count: formatNumber(totalDatasets) })}
           </Badge>
         </div>
         <div className="flex gap-2">
           <Link to="/datasets/create-smart">
             <Button className="bg-gradient-to-r from-[#1977e5] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1] flex items-center gap-2 relative">
               <WandIcon className="w-4 h-4" />
-              智能创建
+              {t('datasets.smartCreate')}
               <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-orange-500 text-white text-xs rounded-full">
                 AI
               </span>
@@ -222,7 +222,7 @@ export const Datasets = (): JSX.Element => {
           <Link to="/datasets/create">
             <Button variant="outline" className="border-[#d1dbe8] flex items-center gap-2">
               <PlusIcon className="w-4 h-4" />
-              创建数据集
+              {t('datasets.createDataset')}
             </Button>
           </Link>
         </div>
@@ -235,7 +235,7 @@ export const Datasets = (): JSX.Element => {
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7096] w-4 h-4" />
             <Input
               className="pl-9 border-[#d1dbe8] h-10"
-              placeholder="搜索数据集名称或描述..."
+              placeholder={t('datasets.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -246,17 +246,17 @@ export const Datasets = (): JSX.Element => {
                 variant="outline"
                 className="border-[#d1dbe8] px-4 flex items-center gap-2"
               >
-                <span>任务类型: {taskFilter === 'all' ? '全部' : taskFilter}</span>
+                <span>{t('datasets.taskType')}: {taskFilter === 'all' ? t('datasets.allTaskTypes') : taskFilter}</span>
                 <SlidersHorizontalIcon className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleTaskFilterChange('all')}>全部</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTaskFilterChange('Natural Language Processing')}>自然语言处理</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTaskFilterChange('Question Answering')}>问答系统</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTaskFilterChange('Text Classification')}>文本分类</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTaskFilterChange('Computer Vision')}>计算机视觉</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTaskFilterChange('Code Generation')}>代码生成</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTaskFilterChange('all')}>{t('datasets.allTaskTypes')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTaskFilterChange('Natural Language Processing')}>{t('datasets.nlp')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTaskFilterChange('Question Answering')}>{t('datasets.qa')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTaskFilterChange('Text Classification')}>{t('datasets.textClassification')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTaskFilterChange('Computer Vision')}>{t('datasets.computerVision')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTaskFilterChange('Code Generation')}>{t('datasets.codeGeneration')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
@@ -265,16 +265,16 @@ export const Datasets = (): JSX.Element => {
                 variant="outline"
                 className="border-[#d1dbe8] px-4 flex items-center gap-2"
               >
-                <span>排序: {sortBy === 'trending' ? '热门' : sortBy === 'newest' ? '最新' : sortBy === 'downloads' ? '下载量' : sortBy === 'likes' ? '点赞数' : '更新时间'}</span>
+                <span>{t('datasets.sorting')}: {sortBy === 'trending' ? t('datasets.sortByTrending') : sortBy === 'newest' ? t('datasets.sortByNewest') : sortBy === 'downloads' ? t('datasets.sortByDownloads') : sortBy === 'likes' ? t('datasets.sortByLikes') : t('datasets.sortByUpdated')}</span>
                 <ArrowDownIcon className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleSortChange('trending')}>热门</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange('newest')}>最新</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange('updated')}>最近更新</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange('downloads')}>下载量</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange('likes')}>点赞数</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange('trending')}>{t('datasets.sortByTrending')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange('newest')}>{t('datasets.sortByNewest')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange('updated')}>{t('datasets.sortByUpdated')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange('downloads')}>{t('datasets.sortByDownloads')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange('likes')}>{t('datasets.sortByLikes')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </form>
@@ -286,21 +286,21 @@ export const Datasets = (): JSX.Element => {
             className={`h-8 ${filterBy === 'all' ? 'bg-[#1977e5]' : 'border-[#d1dbe8]'}`}
             onClick={() => handleFilterChange('all')}
           >
-            全部数据集
+            {t('datasets.filterAll')}
           </Button>
           <Button
             variant={filterBy === 'my-datasets' ? 'default' : 'outline'}
             className={`h-8 ${filterBy === 'my-datasets' ? 'bg-[#1977e5]' : 'border-[#d1dbe8]'}`}
             onClick={() => handleFilterChange('my-datasets')}
           >
-            我的数据集
+            {t('datasets.filterMyDatasets')}
           </Button>
           <Button
             variant={filterBy === 'liked' ? 'default' : 'outline'}
             className={`h-8 ${filterBy === 'liked' ? 'bg-[#1977e5]' : 'border-[#d1dbe8]'}`}
             onClick={() => handleFilterChange('liked')}
           >
-            已收藏
+            {t('datasets.filterLiked')}
           </Button>
         </div>
       </div>
@@ -309,7 +309,7 @@ export const Datasets = (): JSX.Element => {
       {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader2Icon className="w-8 h-8 animate-spin text-[#1977e5]" />
-          <span className="ml-2 text-[#4f7096]">加载中...</span>
+          <span className="ml-2 text-[#4f7096]">{t('datasets.loading')}</span>
         </div>
       )}
 
@@ -323,7 +323,7 @@ export const Datasets = (): JSX.Element => {
             className="ml-4"
             onClick={() => fetchDatasets()}
           >
-            重试
+            {t('datasets.retry')}
           </Button>
         </div>
       )}
@@ -333,7 +333,7 @@ export const Datasets = (): JSX.Element => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {datasets.length === 0 ? (
             <div className="col-span-full flex items-center justify-center py-12">
-              <span className="text-[#4f7096]">没有找到数据集</span>
+              <span className="text-[#4f7096]">{t('datasets.noDatasets')}</span>
             </div>
           ) : (
             datasets.map((dataset) => (
@@ -348,7 +348,7 @@ export const Datasets = (): JSX.Element => {
                             {dataset.owner}/{dataset.name}
                           </h3>
                           {dataset.featured && (
-                            <Badge className="bg-[#ff6b35] text-white text-xs flex-shrink-0">推荐</Badge>
+                            <Badge className="bg-[#ff6b35] text-white text-xs flex-shrink-0">{t('datasets.recommended')}</Badge>
                           )}
                         </div>
                         
@@ -372,8 +372,11 @@ export const Datasets = (): JSX.Element => {
       {!loading && !error && datasets.length > 0 && (
         <div className="flex items-center justify-between mt-8">
           <div className="text-sm text-[#4f7096]">
-            显示第 {(currentPage - 1) * perPage + 1} - {Math.min(currentPage * perPage, totalDatasets)} 条，
-            共 {totalDatasets} 条数据集
+            {t('datasets.pagination.showing', {
+              start: (currentPage - 1) * perPage + 1,
+              end: Math.min(currentPage * perPage, totalDatasets),
+              total: totalDatasets
+            })}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -382,10 +385,10 @@ export const Datasets = (): JSX.Element => {
               disabled={!hasPrev}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              上一页
+              {t('datasets.pagination.previous')}
             </Button>
             <span className="text-sm px-3">
-              第 {currentPage} 页，共 {totalPages} 页
+              {t('datasets.pagination.page', { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -393,7 +396,7 @@ export const Datasets = (): JSX.Element => {
               disabled={!hasNext}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              下一页
+              {t('datasets.pagination.next')}
             </Button>
           </div>
         </div>
