@@ -182,6 +182,9 @@
     "viewDetails": "View Details",
     "editSettings": "Edit Settings",
     "noLibrariesMessage": "No library data, click \"Create Library\" to start adding",
+    "description": "Manage multi-source heterogeneous data, support batch conversion to MD for large model training and data distillation",
+    "totalLibrariesCount": "{{count}} libraries in total",
+    "processing": "Processing",
     "fileStatus": {
       "pending": "Pending", 
       "processing": "Processing",
@@ -211,11 +214,14 @@
       "noPreview": "Preview not available"
     }
   },
+  "tasks": {
+  },
   "common": {
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
-    "justNow": "Just now"
+    "justNow": "Just now",
+    "pageNotFound": "Page Not Found"
   },
   "actions": {
     "createDataset": "Create Dataset",
@@ -380,6 +386,241 @@
       "downloadResult": "Download Result",
       "deleteTask": "Delete Task",
       "noTasks": "No {{status}} tasks"
+    }
+  },
+  "smartDatasetCreator": {
+    "constants": {
+      "datasetTypes": {
+        "qaPairs": {
+          "name": "QA Pairs",
+          "description": "Generate question-answer pairs from document content, suitable for QA system training",
+          "useCase": "Smart customer service, knowledge Q&A, educational assistance",
+          "category": "supervised"
+        },
+        "instructionTuning": {
+          "name": "Instruction Tuning",
+          "description": "Generate instruction-input-output triplets for instruction-following model training",
+          "useCase": "Smart office, document processing, personalized assistant",
+          "category": "supervised"
+        },
+        "textClassification": {
+          "name": "Text Classification",
+          "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
+          "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
+          "category": "supervised"
+        },
+        "dialogue": {
+          "name": "Dialogue Tuning",
+          "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
+          "useCase": "Smart customer service, chatbots, voice assistants",
+          "category": "supervised"
+        },
+        "domainAdaptation": {
+          "name": "Domain Adaptation",
+          "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
+          "useCase": "Medical diagnosis, legal consultation, financial analysis",
+          "category": "supervised"
+        },
+        "reasoning": {
+          "name": "Reasoning Tuning",
+          "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
+          "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
+          "category": "reasoning"
+        },
+        "knowledgeDistillation": {
+          "name": "Knowledge Distillation",
+          "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
+          "useCase": "Model compression, edge deployment, cost optimization",
+          "category": "distillation"
+        }
+      },
+      "formatDetails": {
+        "alpaca": {
+          "name": "Alpaca Format",
+          "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
+          "structure": "instruction + input + output",
+          "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
+          "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
+          "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"]
+        },
+        "shareGPT": {
+          "name": "ShareGPT Format",
+          "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
+          "structure": "conversations + tools + roles",
+          "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
+          "disadvantages": ["Complex format", "Must follow role position rules"],
+          "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"]
+        },
+        "openAI": {
+          "name": "OpenAI Format",
+          "description": "OpenAI API compatible format, simplified version of ShareGPT",
+          "structure": "messages + roles",
+          "advantages": ["API compatible", "Simple to use", "Widely supported"],
+          "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
+          "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"]
+        },
+        "alpacaCOT": {
+          "name": "Alpaca-COT Format",
+          "description": "Alpaca format with chain of thought, suitable for reasoning task training",
+          "structure": "instruction + input + chain_of_thought + output",
+          "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
+          "disadvantages": ["Complex data construction", "Requires professional annotation"],
+          "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"]
+        },
+        "csv": {
+          "name": "CSV Format",
+          "description": "Simple table format, suitable for classification and annotation tasks",
+          "structure": "text, label",
+          "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
+          "disadvantages": ["Limited functionality", "No complex structure support"],
+          "bestFor": ["Text classification", "Label annotation", "Simple tasks"]
+        }
+      },
+      "aiModels": {
+        "gpt4": "GPT-4",
+        "gpt35Turbo": "GPT-3.5 Turbo",
+        "claude3": "Claude-3",
+        "geminiPro": "Gemini Pro",
+        "localLlm": "Local Model"
+      },
+      "steps": {
+        "selectData": {
+          "name": "Select Data",
+          "description": "Select files from raw data"
+        },
+        "configDataset": {
+          "name": "Configure Dataset",
+          "description": "Select dataset type and format"
+        },
+        "configModel": {
+          "name": "Configure Model",
+          "description": "Configure AI model and processing parameters"
+        },
+        "previewConfirm": {
+          "name": "Preview & Confirm",
+          "description": "Preview generation settings and confirm"
+        },
+        "generateDataset": {
+          "name": "Generate Dataset",
+          "description": "AI processes and generates dataset"
+        }
+      }
+    }
+  },
+  "tasks": {
+    "title": "Task Management",
+    "description": "Monitor and manage all background data processing tasks",
+    "statistics": {
+      "totalTasks": "Total Tasks",
+      "running": "Running",
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "tabs": {
+      "taskList": "Task List",
+      "taskQueue": "Task Queue",
+      "systemMonitor": "System Monitor"
+    },
+    "actions": {
+      "pauseSelected": "Pause Selected",
+      "cancelSelected": "Cancel Selected",
+      "refresh": "Refresh",
+      "autoRefreshStatus": "Auto-refreshing every 10 seconds"
+    },
+    "filters": {
+      "searchPlaceholder": "Search task names, libraries or datasets...",
+      "allStatuses": "All Statuses",
+      "allTypes": "All Types",
+      "typeLabels": {
+        "fileConversion": "File Conversion",
+        "datasetGeneration": "Dataset Generation",
+        "dataDistillation": "Data Distillation",
+        "batchProcessing": "Batch Processing",
+        "modelTraining": "Model Training",
+        "dataPreprocessing": "Data Preprocessing"
+      }
+    },
+    "table": {
+      "taskInfo": "Task Information",
+      "type": "Type",
+      "status": "Status",
+      "progress": "Progress",
+      "priority": "Priority",
+      "duration": "Duration",
+      "creator": "Creator",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "duration": {
+      "minutes": "{{count}} minutes",
+      "hoursMinutes": "{{hours}} hours {{minutes}} minutes"
+    },
+    "progress": {
+      "processed": "Processed",
+      "processing": "Processing",
+      "currentItem": "Current: {{item}}",
+      "estimatedRemaining": "Estimated remaining: {{time}}",
+      "errors": "Errors: {{count}}",
+      "warnings": "Warnings: {{count}}",
+      "aiProcessing": "AI processing..."
+    },
+    "operations": {
+      "viewDetails": "View Details",
+      "pauseTask": "Pause Task",
+      "resumeTask": "Resume Task",
+      "retryTask": "Retry Task",
+      "cancelTask": "Cancel Task",
+      "deleteTask": "Delete Task",
+      "downloadResult": "Download Result"
+    },
+    "messages": {
+      "noTasks": "No tasks",
+      "noMatchingTasks": "No matching tasks found",
+      "loading": "Loading task data...",
+      "deletionSuccess": "Successfully deleted {{count}} tasks{{failed}}",
+      "cancellationSuccess": "Successfully cancelled {{count}} tasks{{failed}}",
+      "operationSuccess": "{{operation}} task successful",
+      "operationFailed": "{{operation}} task failed"
+    },
+    "pagination": {
+      "showing": "Showing {{start}} - {{end}} of {{total}} items",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} / {{total}}"
+    },
+    "details": {
+      "title": "Task Details",
+      "basicInfo": "Basic Information",
+      "progressInfo": "Progress Information",
+      "taskLogs": "Task Logs",
+      "taskName": "Task Name",
+      "taskType": "Task Type",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "creator": "Creator",
+      "priority": "Priority",
+      "overallProgress": "Overall Progress",
+      "processedItems": "Processed Items",
+      "totalItems": "Total Items",
+      "errorCount": "Error Count",
+      "warningCount": "Warning Count",
+      "realTimeUpdate": "Real-time updating",
+      "taskExecuting": "Task executing, logs will update automatically...",
+      "close": "Close"
     }
   }
 }

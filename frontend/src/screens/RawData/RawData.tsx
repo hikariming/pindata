@@ -323,7 +323,7 @@ export const RawData = (): JSX.Element => {
       {/* 页面标题和操作按钮 */}
       <div className="mb-6">
         <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">{t('rawData.libraryManagement')}</h1>
-        <p className="text-[#4f7096] mb-4">管理多源异构数据，支持批量转换为MD，用于大模型训练和数据蒸馏</p>
+        <p className="text-[#4f7096] mb-4">{t('rawData.description')}</p>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -436,7 +436,7 @@ export const RawData = (): JSX.Element => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[22px] font-bold leading-7 text-[#0c141c]">{t('rawData.libraryList')}</h2>
           <div className="text-sm text-[#4f7096]">
-            {librariesLoading ? t('datasets.loading') : `共 ${libraries.length} 个数据库`}
+            {librariesLoading ? t('datasets.loading') : t('rawData.totalLibrariesCount', { count: libraries.length })}
           </div>
         </div>
         
@@ -498,7 +498,7 @@ export const RawData = (): JSX.Element => {
                     <TableCell className="py-4">
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-[#4f7096]">已完成</span>
+                          <span className="text-[#4f7096]">{t('rawData.processed')}</span>
                           <span className="text-[#0c141c] font-medium">
                             {libraryStats.progress_percentage}%
                           </span>
@@ -512,8 +512,8 @@ export const RawData = (): JSX.Element => {
                           ></div>
                         </div>
                         <div className="flex justify-between text-xs text-[#4f7096]">
-                          <span>已处理: {libraryStats.processed_count}</span>
-                          <span>处理中: {libraryStats.processing_count}</span>
+                          <span>{t('rawData.processed')}: {libraryStats.processed_count}</span>
+                          <span>{t('rawData.processing')}: {libraryStats.processing_count}</span>
                         </div>
                       </div>
                     </TableCell>

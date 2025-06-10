@@ -243,21 +243,21 @@ export const Tasks = (): JSX.Element => {
   const getTaskTypeLabel = (type: Task['type']) => {
     switch (type) {
       case 'file_conversion':
-        return '文件转换';
+        return t('tasks.filters.typeLabels.fileConversion');
       case 'dataset_generation':
-        return '数据集生成';
+        return t('tasks.filters.typeLabels.datasetGeneration');
       case 'DATASET_GENERATION':
-        return '数据集生成';
+        return t('tasks.filters.typeLabels.datasetGeneration');
       case 'data_distillation':
-        return '数据蒸馏';
+        return t('tasks.filters.typeLabels.dataDistillation');
       case 'batch_processing':
-        return '批量处理';
+        return t('tasks.filters.typeLabels.batchProcessing');
       case 'model_training':
-        return '模型训练';
+        return t('tasks.filters.typeLabels.modelTraining');
       case 'data_preprocessing':
-        return '数据预处理';
+        return t('tasks.filters.typeLabels.dataPreprocessing');
       case 'DATA_IMPORT':
-        return '数据导入';
+        return t('rawData.fileStatus.processed'); // 数据导入使用现有的翻译
     }
   };
 
@@ -281,17 +281,17 @@ export const Tasks = (): JSX.Element => {
   const getStatusLabel = (status: Task['status']) => {
     switch (status) {
       case 'pending':
-        return '等待中';
+        return t('tasks.status.pending');
       case 'running':
-        return '运行中';
+        return t('tasks.status.running');
       case 'completed':
-        return '已完成';
+        return t('tasks.status.completed');
       case 'failed':
-        return '失败';
+        return t('tasks.status.failed');
       case 'cancelled':
-        return '已取消';
+        return t('tasks.status.cancelled');
       default:
-        return '未知';
+        return t('tasks.status.unknown');
     }
   };
 
@@ -311,13 +311,13 @@ export const Tasks = (): JSX.Element => {
   const getPriorityLabel = (priority: Task['priority']) => {
     switch (priority) {
       case 'low':
-        return '低';
+        return t('tasks.priority.low');
       case 'medium':
-        return '中';
+        return t('tasks.priority.medium');
       case 'high':
-        return '高';
+        return t('tasks.priority.high');
       case 'urgent':
-        return '紧急';
+        return t('tasks.priority.urgent');
     }
   };
 
@@ -327,11 +327,11 @@ export const Tasks = (): JSX.Element => {
     const duration = Math.floor((end.getTime() - start.getTime()) / 1000 / 60);
     
     if (duration < 60) {
-      return `${duration}分钟`;
+      return t('tasks.duration.minutes', { count: duration });
     } else {
       const hours = Math.floor(duration / 60);
       const minutes = duration % 60;
-      return `${hours}小时${minutes}分钟`;
+      return t('tasks.duration.hoursMinutes', { hours, minutes });
     }
   };
 
@@ -435,8 +435,8 @@ export const Tasks = (): JSX.Element => {
     <div className="w-full max-w-[1400px] p-6">
       {/* 页面标题 */}
       <div className="mb-6">
-        <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">任务管理</h1>
-        <p className="text-[#4f7096] mb-4">监控和管理所有后台运行的数据处理任务</p>
+        <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">{t('tasks.title')}</h1>
+        <p className="text-[#4f7096] mb-4">{t('tasks.description')}</p>
       </div>
 
       {/* 统计面板 */}
@@ -445,7 +445,7 @@ export const Tasks = (): JSX.Element => {
           <div className="flex items-center">
             <ActivityIcon className="w-8 h-8 text-[#1977e5] mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">总任务数</p>
+              <p className="text-sm text-[#4f7096]">{t('tasks.statistics.totalTasks')}</p>
               <p className="text-xl font-bold text-[#0c141c]">{statistics.total}</p>
             </div>
           </div>
@@ -455,7 +455,7 @@ export const Tasks = (): JSX.Element => {
           <div className="flex items-center">
             <PlayIcon className="w-8 h-8 text-blue-500 mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">运行中</p>
+              <p className="text-sm text-[#4f7096]">{t('tasks.statistics.running')}</p>
               <p className="text-xl font-bold text-[#0c141c]">{statistics.running}</p>
             </div>
           </div>
@@ -465,7 +465,7 @@ export const Tasks = (): JSX.Element => {
           <div className="flex items-center">
             <ClockIcon className="w-8 h-8 text-yellow-500 mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">等待中</p>
+              <p className="text-sm text-[#4f7096]">{t('tasks.statistics.pending')}</p>
               <p className="text-xl font-bold text-[#0c141c]">{statistics.pending}</p>
             </div>
           </div>
@@ -475,7 +475,7 @@ export const Tasks = (): JSX.Element => {
           <div className="flex items-center">
             <CheckCircleIcon className="w-8 h-8 text-green-500 mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">已完成</p>
+              <p className="text-sm text-[#4f7096]">{t('tasks.statistics.completed')}</p>
               <p className="text-xl font-bold text-[#0c141c]">{statistics.completed}</p>
             </div>
           </div>
@@ -485,7 +485,7 @@ export const Tasks = (): JSX.Element => {
           <div className="flex items-center">
             <AlertCircleIcon className="w-8 h-8 text-red-500 mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">失败</p>
+              <p className="text-sm text-[#4f7096]">{t('tasks.statistics.failed')}</p>
               <p className="text-xl font-bold text-[#0c141c]">{statistics.failed}</p>
             </div>
           </div>
@@ -497,15 +497,15 @@ export const Tasks = (): JSX.Element => {
         <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="tasks" className="flex items-center gap-2">
             <ListIcon className="w-4 h-4" />
-            任务列表
+            {t('tasks.tabs.taskList')}
           </TabsTrigger>
           <TabsTrigger value="queue" className="flex items-center gap-2">
             <Layers3Icon className="w-4 h-4" />
-            任务队列
+            {t('tasks.tabs.taskQueue')}
           </TabsTrigger>
           <TabsTrigger value="monitor" className="flex items-center gap-2">
             <ActivityIcon className="w-4 h-4" />
-            系统监控
+            {t('tasks.tabs.systemMonitor')}
           </TabsTrigger>
         </TabsList>
 
@@ -522,7 +522,7 @@ export const Tasks = (): JSX.Element => {
                     className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
                   >
                     <PauseIcon className="w-4 h-4 mr-2" />
-                    暂停选中 ({selectedTasks.size})
+                    {t('tasks.actions.pauseSelected')} ({selectedTasks.size})
                   </Button>
                   <Button 
                     variant="outline" 
@@ -531,7 +531,7 @@ export const Tasks = (): JSX.Element => {
                     className="border-[#d1dbe8] text-red-600 hover:bg-red-50"
                   >
                     <XIcon className="w-4 h-4 mr-2" />
-                    取消选中
+                    {t('tasks.actions.cancelSelected')}
                   </Button>
                 </>
               )}
@@ -550,14 +550,14 @@ export const Tasks = (): JSX.Element => {
                 ) : (
                   <RefreshCwIcon className="w-4 h-4 mr-2" />
                 )}
-                刷新
+                {t('tasks.actions.refresh')}
               </Button>
               
               {/* 显示运行中任务的自动刷新状态 */}
               {tasks.filter(task => task.status === 'running').length > 0 && (
                 <div className="flex items-center text-sm text-[#4f7096] bg-blue-50 px-3 py-1 rounded-md">
                   <ActivityIcon className="w-4 h-4 mr-2 animate-pulse text-blue-500" />
-                  <span>每10秒自动刷新中</span>
+                  <span>{t('tasks.actions.autoRefreshStatus')}</span>
                 </div>
               )}
             </div>
@@ -568,7 +568,7 @@ export const Tasks = (): JSX.Element => {
             <div className="relative flex-1 max-w-md">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#4f7096]" />
               <Input
-                placeholder="搜索任务名称、数据库或数据集..."
+                placeholder={t('tasks.filters.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 border-[#d1dbe8] focus:border-[#1977e5]"
@@ -582,12 +582,12 @@ export const Tasks = (): JSX.Element => {
                 onChange={(e) => setStatusFilter(e.target.value as TaskStatus)}
                 className="px-3 py-2 border border-[#d1dbe8] rounded-md focus:border-[#1977e5] focus:outline-none bg-white"
               >
-                <option value="all">全部状态</option>
-                <option value="running">运行中</option>
-                <option value="pending">等待中</option>
-                <option value="completed">已完成</option>
-                <option value="failed">失败</option>
-                <option value="cancelled">已取消</option>
+                <option value="all">{t('tasks.filters.allStatuses')}</option>
+                <option value="running">{t('tasks.status.running')}</option>
+                <option value="pending">{t('tasks.status.pending')}</option>
+                <option value="completed">{t('tasks.status.completed')}</option>
+                <option value="failed">{t('tasks.status.failed')}</option>
+                <option value="cancelled">{t('tasks.status.cancelled')}</option>
               </select>
               
               <select
@@ -595,13 +595,13 @@ export const Tasks = (): JSX.Element => {
                 onChange={(e) => setTypeFilter(e.target.value as TaskType)}
                 className="px-3 py-2 border border-[#d1dbe8] rounded-md focus:border-[#1977e5] focus:outline-none bg-white"
               >
-                <option value="all">全部类型</option>
-                <option value="file_conversion">文件转换</option>
-                <option value="dataset_generation">数据集生成</option>
-                <option value="data_distillation">数据蒸馏</option>
-                <option value="batch_processing">批量处理</option>
-                <option value="model_training">模型训练</option>
-                <option value="data_preprocessing">数据预处理</option>
+                <option value="all">{t('tasks.filters.allTypes')}</option>
+                <option value="file_conversion">{t('tasks.filters.typeLabels.fileConversion')}</option>
+                <option value="dataset_generation">{t('tasks.filters.typeLabels.datasetGeneration')}</option>
+                <option value="data_distillation">{t('tasks.filters.typeLabels.dataDistillation')}</option>
+                <option value="batch_processing">{t('tasks.filters.typeLabels.batchProcessing')}</option>
+                <option value="model_training">{t('tasks.filters.typeLabels.modelTraining')}</option>
+                <option value="data_preprocessing">{t('tasks.filters.typeLabels.dataPreprocessing')}</option>
               </select>
             </div>
           </div>
@@ -619,14 +619,14 @@ export const Tasks = (): JSX.Element => {
                       className="w-4 h-4 text-[#1977e5] border-[#d1dbe8] rounded focus:ring-[#1977e5]"
                     />
                   </TableHead>
-                  <TableHead className="text-[#4f7096] font-medium">任务信息</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[100px]">类型</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[100px]">状态</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[160px]">进度</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[80px]">优先级</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[120px]">用时</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[100px]">创建者</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[120px]">操作</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium">{t('tasks.table.taskInfo')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">{t('tasks.table.type')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">{t('tasks.table.status')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[160px]">{t('tasks.table.progress')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[80px]">{t('tasks.table.priority')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[120px]">{t('tasks.table.duration')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">{t('tasks.table.creator')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[120px]">{t('tasks.table.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -702,14 +702,14 @@ export const Tasks = (): JSX.Element => {
                         {/* 显示当前处理项目 */}
                         {task.details.currentItem && task.status === 'running' && (
                           <div className="text-xs text-[#4f7096] truncate max-w-[150px]" title={task.details.currentItem}>
-                            正在处理: {task.details.currentItem}
+                            {t('tasks.progress.processing')}: {task.details.currentItem}
                           </div>
                         )}
                         {/* 显示预估时间，特别是对于大模型任务 */}
                         {task.estimatedTime && task.status === 'running' && (
                           <div className="text-xs text-[#4f7096] flex items-center gap-1">
                             <ClockIcon className="w-3 h-3" />
-                            预计剩余: {task.estimatedTime}
+                            {t('tasks.progress.estimatedRemaining', { time: task.estimatedTime })}
                           </div>
                         )}
                         {/* 显示错误和警告计数 */}
@@ -718,13 +718,13 @@ export const Tasks = (): JSX.Element => {
                             {task.details.errorCount! > 0 && (
                               <span className="text-red-600 flex items-center gap-1">
                                 <AlertTriangleIcon className="w-3 h-3" />
-                                错误: {task.details.errorCount}
+                                {t('tasks.progress.errors', { count: task.details.errorCount })}
                               </span>
                             )}
                             {task.details.warningCount! > 0 && (
                               <span className="text-yellow-600 flex items-center gap-1">
                                 <AlertCircleIcon className="w-3 h-3" />
-                                警告: {task.details.warningCount}
+                                {t('tasks.progress.warnings', { count: task.details.warningCount })}
                               </span>
                             )}
                           </div>
@@ -733,7 +733,7 @@ export const Tasks = (): JSX.Element => {
                         {task.type === 'file_conversion' && task.status === 'running' && (
                           <div className="text-xs text-[#4f7096] flex items-center gap-1">
                             <BrainIcon className="w-3 h-3" />
-                            <span>AI处理中...</span>
+                            <span>{t('tasks.progress.aiProcessing')}</span>
                           </div>
                         )}
                       </div>
@@ -767,7 +767,7 @@ export const Tasks = (): JSX.Element => {
                               className="cursor-pointer text-[#0c141c]"
                             >
                               <EyeIcon className="mr-2 h-4 w-4" />
-                              查看详情
+                              {t('tasks.operations.viewDetails')}
                             </DropdownMenuItem>
                             
                             {task.status === 'running' && (
@@ -776,7 +776,7 @@ export const Tasks = (): JSX.Element => {
                                 className="cursor-pointer text-[#0c141c]"
                               >
                                 <PauseIcon className="mr-2 h-4 w-4" />
-                                暂停任务
+                                {t('tasks.operations.pauseTask')}
                               </DropdownMenuItem>
                             )}
                             
@@ -786,7 +786,7 @@ export const Tasks = (): JSX.Element => {
                                 className="cursor-pointer text-[#0c141c]"
                               >
                                 <PlayIcon className="mr-2 h-4 w-4" />
-                                恢复任务
+                                {t('tasks.operations.resumeTask')}
                               </DropdownMenuItem>
                             )}
                             
@@ -796,7 +796,7 @@ export const Tasks = (): JSX.Element => {
                                 className="cursor-pointer text-[#0c141c]"
                               >
                                 <RefreshCwIcon className="mr-2 h-4 w-4" />
-                                重试任务
+                                {t('tasks.operations.retryTask')}
                               </DropdownMenuItem>
                             )}
                             
@@ -806,7 +806,7 @@ export const Tasks = (): JSX.Element => {
                                 className="cursor-pointer text-[#0c141c]"
                               >
                                 <DownloadIcon className="mr-2 h-4 w-4" />
-                                下载结果
+                                {t('tasks.operations.downloadResult')}
                               </DropdownMenuItem>
                             )}
                             
@@ -816,7 +816,7 @@ export const Tasks = (): JSX.Element => {
                                 className="cursor-pointer text-orange-600"
                               >
                                 <XIcon className="mr-2 h-4 w-4" />
-                                取消任务
+                                {t('tasks.operations.cancelTask')}
                               </DropdownMenuItem>
                             )}
                             
@@ -826,7 +826,7 @@ export const Tasks = (): JSX.Element => {
                                 className="cursor-pointer text-red-600"
                               >
                                 <TrashIcon className="mr-2 h-4 w-4" />
-                                删除任务
+                                {t('tasks.operations.deleteTask')}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -840,14 +840,14 @@ export const Tasks = (): JSX.Element => {
             
             {filteredTasks.length === 0 && !loading && (
               <div className="text-center py-8 text-[#4f7096]">
-                {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' ? '没有找到匹配的任务' : '暂无任务'}
+                {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' ? t('tasks.messages.noMatchingTasks') : t('tasks.messages.noTasks')}
               </div>
             )}
             
             {loading && (
               <div className="text-center py-8 text-[#4f7096]">
                 <LoaderIcon className="w-6 h-6 mx-auto mb-2 animate-spin" />
-                <p>正在加载任务数据...</p>
+                <p>{t('tasks.messages.loading')}</p>
               </div>
             )}
 
@@ -855,8 +855,11 @@ export const Tasks = (): JSX.Element => {
             {pagination.total > 0 && (
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-[#4f7096]">
-                  显示 {(pagination.page - 1) * pagination.per_page + 1} - {Math.min(pagination.page * pagination.per_page, pagination.total)} 条，
-                  共 {pagination.total} 条
+                  {t('tasks.pagination.showing', {
+                    start: (pagination.page - 1) * pagination.per_page + 1,
+                    end: Math.min(pagination.page * pagination.per_page, pagination.total),
+                    total: pagination.total
+                  })}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -866,10 +869,10 @@ export const Tasks = (): JSX.Element => {
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                     className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
                   >
-                    上一页
+                    {t('tasks.pagination.previous')}
                   </Button>
                   <span className="flex items-center px-3 text-sm text-[#4f7096]">
-                    第 {pagination.page} / {pagination.total_pages} 页
+                    {t('tasks.pagination.page', { current: pagination.page, total: pagination.total_pages })}
                   </span>
                   <Button
                     variant="outline"
@@ -878,7 +881,7 @@ export const Tasks = (): JSX.Element => {
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                     className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
                   >
-                    下一页
+                    {t('tasks.pagination.next')}
                   </Button>
                 </div>
               </div>
@@ -931,7 +934,7 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-[#e8edf2]">
-          <h3 className="text-lg font-semibold text-[#0c141c]">任务详情</h3>
+          <h3 className="text-lg font-semibold text-[#0c141c]">{t('tasks.details.title')}</h3>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
@@ -940,7 +943,7 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
               className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
             >
               <RefreshCwIcon className="w-4 h-4 mr-1" />
-              刷新
+              {t('tasks.actions.refresh')}
             </Button>
             <Button variant="ghost" onClick={onClose} className="h-8 w-8 p-0">
               ✕
@@ -952,32 +955,32 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 基本信息 */}
             <Card className="border-[#d1dbe8] bg-white p-4">
-              <h4 className="font-medium text-[#0c141c] mb-3">基本信息</h4>
+              <h4 className="font-medium text-[#0c141c] mb-3">{t('tasks.details.basicInfo')}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">任务名称</span>
+                  <span className="text-[#4f7096]">{t('tasks.details.taskName')}</span>
                   <span className="text-[#0c141c]">{task.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">任务类型</span>
+                  <span className="text-[#4f7096]">{t('tasks.details.taskType')}</span>
                   <span className="text-[#0c141c]">{task.type}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">开始时间</span>
+                  <span className="text-[#4f7096]">{t('tasks.details.startTime')}</span>
                   <span className="text-[#0c141c]">{task.startTime}</span>
                 </div>
                 {task.endTime && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">结束时间</span>
+                    <span className="text-[#4f7096]">{t('tasks.details.endTime')}</span>
                     <span className="text-[#0c141c]">{task.endTime}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">创建者</span>
+                  <span className="text-[#4f7096]">{t('tasks.details.creator')}</span>
                   <span className="text-[#0c141c]">{task.createdBy}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">优先级</span>
+                  <span className="text-[#4f7096]">{t('tasks.details.priority')}</span>
                   <span className="text-[#0c141c]">{task.priority}</span>
                 </div>
               </div>
@@ -985,11 +988,11 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
 
             {/* 进度信息 */}
             <Card className="border-[#d1dbe8] bg-white p-4">
-              <h4 className="font-medium text-[#0c141c] mb-3">进度信息</h4>
+              <h4 className="font-medium text-[#0c141c] mb-3">{t('tasks.details.progressInfo')}</h4>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[#4f7096]">总体进度</span>
+                    <span className="text-[#4f7096]">{t('tasks.details.overallProgress')}</span>
                     <span className="text-[#0c141c] font-medium">{task.progress}%</span>
                   </div>
                   <div className="w-full bg-[#e8edf2] rounded-full h-2">
@@ -1002,22 +1005,22 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
                 
                 <div className="text-sm space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">已处理项目</span>
+                    <span className="text-[#4f7096]">{t('tasks.details.processedItems')}</span>
                     <span className="text-[#0c141c]">{task.details.processedItems || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">总项目数</span>
+                    <span className="text-[#4f7096]">{t('tasks.details.totalItems')}</span>
                     <span className="text-[#0c141c]">{task.details.totalItems || 0}</span>
                   </div>
                   {task.details.errorCount! > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-[#4f7096]">错误数量</span>
+                      <span className="text-[#4f7096]">{t('tasks.details.errorCount')}</span>
                       <span className="text-red-600">{task.details.errorCount}</span>
                     </div>
                   )}
                   {task.details.warningCount! > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-[#4f7096]">警告数量</span>
+                      <span className="text-[#4f7096]">{t('tasks.details.warningCount')}</span>
                       <span className="text-yellow-600">{task.details.warningCount}</span>
                     </div>
                   )}
@@ -1030,11 +1033,11 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
           {task.logs && task.logs.length > 0 && (
             <Card className="border-[#d1dbe8] bg-white p-4 mt-6">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-[#0c141c]">任务日志</h4>
+                <h4 className="font-medium text-[#0c141c]">{t('tasks.details.taskLogs')}</h4>
                 {task.status === 'running' && (
                   <div className="flex items-center text-xs text-[#4f7096]">
                     <ActivityIcon className="w-3 h-3 mr-1 animate-pulse" />
-                    实时更新中
+                    {t('tasks.details.realTimeUpdate')}
                   </div>
                 )}
               </div>
@@ -1065,7 +1068,7 @@ const TaskDetailsModal = ({ taskId, task, onClose, onRefresh }: TaskDetailsModal
                 {task.status === 'running' && (
                   <div className="text-xs text-[#4f7096] font-mono mt-2 p-1 bg-blue-50 rounded flex items-center">
                     <LoaderIcon className="w-3 h-3 mr-2 animate-spin" />
-                    任务执行中，日志将自动更新...
+                    {t('tasks.details.taskExecuting')}
                   </div>
                 )}
               </div>
