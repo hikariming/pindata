@@ -21,23 +21,23 @@ export const ActivitySection = (): JSX.Element => {
   const features = [
     {
       icon: <DatabaseIcon className="w-12 h-12 text-[#1977e5]" />,
-      title: "数据导入与处理",
-      description: "支持多种格式的原始数据导入，包括 CSV、JSON、Excel 等。智能数据预处理，自动识别数据类型，生成高质量的训练数据集。"
+      title: t('overview.features.dataImport.title'),
+      description: t('overview.features.dataImport.description')
     },
     {
       icon: <PieChartIcon className="w-12 h-12 text-[#1977e5]" />,
-      title: "多平台数据集管理",
-      description: "无缝集成 Hugging Face Hub 和魔搭社区等主流平台。一键导入热门开源数据集，支持版本管理和更新同步。"
+      title: t('overview.features.datasetManagement.title'),
+      description: t('overview.features.datasetManagement.description')
     },
     {
       icon: <CheckSquareIcon className="w-12 h-12 text-[#1977e5]" />,
-      title: "智能任务调度",
-      description: "自动化数据处理流水线，支持批量操作和定时任务。实时监控任务状态，提供详细的执行日志和性能指标。"
+      title: t('overview.features.taskScheduling.title'),
+      description: t('overview.features.taskScheduling.description')
     },
     {
       icon: <HardDriveIcon className="w-12 h-12 text-[#1977e5]" />,
-      title: "存储与分享",
-      description: "云端存储，支持大规模数据集的安全存储和备份。团队协作功能，支持数据集共享和权限管理。"
+      title: t('overview.features.storageSharing.title'),
+      description: t('overview.features.storageSharing.description')
     }
   ];
 
@@ -143,7 +143,7 @@ export const ActivitySection = (): JSX.Element => {
       <section className="w-full max-w-[960px] flex-1 flex flex-col items-start">
         <div className="w-full p-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600">加载概览数据时出错: {error}</p>
+            <p className="text-red-600">{t('overview.error.loadingOverview', { error })}</p>
           </div>
         </div>
       </section>
@@ -162,10 +162,10 @@ export const ActivitySection = (): JSX.Element => {
         <div className="w-full h-[246px] rounded-lg overflow-hidden relative [background:linear-gradient(0deg,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0)_100%),url(..//depth-5--frame-0.png)_50%_50%_/_cover]">
           <div className="absolute bottom-4 left-4 max-w-[440px]">
             <h2 className="font-bold text-2xl text-white leading-[30px]">
-              欢迎使用拼好数
+              {t('overview.welcome')}
             </h2>
             <p className="font-medium text-base text-white leading-6">
-              开始探索您的数据集、管理任务和监控存储使用情况。
+              {t('overview.welcomeDescription')}
             </p>
           </div>
         </div>
@@ -222,7 +222,7 @@ export const ActivitySection = (): JSX.Element => {
       {/* 快速开始指南 - 紧凑版 */}
       <div className="w-full pt-5 pb-3 px-4">
         <h2 className="font-bold text-[22px] leading-7 text-[#0c141c]">
-          快速开始指南
+          {t('overview.quickStart.title')}
         </h2>
       </div>
 
@@ -235,8 +235,8 @@ export const ActivitySection = (): JSX.Element => {
                   1
                 </div>
                 <div>
-                  <p className="font-medium text-sm text-[#0c141c]">导入数据</p>
-                  <p className="text-xs text-[#4f7096]">本地文件或HF、魔搭平台</p>
+                  <p className="font-medium text-sm text-[#0c141c]">{t('overview.quickStart.step1.title')}</p>
+                  <p className="text-xs text-[#4f7096]">{t('overview.quickStart.step1.description')}</p>
                 </div>
               </div>
               <div className="w-0.5 h-8 bg-[#d1dbe8]"></div>
@@ -245,8 +245,8 @@ export const ActivitySection = (): JSX.Element => {
                   2
                 </div>
                 <div>
-                  <p className="font-medium text-sm text-[#0c141c]">处理数据</p>
-                  <p className="text-xs text-[#4f7096]">清洗、转换和质量检查</p>
+                  <p className="font-medium text-sm text-[#0c141c]">{t('overview.quickStart.step2.title')}</p>
+                  <p className="text-xs text-[#4f7096]">{t('overview.quickStart.step2.description')}</p>
                 </div>
               </div>
               <div className="w-0.5 h-8 bg-[#d1dbe8]"></div>
@@ -255,8 +255,8 @@ export const ActivitySection = (): JSX.Element => {
                   3
                 </div>
                 <div>
-                  <p className="font-medium text-sm text-[#0c141c]">生成数据集</p>
-                  <p className="text-xs text-[#4f7096]">训练数据集并导出</p>
+                  <p className="font-medium text-sm text-[#0c141c]">{t('overview.quickStart.step3.title')}</p>
+                  <p className="text-xs text-[#4f7096]">{t('overview.quickStart.step3.description')}</p>
                 </div>
               </div>
             </div>
@@ -317,24 +317,6 @@ export const ActivitySection = (): JSX.Element => {
           </div>
         ))}
       </div>
-{/* 
-      <div className="w-full pt-5 pb-3 px-4">
-        <h2 className="font-bold text-[22px] leading-7 text-[#0c141c]">
-          {t('overview.quickActions')}
-        </h2>
-      </div>
-
-      <div className="w-full px-4 py-3 flex flex-wrap gap-3">
-        <Button className="h-10 px-4 bg-[#1977e5] text-[#f7f9fc] font-bold text-sm rounded-lg">
-          {t('actions.createDataset')}
-        </Button>
-        <Button
-          variant="secondary"
-          className="h-10 px-4 bg-[#e8edf2] text-[#0c141c] font-bold text-sm rounded-lg"
-        >
-          {t('actions.startNewTask')}
-        </Button>
-      </div> */}
 
       <div className="w-full pt-5 pb-3 px-4">
         <h2 className="font-bold text-[22px] leading-7 text-[#0c141c]">

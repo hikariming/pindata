@@ -235,15 +235,15 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const getStatusText = (status: string) => {
     switch (status) {
       case 'completed':
-        return '已完成';
+        return t('rawData.fileStatus.processed');
       case 'processing':
-        return '处理中';
+        return t('rawData.fileStatus.processing');
       case 'failed':
-        return '处理失败';
+        return t('rawData.fileStatus.failed');
       case 'pending':
-        return '等待处理';
+        return t('rawData.fileStatus.pending');
       default:
-        return '未知';
+        return 'Unknown';
     }
   };
 
@@ -286,7 +286,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
           onClick={onBack}
         >
           <ArrowLeftIcon className="w-4 h-4 mr-2" />
-          返回列表
+          {t('rawData.backToList')}
         </Button>
 
         <Button 
@@ -294,7 +294,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
           className="bg-[#1977e5] hover:bg-[#1565c0] text-white"
         >
           <UploadIcon className="w-4 h-4 mr-2" />
-          上传文件
+          {t('rawData.uploadFiles')}
         </Button>
       </div>
 

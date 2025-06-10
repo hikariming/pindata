@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { Layout } from "./components/Layout";
 import { ActivitySection } from "./screens/StitchDesign/sections/ActivitySection";
 import { RawData } from "./screens/RawData";
@@ -14,6 +15,8 @@ import { SmartDatasetCreator } from "./screens/Datasets/SmartDatasetCreator";
 import { DatasetTasks } from "./screens/Datasets/DatasetTasks";
 
 export const App = (): JSX.Element => {
+  const { t } = useTranslation();
+  
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -36,7 +39,7 @@ export const App = (): JSX.Element => {
         <Route path="datasets/:id/tasks" element={<DatasetTasks />} />
         
         {/* 404 页面 */}
-        <Route path="*" element={<div className="p-6"><h1>页面未找到</h1></div>} />
+        <Route path="*" element={<div className="p-6"><h1>{t('common.pageNotFound')}</h1></div>} />
       </Route>
     </Routes>
   );

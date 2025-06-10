@@ -19,10 +19,48 @@
     "quickActions": "快捷操作",
     "systemNotifications": "系统通知",
     "comingSoon": "即将推出",
-    "pluginsDevelopment": "插件支持正在开发中"
+    "pluginsDevelopment": "插件支持正在开发中",
+    "features": {
+      "dataImport": {
+        "title": "数据导入与处理",
+        "description": "支持多种格式的原始数据导入，包括 CSV、JSON、Excel 等。智能数据预处理，自动识别数据类型，生成高质量的训练数据集。"
+      },
+      "datasetManagement": {
+        "title": "多平台数据集管理",
+        "description": "无缝集成 Hugging Face Hub 和魔搭社区等主流平台。一键导入热门开源数据集，支持版本管理和更新同步。"
+      },
+      "taskScheduling": {
+        "title": "智能任务调度",
+        "description": "自动化数据处理流水线，支持批量操作和定时任务。实时监控任务状态，提供详细的执行日志和性能指标。"
+      },
+      "storageSharing": {
+        "title": "存储与分享",
+        "description": "云端存储，支持大规模数据集的安全存储和备份。团队协作功能，支持数据集共享和权限管理。"
+      }
+    },
+    "quickStart": {
+      "title": "快速开始指南",
+      "step1": {
+        "title": "导入数据",
+        "description": "本地文件或HF、魔搭平台"
+      },
+      "step2": {
+        "title": "处理数据",
+        "description": "清洗、转换和质量检查"
+      },
+      "step3": {
+        "title": "生成数据集",
+        "description": "训练数据集并导出"
+      }
+    },
+    "error": {
+      "loadingOverview": "加载概览数据时出错: {{error}}"
+    }
   },
   "settings": {
-    "llmConfig": "大语言模型配置",
+    "title": "系统设置",
+    "description": "管理大模型配置和查看系统日志",
+    "llmConfig": "大模型配置",
     "llmConfigDescription": "配置您的大语言模型设置",
     "modelSettings": "模型设置",
     "modelType": "模型类型",
@@ -51,15 +89,104 @@
     "filterLogs": "筛选日志",
     "searchLogs": "搜索日志...",
     "noLogs": "未找到日志",
-    "lastUpdated": "最后更新"
+    "lastUpdated": "最后更新",
+    "totalLogs": "总计",
+    "logPause": "暂停",
+    "logResume": "恢复", 
+    "exportLogs": "导出",
+    "allLevels": "全部级别",
+    "loadingLogs": "加载日志中...",
+    "llm": {
+      "modelConfigList": "模型配置列表",
+      "modelConfigDescription": "管理您的大语言模型配置。点击\"测试\"按钮可以验证配置是否正确，系统会发送测试请求并显示详细结果。",
+      "refresh": "刷新",
+      "addModel": "添加模型",
+      "addNewModel": "添加新的模型配置",
+      "addModelDescription": "配置新的大模型接口，支持OpenAI、Claude、Gemini以及自定义接口",
+      "configName": "配置名称",
+      "configNamePlaceholder": "例如：GPT-4 生产环境",
+      "provider": "模型提供商",
+      "modelName": "模型名称",
+      "modelNamePlaceholder": "例如：gpt-4-vision-preview",
+      "modelNameTip": "您可以输入任何模型名称，包括自定义模型",
+      "viewSupportedModels": "查看支持的模型",
+      "apiKeyLabel": "API密钥",
+      "apiUrlLabel": "API接口地址",
+      "temperatureParam": "温度参数",
+      "maxTokensParam": "最大Token数",
+      "enableConfig": "启用此配置",
+      "visionSupport": "支持视觉识别",
+      "visionSupportTip": "启用此选项表示该模型支持图像识别功能，可用于视觉相关任务",
+      "cancel": "取消",
+      "confirm": "确认",
+      "editModel": "编辑模型配置",
+      "editModelDescription": "修改现有的模型配置信息",
+      "confirmDelete": "确认删除",
+      "deleteDescription": "确定要删除这个模型配置吗？此操作无法撤销。",
+      "delete": "删除",
+      "testResult": "连接测试结果",
+      "close": "关闭",
+      "retestConnection": "重新测试",
+      "loading": "加载配置中...",
+      "noConfigs": "暂无配置，请添加第一个模型配置",
+      "defaultLabel": "默认",
+      "visionSupportLabel": "视觉支持",
+      "test": "测试",
+      "setDefault": "设为默认",
+      "defaultConfig": "默认配置",
+      "apiUrl": "API地址",
+      "temperature": "温度",
+      "maxTokens": "最大Token",
+      "visionSupportStatus": "视觉支持",
+      "support": "支持",
+      "notSupport": "不支持",
+      "status": "状态",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "customInterface": "自定义接口",
+      "connectionSuccess": "连接成功",
+      "authFailed": "API密钥认证失败",
+      "connectionFailed": "连接失败",
+      "modelNotFound": "模型不存在",
+      "rateLimited": "请求频率超限",
+      "testFailed": "测试失败",
+      "unknownError": "未知错误",
+      "responseLatency": "响应延迟",
+      "testTime": "测试时间",
+      "modelInfo": "模型信息",
+      "provider": "提供商",
+      "model": "模型",
+      "responsePreview": "响应预览",
+      "errorDetails": "错误详情",
+      "suggestedSolutions": "解决建议",
+      "authFailedTips": [
+        "检查API密钥是否正确且有效",
+        "确认API密钥具有所需权限"
+      ],
+      "connectionFailedTips": [
+        "检查网络连接是否正常",
+        "确认API接口地址是否正确",
+        "检查防火墙设置"
+      ],
+      "modelNotFoundTips": [
+        "确认模型名称是否正确",
+        "检查是否有该模型的访问权限"
+      ],
+      "rateLimitedTips": [
+        "稍后重试",
+        "检查API调用频率限制"
+      ],
+      "testSuccessMessage": "连接测试成功！延迟: {{latency}}ms",
+      "testFailedMessage": "连接测试失败"
+    }
   },
   "rawData": {
     "title": "文件库",
-    "libraryManagement": "源数据管理",
-    "createLibrary": "创建文件库",
+    "libraryManagement": "原数据管理",
+    "createLibrary": "创建数据库",
     "createNewLibrary": "创建新文件库",
     "createLibraryDescription": "创建新的文件库以组织和管理您的文件",
-    "libraryList": "文件库列表",
+    "libraryList": "数据库列表",
     "libraryName": "库名称",
     "libraryNamePlaceholder": "输入库名称",
     "libraryDescription": "描述",
@@ -67,8 +194,8 @@
     "fileCount": "文件数量",
     "lastUpdated": "最后更新",
     "actions": "操作",
-    "view": "查看库",
-    "delete": "删除库",
+    "view": "查看详情",
+    "delete": "删除",
     "backToList": "返回文件库",
     "uploadFiles": "上传文件",
     "fileName": "文件名",
@@ -78,10 +205,31 @@
     "status": "状态",
     "processSelected": "处理所选",
     "deleteSelected": "删除所选",
+    "refreshData": "刷新数据",
+    "conversionSettings": "转换设置",
+    "totalLibraries": "数据库总数",
+    "totalFiles": "文件总数",
+    "processed": "已处理",
+    "conversionRate": "转换率",
+    "totalSize": "总大小",
+    "libraryInfo": "数据库信息",
+    "dataType": "数据类型",
+    "processingProgress": "处理进度",
+    "viewDetails": "查看详情",
+    "editSettings": "编辑设置",
+    "noLibrariesMessage": "暂无文件库数据，点击\"创建数据库\"开始添加",
+    "description": "管理多源异构数据，支持批量转换为MD，用于大模型训练和数据蒸馏",
+    "totalLibrariesCount": "共 {{count}} 个数据库",
+    "processing": "处理中",
+    "noDescription": "暂无描述",
+    "mdFiles": "个MD文件",
+    "totalFiles": "总共 {{count}} 个文件",
+    "unknownDate": "未知日期",
     "fileStatus": {
-      "pending": "未处理",
-      "processing": "处理中",
-      "processed": "已处理"
+      "pending": "等待处理",
+      "processing": "处理中", 
+      "processed": "已完成",
+      "failed": "处理失败"
     },
     "fileDetails": {
       "title": "文件详情",
@@ -104,12 +252,34 @@
       "download": "下载",
       "delete": "删除",
       "noPreview": "暂无预览"
+    },
+    "smartDatasetCreator": {
+      "step1": {
+        "title": "选择MD数据文件",
+        "loading": "加载数据集合...",
+        "selectedCount": "已选择 {{selected}} / {{total}} 个MD文件",
+        "refresh": "刷新",
+        "noMdFiles": "此数据集合中暂无已转换的MD文件",
+        "preview": "预览",
+        "selectedFiles": {
+          "title": "已选择的文件",
+          "count": "{{count}} 个文件"
+        },
+        "noCollections": {
+          "title": "暂无可用的数据集合",
+          "description": "请先在原始数据管理中创建数据集合并上传文件"
+        }
+      }
     }
+  },
+  "tasks": {
   },
   "common": {
     "cancel": "取消",
     "save": "保存",
-    "delete": "删除"
+    "delete": "删除",
+    "justNow": "刚刚",
+    "pageNotFound": "页面未找到"
   },
   "actions": {
     "createDataset": "创建数据集",
@@ -344,6 +514,122 @@
       "downloadResult": "下载结果",
       "deleteTask": "删除任务",
       "noTasks": "暂无{{status}}任务"
+    }
+  },
+  "tasks": {
+    "title": "任务管理",
+    "description": "监控和管理所有后台运行的数据处理任务",
+    "statistics": {
+      "totalTasks": "总任务数",
+      "running": "运行中",
+      "pending": "等待中",
+      "completed": "已完成",
+      "failed": "失败"
+    },
+    "tabs": {
+      "taskList": "任务列表",
+      "taskQueue": "任务队列",
+      "systemMonitor": "系统监控"
+    },
+    "actions": {
+      "pauseSelected": "暂停选中",
+      "cancelSelected": "取消选中",
+      "refresh": "刷新",
+      "autoRefreshStatus": "每10秒自动刷新中"
+    },
+    "filters": {
+      "searchPlaceholder": "搜索任务名称、数据库或数据集...",
+      "allStatuses": "全部状态",
+      "allTypes": "全部类型",
+      "typeLabels": {
+        "fileConversion": "文件转换",
+        "datasetGeneration": "数据集生成",
+        "dataDistillation": "数据蒸馏",
+        "batchProcessing": "批量处理",
+        "modelTraining": "模型训练",
+        "dataPreprocessing": "数据预处理"
+      }
+    },
+    "table": {
+      "taskInfo": "任务信息",
+      "type": "类型",
+      "status": "状态",
+      "progress": "进度",
+      "priority": "优先级",
+      "duration": "用时",
+      "creator": "创建者",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "等待中",
+      "running": "运行中",
+      "completed": "已完成",
+      "failed": "失败",
+      "cancelled": "已取消",
+      "unknown": "未知"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "紧急"
+    },
+    "duration": {
+      "minutes": "{{count}}分钟",
+      "hoursMinutes": "{{hours}}小时{{minutes}}分钟"
+    },
+    "progress": {
+      "processed": "已处理",
+      "processing": "处理中",
+      "currentItem": "当前: {{item}}",
+      "estimatedRemaining": "预计剩余: {{time}}",
+      "errors": "错误: {{count}}",
+      "warnings": "警告: {{count}}",
+      "aiProcessing": "AI处理中..."
+    },
+    "operations": {
+      "viewDetails": "查看详情",
+      "pauseTask": "暂停任务",
+      "resumeTask": "恢复任务",
+      "retryTask": "重试任务",
+      "cancelTask": "取消任务",
+      "deleteTask": "删除任务",
+      "downloadResult": "下载结果"
+    },
+    "messages": {
+      "noTasks": "暂无任务",
+      "noMatchingTasks": "没有找到匹配的任务",
+      "loading": "正在加载任务数据...",
+      "deletionSuccess": "成功删除 {{count}} 个任务{{failed}}",
+      "cancellationSuccess": "成功取消 {{count}} 个任务{{failed}}",
+      "operationSuccess": "{{operation}}任务成功",
+      "operationFailed": "{{operation}}任务失败"
+    },
+    "pagination": {
+      "showing": "显示 {{start}} - {{end}} 条，共 {{total}} 条",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {{current}} / {{total}} 页"
+    },
+    "details": {
+      "title": "任务详情",
+      "basicInfo": "基本信息",
+      "progressInfo": "进度信息",
+      "taskLogs": "任务日志",
+      "taskName": "任务名称",
+      "taskType": "任务类型",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "creator": "创建者",
+      "priority": "优先级",
+      "overallProgress": "总体进度",
+      "processedItems": "已处理项目",
+      "totalItems": "总项目数",
+      "errorCount": "错误数量",
+      "warningCount": "警告数量",
+      "realTimeUpdate": "实时更新中",
+      "taskExecuting": "任务执行中，日志将自动更新...",
+      "close": "关闭"
     }
   }
 }

@@ -84,15 +84,15 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
       path: '/datasets',
       subItems: [
         {
-          label: '数据集列表',
+          label: t('datasets.title'),
           path: '/datasets',
         },
         {
-          label: '创建数据集',
+          label: t('datasets.create.title'),
           path: '/datasets/create',
         },
         {
-          label: '智能创建',
+          label: t('datasets.smartCreate'),
           path: '/datasets/create-smart',
           badge: 'AI'
         }

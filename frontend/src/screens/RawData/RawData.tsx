@@ -322,8 +322,8 @@ export const RawData = (): JSX.Element => {
     <div className="w-full max-w-[1400px] p-6">
       {/* 页面标题和操作按钮 */}
       <div className="mb-6">
-        <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">原数据管理</h1>
-        <p className="text-[#4f7096] mb-4">管理多源异构数据，支持批量转换为MD，用于大模型训练和数据蒸馏</p>
+        <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">{t('rawData.libraryManagement')}</h1>
+        <p className="text-[#4f7096] mb-4">{t('rawData.description')}</p>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -332,7 +332,7 @@ export const RawData = (): JSX.Element => {
             disabled={actionLoading}
           >
             <PlusIcon className="w-4 h-4 mr-2" />
-            创建数据库
+            {t('rawData.createLibrary')}
           </Button>
           <Button
             variant="outline"
@@ -346,7 +346,7 @@ export const RawData = (): JSX.Element => {
             ) : (
               <RefreshCwIcon className="w-4 h-4 mr-2" />
             )}
-            刷新数据
+            {t('rawData.refreshData')}
           </Button>
           <Button
             variant="outline"
@@ -354,7 +354,7 @@ export const RawData = (): JSX.Element => {
             className="h-9 px-4 border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
           >
             <Settings2Icon className="w-4 h-4 mr-2" />
-            转换设置
+            {t('rawData.conversionSettings')}
           </Button>
         </div>
       </div>
@@ -374,7 +374,7 @@ export const RawData = (): JSX.Element => {
           <div className="flex items-center">
             <FolderIcon className="w-8 h-8 text-[#1977e5] mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">数据库总数</p>
+              <p className="text-sm text-[#4f7096]">{t('rawData.totalLibraries')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_libraries}
               </p>
@@ -386,7 +386,7 @@ export const RawData = (): JSX.Element => {
           <div className="flex items-center">
             <FileTextIcon className="w-8 h-8 text-[#10b981] mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">文件总数</p>
+              <p className="text-sm text-[#4f7096]">{t('rawData.totalFiles')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_files}
               </p>
@@ -398,7 +398,7 @@ export const RawData = (): JSX.Element => {
           <div className="flex items-center">
             <CheckCircleIcon className="w-8 h-8 text-[#10b981] mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">已处理</p>
+              <p className="text-sm text-[#4f7096]">{t('rawData.processed')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_processed}
               </p>
@@ -410,7 +410,7 @@ export const RawData = (): JSX.Element => {
           <div className="flex items-center">
             <TrendingUpIcon className="w-8 h-8 text-[#8b5cf6] mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">转换率</p>
+              <p className="text-sm text-[#4f7096]">{t('rawData.conversionRate')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {(librariesLoading || filesLoading) ? '...' : `${calculatedStatistics.conversion_rate}%`}
               </p>
@@ -422,7 +422,7 @@ export const RawData = (): JSX.Element => {
           <div className="flex items-center">
             <AlertCircleIcon className="w-8 h-8 text-[#f59e0b] mr-3" />
             <div>
-              <p className="text-sm text-[#4f7096]">总大小</p>
+              <p className="text-sm text-[#4f7096]">{t('rawData.totalSize')}</p>
               <p className="text-xl font-bold text-[#0c141c]">
                 {(librariesLoading || filesLoading) ? '...' : calculatedStatistics.total_size}
               </p>
@@ -434,9 +434,9 @@ export const RawData = (): JSX.Element => {
       {/* 数据库列表 */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[22px] font-bold leading-7 text-[#0c141c]">数据库列表</h2>
+          <h2 className="text-[22px] font-bold leading-7 text-[#0c141c]">{t('rawData.libraryList')}</h2>
           <div className="text-sm text-[#4f7096]">
-            {librariesLoading ? '加载中...' : `共 ${libraries.length} 个数据库`}
+            {librariesLoading ? t('datasets.loading') : t('rawData.totalLibrariesCount', { count: libraries.length })}
           </div>
         </div>
         
@@ -444,19 +444,19 @@ export const RawData = (): JSX.Element => {
           {librariesLoading ? (
             <div className="p-8 text-center">
               <Loader2Icon className="w-8 h-8 animate-spin mx-auto mb-4 text-[#1977e5]" />
-              <p className="text-[#4f7096]">加载文件库列表中...</p>
+              <p className="text-[#4f7096]">{t('datasets.loading')}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow className="border-[#d1dbe8] hover:bg-transparent">
-                  <TableHead className="text-[#4f7096] font-medium">数据库信息</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[120px]">数据类型</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[140px]">处理进度</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[100px]">文件数量</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[100px]">总大小</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[120px]">最后更新</TableHead>
-                  <TableHead className="text-[#4f7096] font-medium w-[80px]">操作</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium">{t('rawData.libraryInfo')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[120px]">{t('rawData.dataType')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[140px]">{t('rawData.processingProgress')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">{t('rawData.fileCount')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[100px]">{t('rawData.totalSize')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[120px]">{t('rawData.lastUpdated')}</TableHead>
+                  <TableHead className="text-[#4f7096] font-medium w-[80px]">{t('rawData.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -498,7 +498,7 @@ export const RawData = (): JSX.Element => {
                     <TableCell className="py-4">
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-[#4f7096]">已完成</span>
+                          <span className="text-[#4f7096]">{t('rawData.processed')}</span>
                           <span className="text-[#0c141c] font-medium">
                             {libraryStats.progress_percentage}%
                           </span>
@@ -512,8 +512,8 @@ export const RawData = (): JSX.Element => {
                           ></div>
                         </div>
                         <div className="flex justify-between text-xs text-[#4f7096]">
-                          <span>已处理: {libraryStats.processed_count}</span>
-                          <span>处理中: {libraryStats.processing_count}</span>
+                          <span>{t('rawData.processed')}: {libraryStats.processed_count}</span>
+                          <span>{t('rawData.processing')}: {libraryStats.processing_count}</span>
                         </div>
                       </div>
                     </TableCell>
@@ -550,14 +550,14 @@ export const RawData = (): JSX.Element => {
                             }}
                           >
                             <EyeIcon className="mr-2 h-4 w-4" />
-                            <span>查看详情</span>
+                            <span>{t('rawData.viewDetails')}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="cursor-pointer text-[#0c141c]"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Settings2Icon className="mr-2 h-4 w-4" />
-                            <span>编辑设置</span>
+                            <span>{t('rawData.editSettings')}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="cursor-pointer text-red-600"
@@ -568,7 +568,7 @@ export const RawData = (): JSX.Element => {
                             disabled={actionLoading}
                           >
                             <TrashIcon className="mr-2 h-4 w-4" />
-                            <span>删除</span>
+                            <span>{t('rawData.delete')}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -578,7 +578,7 @@ export const RawData = (): JSX.Element => {
                 {libraries.length === 0 && !librariesLoading && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-[#4f7096]">
-                      暂无文件库数据，点击"创建数据库"开始添加
+                      {t('rawData.noLibrariesMessage')}
                     </TableCell>
                   </TableRow>
                 )}

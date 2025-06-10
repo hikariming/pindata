@@ -19,9 +19,47 @@
     "quickActions": "Quick Actions",
     "systemNotifications": "System Notifications",
     "comingSoon": "Coming Soon",
-    "pluginsDevelopment": "Plugin support is currently under development"
+    "pluginsDevelopment": "Plugin support is currently under development",
+    "features": {
+      "dataImport": {
+        "title": "Data Import and Processing",
+        "description": "Support for importing raw data in multiple formats including CSV, JSON, Excel, etc. Intelligent data preprocessing, automatic data type recognition, and generation of high-quality training datasets."
+      },
+      "datasetManagement": {
+        "title": "Multi-platform Dataset Management",
+        "description": "Seamless integration with mainstream platforms like Hugging Face Hub and ModelScope. One-click import of popular open-source datasets with version management and update synchronization."
+      },
+      "taskScheduling": {
+        "title": "Smart Task Scheduling",
+        "description": "Automated data processing pipeline supporting batch operations and scheduled tasks. Real-time task status monitoring with detailed execution logs and performance metrics."
+      },
+      "storageSharing": {
+        "title": "Storage and Sharing",
+        "description": "Cloud storage supporting secure storage and backup of large-scale datasets. Team collaboration features with dataset sharing and permission management."
+      }
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "step1": {
+        "title": "Import Data",
+        "description": "Local files or HF, ModelScope platforms"
+      },
+      "step2": {
+        "title": "Process Data",
+        "description": "Cleaning, transformation and quality check"
+      },
+      "step3": {
+        "title": "Generate Dataset",
+        "description": "Train dataset and export"
+      }
+    },
+    "error": {
+      "loadingOverview": "Error loading overview data: {{error}}"
+    }
   },
   "settings": {
+    "title": "System Settings",
+    "description": "Manage large model configurations and view system logs",
     "llmConfig": "LLM Configuration",
     "llmConfigDescription": "Configure your Large Language Model settings",
     "modelSettings": "Model Settings",
@@ -51,11 +89,100 @@
     "filterLogs": "Filter Logs",
     "searchLogs": "Search logs...",
     "noLogs": "No logs found",
-    "lastUpdated": "Last Updated"
+    "lastUpdated": "Last Updated",
+    "totalLogs": "Total",
+    "logPause": "Pause",
+    "logResume": "Resume",
+    "exportLogs": "Export",
+    "allLevels": "All Levels",
+    "loadingLogs": "Loading logs...",
+    "llm": {
+      "modelConfigList": "Model Configuration List",
+      "modelConfigDescription": "Manage your large language model configurations. Click \"Test\" to verify if the configuration is correct, the system will send test requests and display detailed results.",
+      "refresh": "Refresh",
+      "addModel": "Add Model",
+      "addNewModel": "Add New Model Configuration",
+      "addModelDescription": "Configure new large model interface, supporting OpenAI, Claude, Gemini and custom interfaces",
+      "configName": "Configuration Name",
+      "configNamePlaceholder": "e.g., GPT-4 Production",
+      "provider": "Model Provider",
+      "modelName": "Model Name",
+      "modelNamePlaceholder": "e.g., gpt-4-vision-preview",
+      "modelNameTip": "You can enter any model name, including custom models",
+      "viewSupportedModels": "View Supported Models",
+      "apiKeyLabel": "API Key",
+      "apiUrlLabel": "API Interface URL",
+      "temperatureParam": "Temperature Parameter",
+      "maxTokensParam": "Max Tokens",
+      "enableConfig": "Enable this configuration",
+      "visionSupport": "Vision Support",
+      "visionSupportTip": "Enable this option to indicate that the model supports image recognition and can be used for vision-related tasks",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "editModel": "Edit Model Configuration",
+      "editModelDescription": "Modify existing model configuration information",
+      "confirmDelete": "Confirm Deletion",
+      "deleteDescription": "Are you sure you want to delete this model configuration? This action cannot be undone.",
+      "delete": "Delete",
+      "testResult": "Connection Test Result",
+      "close": "Close",
+      "retestConnection": "Retest",
+      "loading": "Loading configurations...",
+      "noConfigs": "No configurations, please add the first model configuration",
+      "defaultLabel": "Default",
+      "visionSupportLabel": "Vision Support",
+      "test": "Test",
+      "setDefault": "Set as Default",
+      "defaultConfig": "Default Configuration",
+      "apiUrl": "API URL",
+      "temperature": "Temperature",
+      "maxTokens": "Max Tokens",
+      "visionSupportStatus": "Vision Support",
+      "support": "Supported",
+      "notSupport": "Not Supported",
+      "status": "Status",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "customInterface": "Custom Interface",
+      "connectionSuccess": "Connection Successful",
+      "authFailed": "API Key Authentication Failed",
+      "connectionFailed": "Connection Failed",
+      "modelNotFound": "Model Not Found",
+      "rateLimited": "Rate Limited",
+      "testFailed": "Test Failed",
+      "unknownError": "Unknown Error",
+      "responseLatency": "Response Latency",
+      "testTime": "Test Time",
+      "modelInfo": "Model Information",
+      "provider": "Provider",
+      "model": "Model",
+      "responsePreview": "Response Preview",
+      "errorDetails": "Error Details",
+      "suggestedSolutions": "Suggested Solutions",
+      "authFailedTips": [
+        "Check if the API key is correct and valid",
+        "Confirm that the API key has the required permissions"
+      ],
+      "connectionFailedTips": [
+        "Check if the network connection is normal",
+        "Confirm that the API interface address is correct",
+        "Check firewall settings"
+      ],
+      "modelNotFoundTips": [
+        "Confirm that the model name is correct",
+        "Check if you have access to this model"
+      ],
+      "rateLimitedTips": [
+        "Try again later",
+        "Check API call rate limits"
+      ],
+      "testSuccessMessage": "Connection test successful! Latency: {{latency}}ms",
+      "testFailedMessage": "Connection test failed"
+    }
   },
   "rawData": {
     "title": "File Libraries",
-    "libraryManagement": "Source Data Management",
+    "libraryManagement": "Source Data Management", 
     "createLibrary": "Create Library",
     "createNewLibrary": "Create New Library",
     "createLibraryDescription": "Create a new library to organize and manage your files",
@@ -78,10 +205,31 @@
     "status": "Status",
     "processSelected": "Process Selected",
     "deleteSelected": "Delete Selected",
+    "refreshData": "Refresh Data",
+    "conversionSettings": "Conversion Settings",
+    "totalLibraries": "Total Libraries",
+    "totalFiles": "Total Files",
+    "processed": "Processed",
+    "conversionRate": "Conversion Rate",
+    "totalSize": "Total Size",
+    "libraryInfo": "Library Information",
+    "dataType": "Data Type",
+    "processingProgress": "Processing Progress",
+    "viewDetails": "View Details",
+    "editSettings": "Edit Settings",
+    "noLibrariesMessage": "No library data, click \"Create Library\" to start adding",
+    "description": "Manage multi-source heterogeneous data, support batch conversion to MD for large model training and data distillation",
+    "totalLibrariesCount": "{{count}} libraries in total",
+    "processing": "Processing",
+    "noDescription": "No description",
+    "mdFiles": "MD files",
+    "totalFiles": "Total {{count}} files",
+    "unknownDate": "Unknown date",
     "fileStatus": {
-      "pending": "Pending",
+      "pending": "Pending", 
       "processing": "Processing",
-      "processed": "Processed"
+      "processed": "Processed",
+      "failed": "Failed"
     },
     "fileDetails": {
       "title": "File Details",
@@ -104,30 +252,32 @@
       "download": "Download",
       "delete": "Delete",
       "noPreview": "Preview not available"
+    },
+    "smartDatasetCreator": {
+      "step1": {
+        "title": "Select MD Data Files",
+        "loading": "Loading data collections...",
+        "selectedCount": "Selected {{selected}} / {{total}} MD files",
+        "refresh": "Refresh",
+        "noMdFiles": "No converted MD files in this collection",
+        "preview": "Preview",
+        "selectedFiles": {
+          "title": "Selected Files",
+          "count": "{{count}} files"
+        },
+        "noCollections": {
+          "title": "No available data collections",
+          "description": "Please create a data collection and upload files in raw data management first"
+        }
+      }
     }
-  },
-  "common": {
-    "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete"
-  },
-  "actions": {
-    "createDataset": "Create Dataset",
-    "startNewTask": "Start New Task",
-    "edit": "Edit",
-    "delete": "Delete",
-    "view": "View"
-  },
-  "time": {
-    "hoursAgo": "{{count}} hours ago",
-    "daysAgo": "{{count}} days ago"
   },
   "datasets": {
     "title": "Datasets",
     "totalDatasets": "{{count}} datasets",
     "smartCreate": "Smart Create",
     "createDataset": "Create Dataset",
-    "searchPlaceholder": "Search dataset names or descriptions...",
+    "searchPlaceholder": "Search dataset name or description...",
     "taskType": "Task Type",
     "allTaskTypes": "All",
     "nlp": "Natural Language Processing",
@@ -135,7 +285,7 @@
     "textClassification": "Text Classification",
     "computerVision": "Computer Vision",
     "codeGeneration": "Code Generation",
-    "sorting": "Sort",
+    "sorting": "Sorting",
     "sortByTrending": "Trending",
     "sortByNewest": "Newest",
     "sortByUpdated": "Recently Updated",
@@ -175,76 +325,76 @@
       "commitHash": "Commit Hash",
       "author": "Author",
       "commitMessage": "Commit Message",
-      "settingsInDevelopment": "Settings feature is under development...",
-      "noVersion": "No version",
-      "files": "files"
+      "settingsInDevelopment": "Settings are under development...",
+      "noVersion": "No Version",
+      "files": "Files"
     },
     "create": {
       "title": "Create Dataset",
-      "backToList": "Back to Dataset List",
-      "subtitle": "Choose how you want to create your dataset and fill in the relevant information.",
-      "creationFailed": "Creation Failed",
+      "backToList": "Back to List",
+      "subtitle": "Select the creation method for the dataset and enter the relevant information.",
+      "creationFailed": "Creation failed",
       "selectMethod": "Select Creation Method",
       "createEmpty": "Create Empty Dataset",
-      "createEmptyDesc": "Create a new empty dataset directory where you can upload and manage data files later.",
+      "createEmptyDesc": "Create a new empty dataset directory, you can upload and manage data files later.",
       "importHuggingface": "Hugging Face Import",
-      "importHuggingfaceDesc": "Import existing datasets from Hugging Face Hub, supports URL or dataset paths.",
+      "importHuggingfaceDesc": "Import existing datasets from Hugging Face Hub, supporting URL or dataset path.",
       "importModelscope": "ModelScope Import",
-      "importModelscopeDesc": "Import Chinese-optimized datasets from ModelScope community, focused on Chinese AI application scenarios.",
+      "importModelscopeDesc": "Import Chinese-optimized datasets from ModelScope community, focusing on Chinese AI application scenarios.",
       "importInfo": "Import Information",
       "datasetUrl": "Dataset URL or Path",
       "required": "Required",
-      "urlPlaceholder": "e.g., squad or https://huggingface.co/datasets/squad",
-      "modelscopeUrlPlaceholder": "e.g., open-r1/Mixture-of-Thoughts or full URL",
-      "urlHint": "Supports dataset names (like open-r1/Mixture-of-Thoughts) or full URLs",
-      "modelscopeUrlHint": "Supports path format (like open-r1/Mixture-of-Thoughts) or full URL, system will automatically get dataset info",
+      "urlPlaceholder": "Example: squad or https://huggingface.co/datasets/squad",
+      "modelscopeUrlPlaceholder": "Example: open-r1/Mixture-of-Thoughts or full URL",
+      "urlHint": "Support dataset name (e.g. open-r1/Mixture-of-Thoughts) or full URL",
+      "modelscopeUrlHint": "Support path format (e.g. open-r1/Mixture-of-Thoughts) or full URL, the system will automatically obtain dataset information",
       "visitHuggingface": "Visit Hugging Face",
       "visitModelscope": "Visit ModelScope",
       "basicInfo": "Basic Information",
       "datasetName": "Dataset Name",
       "datasetNamePlaceholder": "Enter dataset name...",
       "owner": "Owner",
-      "ownerPlaceholder": "Enter owner username or organization name...",
+      "ownerPlaceholder": "Enter owner name or organization name...",
       "ownerHint": "The combination of owner and dataset name must be unique",
       "license": "License",
       "taskType": "Task Type",
       "tags": "Tags",
-      "tagsPlaceholder": "Separate tags with commas, e.g., nlp, chinese, qa...",
-      "descriptionPlaceholder": "Describe your dataset content, purpose and features...",
-      "createExplanation": "Creation Explanation",
+      "tagsPlaceholder": "Separate tags with commas, e.g. nlp, japanese, qa...",
+      "descriptionPlaceholder": "Describe the content, purpose and features of the dataset...",
+      "createExplanation": "Create Explanation",
       "importExplanation": "Import Explanation",
       "emptyDatasetSteps": [
-        "• System will create a new empty dataset directory for you",
-        "• You can upload data files later through the file management interface",
-        "• Supports multiple formats: JSON, CSV, Parquet, TXT, etc."
+        "• The system will create a new empty dataset directory",
+        "• You can upload data files later from the file management interface",
+        "• Support multiple formats: JSON, CSV, Parquet, TXT, etc."
       ],
       "huggingfaceSteps": [
-        "• System will download the specified dataset from Hugging Face Hub",
-        "• Dataset information (name, description, etc.) will be automatically obtained from source",
-        "• Import process may take several minutes, depending on dataset size"
+        "• The system will download the specified dataset from Hugging Face Hub",
+        "• The dataset information (name, description, etc.) will be automatically obtained from the source",
+        "• The import process may take several minutes depending on the dataset size"
       ],
       "modelscopeSteps": [
-        "• System will download the specified dataset from ModelScope community",
-        "• Dataset information (name, description, etc.) will be automatically obtained from source",
-        "• Import process may take several minutes, depending on dataset size"
+        "• The system will download the specified dataset from ModelScope community",
+        "• The dataset information (name, description, etc.) will be automatically obtained from the source",
+        "• The import process may take several minutes depending on the dataset size"
       ],
-      "reselect": "Reselect",
+      "reselect": "Re-select",
       "creating": "Creating...",
       "importing": "Importing...",
       "success": {
-        "title": "Dataset Created Successfully!",
+        "title": "Dataset creation successful!",
         "redirecting": "Redirecting to dataset list...",
-        "importStarted": "Import Task Started!",
-        "importMessage": "Dataset is being imported from {{source}}, you can check progress in task management page.",
-        "viewTaskProgress": "View Task Progress",
-        "backToDatasetList": "Back to Dataset List"
+        "importStarted": "Import task started!",
+        "importMessage": "The dataset is being imported from {{source}}. You can check the progress on the task management page.",
+        "viewTaskProgress": "View task progress",
+        "backToDatasetList": "Back to dataset list"
       }
     },
     "tasks": {
       "title": "Dataset Tasks",
-      "subtitle": "Monitor and manage dataset creation task progress",
-      "backToList": "Back to Dataset List",
-      "refreshStatus": "Refresh Status",
+      "subtitle": "Monitor and manage the progress of dataset creation tasks",
+      "backToList": "Back to dataset list",
+      "refreshStatus": "Update status",
       "running": "Running",
       "completed": "Completed",
       "pending": "Pending",
@@ -260,9 +410,9 @@
       "fileExtraction": "File Extraction",
       "networkDownload": "Network Download",
       "modelDistillation": "Model Distillation",
-      "startTime": "Start",
-      "completedTime": "Completed",
-      "estimatedTime": "Estimated",
+      "startTime": "Start Time",
+      "completedTime": "Completed Time",
+      "estimatedTime": "Estimated Time",
       "duration": "Duration",
       "minutes": "{{count}} minutes",
       "hours": "{{count}} hours {{mins}} minutes",
@@ -273,7 +423,258 @@
       "retry": "Retry",
       "downloadResult": "Download Result",
       "deleteTask": "Delete Task",
-      "noTasks": "No {{status}} tasks"
+      "noTasks": "No tasks"
+    }
+  },
+  "tasks": {
+    "title": "Task Management",
+    "description": "Monitor and manage all background data processing tasks",
+    "statistics": {
+      "totalTasks": "Total Tasks",
+      "running": "Running",
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "tabs": {
+      "taskList": "Task List",
+      "taskQueue": "Task Queue",
+      "systemMonitor": "System Monitor"
+    },
+    "actions": {
+      "pauseSelected": "Pause Selected",
+      "cancelSelected": "Cancel Selected",
+      "refresh": "Refresh",
+      "autoRefreshStatus": "Auto-refreshing every 10 seconds"
+    },
+    "filters": {
+      "searchPlaceholder": "Search task names, libraries or datasets...",
+      "allStatuses": "All Statuses",
+      "allTypes": "All Types",
+      "typeLabels": {
+        "fileConversion": "File Conversion",
+        "datasetGeneration": "Dataset Generation",
+        "dataDistillation": "Data Distillation",
+        "batchProcessing": "Batch Processing",
+        "modelTraining": "Model Training",
+        "dataPreprocessing": "Data Preprocessing"
+      }
+    },
+    "table": {
+      "taskInfo": "Task Information",
+      "type": "Type",
+      "status": "Status",
+      "progress": "Progress",
+      "priority": "Priority",
+      "duration": "Duration",
+      "creator": "Creator",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "duration": {
+      "minutes": "{{count}} minutes",
+      "hoursMinutes": "{{hours}} hours {{minutes}} minutes"
+    },
+    "progress": {
+      "processed": "Processed",
+      "processing": "Processing",
+      "currentItem": "Current: {{item}}",
+      "estimatedRemaining": "Estimated remaining: {{time}}",
+      "errors": "Errors: {{count}}",
+      "warnings": "Warnings: {{count}}",
+      "aiProcessing": "AI processing..."
+    },
+    "operations": {
+      "viewDetails": "View Details",
+      "pauseTask": "Pause Task",
+      "resumeTask": "Resume Task",
+      "retryTask": "Retry Task",
+      "cancelTask": "Cancel Task",
+      "deleteTask": "Delete Task",
+      "downloadResult": "Download Result"
+    },
+    "messages": {
+      "noTasks": "No tasks",
+      "noMatchingTasks": "No matching tasks found",
+      "loading": "Loading task data...",
+      "deletionSuccess": "Successfully deleted {{count}} tasks{{failed}}",
+      "cancellationSuccess": "Successfully cancelled {{count}} tasks{{failed}}",
+      "operationSuccess": "{{operation}} task successful",
+      "operationFailed": "{{operation}} task failed"
+    },
+    "pagination": {
+      "showing": "Showing {{start}} - {{end}} of {{total}} items",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} / {{total}}"
+    },
+    "details": {
+      "title": "Task Details",
+      "basicInfo": "Basic Information",
+      "progressInfo": "Progress Information",
+      "taskLogs": "Task Logs",
+      "taskName": "Task Name",
+      "taskType": "Task Type",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "creator": "Creator",
+      "priority": "Priority",
+      "overallProgress": "Overall Progress",
+      "processedItems": "Processed Items",
+      "totalItems": "Total Items",
+      "errorCount": "Error Count",
+      "warningCount": "Warning Count",
+      "realTimeUpdate": "Real-time updating",
+      "taskExecuting": "Task executing, logs will update automatically...",
+      "close": "Close"
+    }
+  },
+  "smartDatasetCreator": {
+    "constants": {
+      "datasetTypes": {
+        "qaPairs": {
+          "name": "QA Pairs",
+          "description": "Generate question-answer pairs from document content, suitable for QA system training",
+          "useCase": "Smart customer service, knowledge Q&A, educational assistance",
+          "category": "supervised"
+        },
+        "instructionTuning": {
+          "name": "Instruction Tuning",
+          "description": "Generate instruction-input-output triplets for instruction-following model training",
+          "useCase": "Smart office, document processing, personalized assistant",
+          "category": "supervised"
+        },
+        "textClassification": {
+          "name": "Text Classification",
+          "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
+          "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
+          "category": "supervised"
+        },
+        "dialogue": {
+          "name": "Dialogue Tuning",
+          "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
+          "useCase": "Smart customer service, chatbots, voice assistants",
+          "category": "supervised"
+        },
+        "domainAdaptation": {
+          "name": "Domain Adaptation",
+          "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
+          "useCase": "Medical diagnosis, legal consultation, financial analysis",
+          "category": "supervised"
+        },
+        "reasoning": {
+          "name": "Reasoning Tuning",
+          "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
+          "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
+          "category": "reasoning"
+        },
+        "knowledgeDistillation": {
+          "name": "Knowledge Distillation",
+          "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
+          "useCase": "Model compression, edge deployment, cost optimization",
+          "category": "distillation"
+        }
+      },
+      "formatDetails": {
+        "alpaca": {
+          "name": "Alpaca Format",
+          "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
+          "structure": "instruction + input + output",
+          "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
+          "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
+          "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"]
+        },
+        "shareGPT": {
+          "name": "ShareGPT Format",
+          "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
+          "structure": "conversations + tools + roles",
+          "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
+          "disadvantages": ["Complex format", "Must follow role position rules"],
+          "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"]
+        },
+        "openAI": {
+          "name": "OpenAI Format",
+          "description": "OpenAI API compatible format, simplified version of ShareGPT",
+          "structure": "messages + roles",
+          "advantages": ["API compatible", "Simple to use", "Widely supported"],
+          "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
+          "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"]
+        },
+        "alpacaCOT": {
+          "name": "Alpaca-COT Format",
+          "description": "Alpaca format with chain of thought, suitable for reasoning task training",
+          "structure": "instruction + input + chain_of_thought + output",
+          "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
+          "disadvantages": ["Complex data construction", "Requires professional annotation"],
+          "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"]
+        },
+        "csv": {
+          "name": "CSV Format",
+          "description": "Simple table format, suitable for classification and annotation tasks",
+          "structure": "text, label",
+          "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
+          "disadvantages": ["Limited functionality", "No complex structure support"],
+          "bestFor": ["Text classification", "Label annotation", "Simple tasks"]
+        }
+      },
+      "aiModels": {
+        "gpt4": "GPT-4",
+        "gpt35Turbo": "GPT-3.5 Turbo",
+        "claude3": "Claude-3",
+        "geminiPro": "Gemini Pro",
+        "localLlm": "Local Model"
+      },
+      "steps": {
+        "selectData": {
+          "name": "Select Data",
+          "description": "Select files from raw data"
+        },
+        "configDataset": {
+          "name": "Configure Dataset",
+          "description": "Select dataset type and format"
+        },
+        "configModel": {
+          "name": "Configure Model",
+          "description": "Configure AI model and processing parameters"
+        },
+        "previewConfirm": {
+          "name": "Preview & Confirm",
+          "description": "Preview generation settings and confirm"
+        },
+        "generateDataset": {
+          "name": "Generate Dataset",
+          "description": "AI processes and generates dataset"
+        }
+      }
+    },
+    "step1": {
+      "title": "Select MD Data Files",
+      "loading": "Loading data collections...",
+      "selectedCount": "Selected {{selected}} / {{total}} MD files",
+      "refresh": "Refresh",
+      "noMdFiles": "No converted MD files in this collection",
+      "preview": "Preview",
+      "selectedFiles": {
+        "title": "Selected Files",
+        "count": "{{count}} files"
+      },
+      "noCollections": {
+        "title": "No available data collections",
+        "description": "Please create a data collection and upload files in raw data management first"
+      }
     }
   }
 }
