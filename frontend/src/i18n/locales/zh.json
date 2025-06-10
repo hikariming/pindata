@@ -183,7 +183,6 @@
   "rawData": {
     "title": "文件库",
     "libraryManagement": "原数据管理",
-    "createLibrary": "创建数据库",
     "createNewLibrary": "创建新文件库",
     "createLibraryDescription": "创建新的文件库以组织和管理您的文件",
     "libraryList": "数据库列表",
@@ -368,6 +367,30 @@
           "title": "暂无可用的数据集合",
           "description": "请先在原始数据管理中创建数据集合并上传文件"
         }
+      }
+    },
+    "createLibrary": {
+      "create": "创建数据库",
+      "basicInfo": "基本信息",
+      "dataTypeLabel": "数据类型",
+      "dataTypes": {
+        "training": "训练数据",
+        "evaluation": "评估数据",
+        "mixed": "混合数据"
+      },
+      "purposeLabel": "预期用途",
+      "purposePlaceholder": "如：科研论文理解模型训练、法律文档分析等",
+      "tagManagement": "标签管理",
+      "addTag": "添加标签",
+      "addTagPlaceholder": "添加标签",
+      "commonTags": "常用标签：",
+      "addedTags": "已添加的标签：",
+      "creating": "创建中...",
+      "validationErrors": {
+        "nameRequired": "请输入数据库名称",
+        "nameMinLength": "数据库名称长度不能少于3个字符",
+        "nameMaxLength": "数据库名称长度不能超过63个字符",
+        "nameInvalidFormat": "数据库名称只能包含中文、英文、数字、下划线和连字符，且不能以连字符开头或结尾"
       }
     }
   },

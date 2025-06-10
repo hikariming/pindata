@@ -332,7 +332,7 @@ export const RawData = (): JSX.Element => {
             disabled={actionLoading}
           >
             <PlusIcon className="w-4 h-4 mr-2" />
-            {t('rawData.createLibrary')}
+            {t('rawData.createLibrary.create')}
           </Button>
           <Button
             variant="outline"

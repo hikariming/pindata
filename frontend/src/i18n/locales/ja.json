@@ -183,7 +183,6 @@
   "rawData": {
     "title": "ファイルライブラリ",
     "libraryManagement": "ソースデータ管理",
-    "createLibrary": "ライブラリを作成",
     "createNewLibrary": "新しいライブラリを作成",
     "createLibraryDescription": "ファイルを整理・管理するための新しいライブラリを作成します",
     "libraryList": "ライブラリリスト",
@@ -368,6 +367,30 @@
           "title": "利用可能なデータコレクションがありません",
           "description": "生データ管理でデータコレクションを作成し、ファイルをアップロードしてください"
         }
+      }
+    },
+    "createLibrary": {
+      "create": "ライブラリを作成",
+      "basicInfo": "基本情報",
+      "dataTypeLabel": "データタイプ",
+      "dataTypes": {
+        "training": "トレーニングデータ",
+        "evaluation": "評価データ",
+        "mixed": "混合データ"
+      },
+      "purposeLabel": "使用目的",
+      "purposePlaceholder": "例：科学論文理解モデルの学習、法的文書分析など",
+      "tagManagement": "タグ管理",
+      "addTag": "タグを追加",
+      "addTagPlaceholder": "タグを追加",
+      "commonTags": "一般的なタグ：",
+      "addedTags": "追加されたタグ：",
+      "creating": "作成中...",
+      "validationErrors": {
+        "nameRequired": "ライブラリ名を入力してください",
+        "nameMinLength": "ライブラリ名は3文字以上である必要があります",
+        "nameMaxLength": "ライブラリ名は63文字以下である必要があります",
+        "nameInvalidFormat": "ライブラリ名には日本語、英語、数字、アンダースコア、ハイフンのみ使用でき、ハイフンで始まったり終わったりすることはできません"
       }
     }
   },

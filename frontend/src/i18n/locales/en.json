@@ -183,7 +183,6 @@
   "rawData": {
     "title": "File Libraries",
     "libraryManagement": "Source Data Management", 
-    "createLibrary": "Create Library",
     "createNewLibrary": "Create New Library",
     "createLibraryDescription": "Create a new library to organize and manage your files",
     "libraryList": "Library List",
@@ -368,6 +367,30 @@
           "title": "No available data collections",
           "description": "Please create a data collection and upload files in raw data management first"
         }
+      }
+    },
+    "createLibrary": {
+      "create": "Create Library",
+      "basicInfo": "Basic Information",
+      "dataTypeLabel": "Data Type",
+      "dataTypes": {
+        "training": "Training Data",
+        "evaluation": "Evaluation Data",
+        "mixed": "Mixed Data"
+      },
+      "purposeLabel": "Expected Purpose",
+      "purposePlaceholder": "e.g., Training models for scientific paper understanding, legal document analysis, etc.",
+      "tagManagement": "Tag Management",
+      "addTag": "Add Tag",
+      "addTagPlaceholder": "Add tag",
+      "commonTags": "Common Tags:",
+      "addedTags": "Added Tags:",
+      "creating": "Creating...",
+      "validationErrors": {
+        "nameRequired": "Please enter library name",
+        "nameMinLength": "Library name must be at least 3 characters long",
+        "nameMaxLength": "Library name cannot exceed 63 characters",
+        "nameInvalidFormat": "Library name can only contain Chinese, English, numbers, underscores and hyphens, and cannot start or end with hyphens"
       }
     }
   },
@@ -643,6 +666,14 @@
     }
   },
   "smartDatasetCreator": {
+    "stepIndicator": {
+      "progress": "Step {{current}} / {{total}}",
+      "completed": "Completed"
+    },
+    "navigation": {
+      "prevStep": "Previous",
+      "nextStep": "Next"
+    },
     "title": "Smart Dataset Creator",
     "description": "Use AI technology to automatically generate high-quality training datasets from raw data, supporting multiple dataset types and formats.",
     "constants": {

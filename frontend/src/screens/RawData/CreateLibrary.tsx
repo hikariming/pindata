@@ -63,26 +63,26 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      alert('请输入数据库名称');
+      alert(t('rawData.createLibrary.validationErrors.nameRequired'));
       return;
     }
 
     // 验证库名称格式
     const name = formData.name.trim();
     if (name.length < 3) {
-      alert('数据库名称长度不能少于3个字符');
+      alert(t('rawData.createLibrary.validationErrors.nameMinLength'));
       return;
     }
     
     if (name.length > 63) {
-      alert('数据库名称长度不能超过63个字符');
+      alert(t('rawData.createLibrary.validationErrors.nameMaxLength'));
       return;
     }
     
     // 检查是否包含非法字符
     const validNameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5][a-zA-Z0-9\u4e00-\u9fa5_-]*[a-zA-Z0-9\u4e00-\u9fa5]$/;
     if (!validNameRegex.test(name)) {
-      alert('数据库名称只能包含中文、英文、数字、下划线和连字符，且不能以连字符开头或结尾');
+      alert(t('rawData.createLibrary.validationErrors.nameInvalidFormat'));
       return;
     }
 
@@ -119,11 +119,11 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
       </div>
 
       <div className="space-y-6">
-        {/* 基本信息 */}
+        {/* Basic Information */}
         <Card className="border-[#d1dbe8] bg-white p-6">
           <div className="flex items-center mb-4">
             <DatabaseIcon className="w-5 h-5 text-[#1977e5] mr-2" />
-            <h3 className="text-lg font-semibold text-[#0c141c]">基本信息</h3>
+            <h3 className="text-lg font-semibold text-[#0c141c]">{t('rawData.createLibrary.basicInfo')}</h3>
           </div>
           
           <div className="space-y-4">
@@ -142,16 +142,16 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#0c141c]">
-                  数据类型 <span className="text-red-500">*</span>
+                  {t('rawData.createLibrary.dataTypeLabel')} <span className="text-red-500">*</span>
                 </label>
                 <select 
                   value={formData.data_type} 
                   onChange={(e) => setFormData({ ...formData, data_type: e.target.value as DataType })}
                   className="w-full px-3 py-2 border border-[#d1dbe8] rounded-md focus:border-[#1977e5] focus:outline-none bg-white"
                 >
-                  <option value="training">训练数据</option>
-                  <option value="evaluation">评估数据</option>
-                  <option value="mixed">混合数据</option>
+                  <option value="training">{t('rawData.createLibrary.dataTypes.training')}</option>
+                  <option value="evaluation">{t('rawData.createLibrary.dataTypes.evaluation')}</option>
+                  <option value="mixed">{t('rawData.createLibrary.dataTypes.mixed')}</option>
                 </select>
               </div>
             </div>
@@ -170,10 +170,10 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-[#0c141c]">
-                预期用途
+                {t('rawData.createLibrary.purposeLabel')}
               </label>
               <Input
-                placeholder="如：科研论文理解模型训练、法律文档分析等"
+                placeholder={t('rawData.createLibrary.purposePlaceholder')}
                 value={formData.purpose}
                 onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
                 className="border-[#d1dbe8] focus:border-[#1977e5]"
@@ -182,17 +182,17 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
           </div>
         </Card>
 
-        {/* 标签管理 */}
+        {/* Tag Management */}
         <Card className="border-[#d1dbe8] bg-white p-6">
           <div className="flex items-center mb-4">
             <TagIcon className="w-5 h-5 text-[#1977e5] mr-2" />
-            <h3 className="text-lg font-semibold text-[#0c141c]">标签管理</h3>
+            <h3 className="text-lg font-semibold text-[#0c141c]">{t('rawData.createLibrary.tagManagement')}</h3>
           </div>
           
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="添加标签"
+                placeholder={t('rawData.createLibrary.addTagPlaceholder')}
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
@@ -207,7 +207,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             </div>
 
             <div>
-              <p className="text-sm text-[#4f7096] mb-2">常用标签：</p>
+              <p className="text-sm text-[#4f7096] mb-2">{t('rawData.createLibrary.commonTags')}</p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {commonTags.map((tag) => (
                   <Badge
@@ -227,7 +227,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
             {formData.tags.length > 0 && (
               <div>
-                <p className="text-sm text-[#4f7096] mb-2">已添加的标签：</p>
+                <p className="text-sm text-[#4f7096] mb-2">{t('rawData.createLibrary.addedTags')}</p>
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag) => (
                     <Badge key={tag} className="bg-[#1977e5] text-white">
@@ -246,7 +246,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
 
 
-        {/* 操作按钮 */}
+        {/* Action Buttons */}
         <div className="flex justify-end gap-3">
           <Button
             variant="outline"
@@ -264,7 +264,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             {loading ? (
               <>
                 <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
-                创建中...
+                {t('rawData.createLibrary.creating')}
               </>
             ) : (
               <>
@@ -275,7 +275,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
           </Button>
         </div>
 
-        {/* 错误提示 */}
+        {/* Error Message */}
         {error && (
           <Card className="border-red-200 bg-red-50 p-4 mt-4">
             <div className="text-red-600 text-sm">
