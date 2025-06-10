@@ -101,7 +101,7 @@ graph TD
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/pindata.git
+git clone https://github.com/hikariming/pindata.git
 cd pindata
 
 # Start all services
@@ -233,7 +233,7 @@ PinData is open source software licensed under the [Apache License 2.0](LICENSE)
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/pindata&type=Date)](https://star-history.com/#yourusername/pindata&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=hikariming/pindata&type=Date)](https://star-history.com/#hikariming/pindata&Date)
 
 ---
 
@@ -241,6 +241,6 @@ PinData is open source software licensed under the [Apache License 2.0](LICENSE)
 
 **Made with ❤️ by the PinData Team**
 
-[⭐ Star us on GitHub](https://github.com/yourusername/pindata)
+[⭐ Star us on GitHub](https://github.com/hikariming/pindata)
 
 </div>
