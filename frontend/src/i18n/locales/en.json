@@ -55,7 +55,7 @@
   },
   "rawData": {
     "title": "File Libraries",
-    "libraryManagement": "Source Data Management",
+    "libraryManagement": "Source Data Management", 
     "createLibrary": "Create Library",
     "createNewLibrary": "Create New Library",
     "createLibraryDescription": "Create a new library to organize and manage your files",
@@ -78,10 +78,24 @@
     "status": "Status",
     "processSelected": "Process Selected",
     "deleteSelected": "Delete Selected",
+    "refreshData": "Refresh Data",
+    "conversionSettings": "Conversion Settings",
+    "totalLibraries": "Total Libraries",
+    "totalFiles": "Total Files",
+    "processed": "Processed",
+    "conversionRate": "Conversion Rate",
+    "totalSize": "Total Size",
+    "libraryInfo": "Library Information",
+    "dataType": "Data Type",
+    "processingProgress": "Processing Progress",
+    "viewDetails": "View Details",
+    "editSettings": "Edit Settings",
+    "noLibrariesMessage": "No library data, click \"Create Library\" to start adding",
     "fileStatus": {
-      "pending": "Pending",
+      "pending": "Pending", 
       "processing": "Processing",
-      "processed": "Processed"
+      "processed": "Processed",
+      "failed": "Failed"
     },
     "fileDetails": {
       "title": "File Details",

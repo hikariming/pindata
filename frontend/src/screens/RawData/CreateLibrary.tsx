@@ -108,14 +108,14 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
         onClick={onBack}
       >
         <ArrowLeftIcon className="w-4 h-4 mr-2" />
-        返回列表
+        {t('rawData.backToList')}
       </Button>
 
       <div className="mb-6">
         <h2 className="text-[26px] font-bold leading-8 text-[#0c141c] mb-2">
-          创建新数据库
+          {t('rawData.createNewLibrary')}
         </h2>
-        <p className="text-[#4f7096]">配置数据库以管理和处理多源异构训练数据</p>
+        <p className="text-[#4f7096]">{t('rawData.createLibraryDescription')}</p>
       </div>
 
       <div className="space-y-6">
@@ -130,10 +130,10 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#0c141c]">
-                  数据库名称 <span className="text-red-500">*</span>
+                  {t('rawData.libraryName')} <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  placeholder="请输入数据库名称"
+                  placeholder={t('rawData.libraryNamePlaceholder')}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="border-[#d1dbe8] focus:border-[#1977e5]"
@@ -158,10 +158,10 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-[#0c141c]">
-                数据库描述
+                {t('rawData.libraryDescription')}
               </label>
               <Textarea
-                placeholder="描述这个数据库的用途和包含的数据类型..."
+                placeholder={t('rawData.libraryDescriptionPlaceholder')}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="border-[#d1dbe8] focus:border-[#1977e5] min-h-[80px]"
@@ -254,7 +254,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             disabled={loading}
             className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2] hover:text-[#0c141c]"
           >
-            取消
+            {t('common.cancel')}
           </Button>
           <Button 
             onClick={handleSubmit}
@@ -269,7 +269,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             ) : (
               <>
                 <BrainIcon className="w-4 h-4 mr-2" />
-                创建数据库
+                {t('rawData.createLibrary')}
               </>
             )}
           </Button>
