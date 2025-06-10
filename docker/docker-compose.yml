@@ -5,17 +5,28 @@ services:
   db:
     image: postgres:15-alpine
     container_name: pindata_postgres
+    restart: always
     environment:
-      POSTGRES_USER: postgres
+      PGUSER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pindata_dataset
       PGDATA: /var/lib/postgresql/data/pgdata
+    command: >
+      postgres -c 'max_connections=100'
+               -c 'shared_buffers=128MB'
+               -c 'work_mem=4MB'
+               -c 'maintenance_work_mem=64MB'
+               -c 'effective_cache_size=1024MB'
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
-    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-h', 'localhost', '-U', 'postgres', '-d', 'pindata_dataset']
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - pindata_network
 
