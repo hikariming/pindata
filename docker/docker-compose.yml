@@ -18,7 +18,7 @@ services:
                -c 'maintenance_work_mem=64MB'
                -c 'effective_cache_size=1024MB'
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -237,13 +237,9 @@ services:
     networks:
       - pindata_network
 
-# 数据卷 - 使用本地目录映射
-# volumes:
-#   postgres_data: ./data/postgres
-#   minio_data: ./data/minio
-#   redis_data: ./data/redis
-#   api_data: ./data/api
-#   celery_data: ./data/celery
+# 数据卷
+volumes:
+  postgres_data:
 
 # 网络
 networks:
