@@ -16,8 +16,10 @@ import {
   FileCheckIcon
 } from 'lucide-react';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
+import { useTranslation } from 'react-i18next';
 
 export const Step1DataSelection: React.FC = () => {
+  const { t } = useTranslation();
   const {
     selectedFiles,
     datasetCollections,
@@ -53,25 +55,28 @@ export const Step1DataSelection: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6">
           <DatabaseIcon className="w-6 h-6 text-[#1977e5]" />
-          <h3 className="text-lg font-semibold text-[#0c141c]">选择MD数据文件</h3>
+          <h3 className="text-lg font-semibold text-[#0c141c]">{t('rawData.smartDatasetCreator.step1.title')}</h3>
         </div>
 
         {loadingCollections ? (
           <div className="flex items-center justify-center py-8">
             <Loader2Icon className="w-6 h-6 animate-spin mr-2" />
-            <span>加载数据集合...</span>
+            <span>{t('rawData.smartDatasetCreator.step1.loading')}</span>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm text-[#4f7096]">
-                  已选择 {getTotalSelectedCount()} / {getTotalAvailableCount()} 个MD文件
+                  {t('rawData.smartDatasetCreator.step1.selectedCount', {
+                    selected: getTotalSelectedCount(),
+                    total: getTotalAvailableCount()
+                  })}
                 </span>
               </div>
               <Button variant="outline" onClick={loadDatasetCollections} className="flex items-center gap-2">
                 <RefreshCwIcon className="w-4 h-4" />
-                刷新
+                {t('rawData.smartDatasetCreator.step1.refresh')}
               </Button>
             </div>
 
@@ -110,16 +115,16 @@ export const Step1DataSelection: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-sm text-[#4f7096] mt-1">
-                        {collection.library.description || '暂无描述'}
+                        {collection.library.description || t('rawData.noDescription')}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-[#6b7280] mt-1">
                         <span className="flex items-center gap-1">
                           <FileCheckIcon className="w-3 h-3" />
-                          {collection.markdownFiles.length} 个MD文件
+                          {collection.markdownFiles.length} {t('rawData.mdFiles')}
                         </span>
                         <span className="flex items-center gap-1">
                           <HashIcon className="w-3 h-3" />
-                          总共 {collection.library.file_count} 个文件
+                          {t('rawData.totalFiles', { count: collection.library.file_count })}
                         </span>
                       </div>
                     </div>
@@ -131,7 +136,7 @@ export const Step1DataSelection: React.FC = () => {
                       {collection.markdownFiles.length === 0 ? (
                         <div className="text-center py-6 text-[#6b7280]">
                           <FileIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p>此数据集合中暂无已转换的MD文件</p>
+                          <p>{t('rawData.smartDatasetCreator.step1.noMdFiles')}</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -152,12 +157,12 @@ export const Step1DataSelection: React.FC = () => {
                                 <div className="text-xs text-[#4f7096]">
                                   {file.file_size_human} • 
                                   {file.process_status_label} • 
-                                  {file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : '未知日期'}
+                                  {file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : t('rawData.unknownDate')}
                                 </div>
                               </div>
                               <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
                                 <EyeIcon className="w-3 h-3" />
-                                预览
+                                {t('rawData.smartDatasetCreator.step1.preview')}
                               </Button>
                             </div>
                           ))}
@@ -172,8 +177,8 @@ export const Step1DataSelection: React.FC = () => {
             {datasetCollections.length === 0 && (
               <div className="text-center py-8 text-[#6b7280]">
                 <DatabaseIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>暂无可用的数据集合</p>
-                <p className="text-sm mt-1">请先在原始数据管理中创建数据集合并上传文件</p>
+                <p>{t('rawData.smartDatasetCreator.step1.noCollections.title')}</p>
+                <p className="text-sm mt-1">{t('rawData.smartDatasetCreator.step1.noCollections.description')}</p>
               </div>
             )}
 
@@ -182,8 +187,10 @@ export const Step1DataSelection: React.FC = () => {
               <div className="mt-6 p-4 bg-[#f0f4f8] border border-[#d1dbe8] rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <FileCheckIcon className="w-5 h-5 text-[#1977e5]" />
-                  <span className="font-medium text-[#0c141c]">已选择的文件</span>
-                  <span className="text-sm text-[#4f7096]">({selectedFiles.length} 个文件)</span>
+                  <span className="font-medium text-[#0c141c]">{t('rawData.smartDatasetCreator.step1.selectedFiles.title')}</span>
+                  <span className="text-sm text-[#4f7096]">
+                    {t('rawData.smartDatasetCreator.step1.selectedFiles.count', { count: selectedFiles.length })}
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
                   {selectedFiles.map((file) => (

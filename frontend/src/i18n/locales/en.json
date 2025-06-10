@@ -19,7 +19,43 @@
     "quickActions": "Quick Actions",
     "systemNotifications": "System Notifications",
     "comingSoon": "Coming Soon",
-    "pluginsDevelopment": "Plugin support is currently under development"
+    "pluginsDevelopment": "Plugin support is currently under development",
+    "features": {
+      "dataImport": {
+        "title": "Data Import and Processing",
+        "description": "Support for importing raw data in multiple formats including CSV, JSON, Excel, etc. Intelligent data preprocessing, automatic data type recognition, and generation of high-quality training datasets."
+      },
+      "datasetManagement": {
+        "title": "Multi-platform Dataset Management",
+        "description": "Seamless integration with mainstream platforms like Hugging Face Hub and ModelScope. One-click import of popular open-source datasets with version management and update synchronization."
+      },
+      "taskScheduling": {
+        "title": "Smart Task Scheduling",
+        "description": "Automated data processing pipeline supporting batch operations and scheduled tasks. Real-time task status monitoring with detailed execution logs and performance metrics."
+      },
+      "storageSharing": {
+        "title": "Storage and Sharing",
+        "description": "Cloud storage supporting secure storage and backup of large-scale datasets. Team collaboration features with dataset sharing and permission management."
+      }
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "step1": {
+        "title": "Import Data",
+        "description": "Local files or HF, ModelScope platforms"
+      },
+      "step2": {
+        "title": "Process Data",
+        "description": "Cleaning, transformation and quality check"
+      },
+      "step3": {
+        "title": "Generate Dataset",
+        "description": "Train dataset and export"
+      }
+    },
+    "error": {
+      "loadingOverview": "Error loading overview data: {{error}}"
+    }
   },
   "settings": {
     "title": "System Settings",
@@ -146,7 +182,7 @@
   },
   "rawData": {
     "title": "File Libraries",
-    "libraryManagement": "Source Data Management", 
+    "libraryManagement": "Source Data Management",
     "createLibrary": "Create Library",
     "createNewLibrary": "Create New Library",
     "createLibraryDescription": "Create a new library to organize and manage your files",
@@ -185,8 +221,12 @@
     "description": "Manage multi-source heterogeneous data, support batch conversion to MD for large model training and data distillation",
     "totalLibrariesCount": "{{count}} libraries in total",
     "processing": "Processing",
+    "noDescription": "No description",
+    "mdFiles": "MD files",
+    "totalFiles": "Total {{count}} files",
+    "unknownDate": "Unknown date",
     "fileStatus": {
-      "pending": "Pending", 
+      "pending": "Pending",
       "processing": "Processing",
       "processed": "Processed",
       "failed": "Failed"
@@ -212,513 +252,134 @@
       "download": "Download",
       "delete": "Delete",
       "noPreview": "Preview not available"
+    },
+    "smartDatasetCreator": {
+      "step1": {
+        "title": "Select MD Data Files",
+        "loading": "Loading data collections...",
+        "selectedCount": "Selected {{selected}} / {{total}} MD files",
+        "refresh": "Refresh",
+        "noMdFiles": "No converted MD files in this collection",
+        "preview": "Preview",
+        "selectedFiles": {
+          "title": "Selected Files",
+          "count": "{{count}} files"
+        },
+        "noCollections": {
+          "title": "No available data collections",
+          "description": "Please create a data collection and upload files in raw data management first"
+        }
+      }
     }
-  },
-  "tasks": {
-  },
-  "common": {
-    "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete",
-    "justNow": "Just now",
-    "pageNotFound": "Page Not Found"
-  },
-  "actions": {
-    "createDataset": "Create Dataset",
-    "startNewTask": "Start New Task",
-    "edit": "Edit",
-    "delete": "Delete",
-    "view": "View"
-  },
-  "time": {
-    "hoursAgo": "{{count}} hours ago",
-    "daysAgo": "{{count}} days ago"
   },
   "datasets": {
     "title": "Datasets",
+    "description": "Create, manage, and export your datasets.",
     "totalDatasets": "{{count}} datasets",
     "smartCreate": "Smart Create",
-    "createDataset": "Create Dataset",
-    "searchPlaceholder": "Search dataset names or descriptions...",
-    "taskType": "Task Type",
-    "allTaskTypes": "All",
-    "nlp": "Natural Language Processing",
-    "qa": "Question Answering",
-    "textClassification": "Text Classification",
-    "computerVision": "Computer Vision",
-    "codeGeneration": "Code Generation",
-    "sorting": "Sort",
-    "sortByTrending": "Trending",
-    "sortByNewest": "Newest",
-    "sortByUpdated": "Recently Updated",
-    "sortByDownloads": "Downloads",
-    "sortByLikes": "Likes",
-    "filterAll": "All Datasets",
-    "filterMyDatasets": "My Datasets",
-    "filterLiked": "Liked",
-    "loading": "Loading...",
-    "error": "Error",
-    "retry": "Retry",
-    "noDatasets": "No datasets found",
-    "recommended": "Recommended",
-    "pagination": {
-      "showing": "Showing {{start}} - {{end}} of {{total}} datasets",
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {{current}} of {{total}}"
-    },
-    "detail": {
-      "backToList": "Back to List",
-      "dataPreview": "Data Preview",
-      "versionManagement": "Version Management",
-      "detailInfo": "Detail Info",
-      "settings": "Settings",
-      "datasetId": "Dataset ID",
-      "name": "Name",
-      "status": "Status",
-      "published": "Published",
-      "createdAt": "Created At",
-      "currentVersion": "Current Version",
-      "versionType": "Version Type",
-      "fileCount": "File Count",
-      "totalSize": "Total Size",
-      "description": "Description",
-      "versionInfo": "Version Info",
-      "commitHash": "Commit Hash",
-      "author": "Author",
-      "commitMessage": "Commit Message",
-      "settingsInDevelopment": "Settings feature is under development...",
-      "noVersion": "No version",
-      "files": "files"
-    },
-    "create": {
-      "title": "Create Dataset",
-      "backToList": "Back to Dataset List",
-      "subtitle": "Choose how you want to create your dataset and fill in the relevant information.",
-      "creationFailed": "Creation Failed",
-      "selectMethod": "Select Creation Method",
-      "createEmpty": "Create Empty Dataset",
-      "createEmptyDesc": "Create a new empty dataset directory where you can upload and manage data files later.",
-      "importHuggingface": "Hugging Face Import",
-      "importHuggingfaceDesc": "Import existing datasets from Hugging Face Hub, supports URL or dataset paths.",
-      "importModelscope": "ModelScope Import",
-      "importModelscopeDesc": "Import Chinese-optimized datasets from ModelScope community, focused on Chinese AI application scenarios.",
-      "importInfo": "Import Information",
-      "datasetUrl": "Dataset URL or Path",
-      "required": "Required",
-      "urlPlaceholder": "e.g., squad or https://huggingface.co/datasets/squad",
-      "modelscopeUrlPlaceholder": "e.g., open-r1/Mixture-of-Thoughts or full URL",
-      "urlHint": "Supports dataset names (like open-r1/Mixture-of-Thoughts) or full URLs",
-      "modelscopeUrlHint": "Supports path format (like open-r1/Mixture-of-Thoughts) or full URL, system will automatically get dataset info",
-      "visitHuggingface": "Visit Hugging Face",
-      "visitModelscope": "Visit ModelScope",
-      "basicInfo": "Basic Information",
-      "datasetName": "Dataset Name",
-      "datasetNamePlaceholder": "Enter dataset name...",
-      "owner": "Owner",
-      "ownerPlaceholder": "Enter owner username or organization name...",
-      "ownerHint": "The combination of owner and dataset name must be unique",
-      "license": "License",
-      "taskType": "Task Type",
-      "tags": "Tags",
-      "tagsPlaceholder": "Separate tags with commas, e.g., nlp, chinese, qa...",
-      "descriptionPlaceholder": "Describe your dataset content, purpose and features...",
-      "createExplanation": "Creation Explanation",
-      "importExplanation": "Import Explanation",
-      "emptyDatasetSteps": [
-        "• System will create a new empty dataset directory for you",
-        "• You can upload data files later through the file management interface",
-        "• Supports multiple formats: JSON, CSV, Parquet, TXT, etc."
-      ],
-      "huggingfaceSteps": [
-        "• System will download the specified dataset from Hugging Face Hub",
-        "• Dataset information (name, description, etc.) will be automatically obtained from source",
-        "• Import process may take several minutes, depending on dataset size"
-      ],
-      "modelscopeSteps": [
-        "• System will download the specified dataset from ModelScope community",
-        "• Dataset information (name, description, etc.) will be automatically obtained from source",
-        "• Import process may take several minutes, depending on dataset size"
-      ],
-      "reselect": "Reselect",
-      "creating": "Creating...",
-      "importing": "Importing...",
-      "success": {
-        "title": "Dataset Created Successfully!",
-        "redirecting": "Redirecting to dataset list...",
-        "importStarted": "Import Task Started!",
-        "importMessage": "Dataset is being imported from {{source}}, you can check progress in task management page.",
-        "viewTaskProgress": "View Task Progress",
-        "backToDatasetList": "Back to Dataset List"
-      }
-    },
+    "import": "Import",
+    "create": "Create",
+    "name": "Name",
+    "tags": "Tags",
+    "files": "Files",
+    "size": "Size",
+    "updated": "Updated",
+    "newDataset": "New Dataset",
+    "importHuggingFace": "Import from Hugging Face",
+    "importModelScope": "Import from ModelScope",
+    "localUpload": "Upload from Local",
     "tasks": {
-      "title": "Dataset Tasks",
-      "subtitle": "Monitor and manage dataset creation task progress",
-      "backToList": "Back to Dataset List",
-      "refreshStatus": "Refresh Status",
-      "running": "Running",
-      "completed": "Completed",
-      "pending": "Pending",
-      "failed": "Failed",
-      "paused": "Paused",
-      "allTasks": "All Tasks",
-      "taskInfo": "Task Information",
-      "type": "Type",
-      "status": "Status",
-      "progress": "Progress",
-      "time": "Time",
-      "actions": "Actions",
-      "fileExtraction": "File Extraction",
-      "networkDownload": "Network Download",
-      "modelDistillation": "Model Distillation",
-      "startTime": "Start",
-      "completedTime": "Completed",
-      "estimatedTime": "Estimated",
-      "duration": "Duration",
-      "minutes": "{{count}} minutes",
-      "hours": "{{count}} hours {{mins}} minutes",
-      "error": "Error",
-      "pause": "Pause",
-      "resume": "Resume",
-      "stop": "Stop",
-      "retry": "Retry",
-      "downloadResult": "Download Result",
+      "title": "Tasks",
+      "status": {
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "queued": "Queued"
+      },
+      "type": {
+        "import": "Import",
+        "export": "Export",
+        "processing": "Processing"
+      },
+      "viewAll": "View all tasks",
       "deleteTask": "Delete Task",
       "noTasks": "No {{status}} tasks"
-    }
-  },
-  "smartDatasetCreator": {
-    "constants": {
-      "datasetTypes": {
-        "qaPairs": {
-          "name": "QA Pairs",
-          "description": "Generate question-answer pairs from document content, suitable for QA system training",
-          "useCase": "Smart customer service, knowledge Q&A, educational assistance",
-          "category": "supervised"
-        },
-        "instructionTuning": {
-          "name": "Instruction Tuning",
-          "description": "Generate instruction-input-output triplets for instruction-following model training",
-          "useCase": "Smart office, document processing, personalized assistant",
-          "category": "supervised"
-        },
-        "textClassification": {
-          "name": "Text Classification",
-          "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
-          "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
-          "category": "supervised"
-        },
-        "dialogue": {
-          "name": "Dialogue Tuning",
-          "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
-          "useCase": "Smart customer service, chatbots, voice assistants",
-          "category": "supervised"
-        },
-        "domainAdaptation": {
-          "name": "Domain Adaptation",
-          "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
-          "useCase": "Medical diagnosis, legal consultation, financial analysis",
-          "category": "supervised"
-        },
-        "reasoning": {
-          "name": "Reasoning Tuning",
-          "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
-          "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
-          "category": "reasoning"
-        },
-        "knowledgeDistillation": {
-          "name": "Knowledge Distillation",
-          "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
-          "useCase": "Model compression, edge deployment, cost optimization",
-          "category": "distillation"
-        }
-      },
-      "formatDetails": {
-        "alpaca": {
-          "name": "Alpaca Format",
-          "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
-          "structure": "instruction + input + output",
-          "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
-          "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
-          "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"]
-        },
-        "shareGPT": {
-          "name": "ShareGPT Format",
-          "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
-          "structure": "conversations + tools + roles",
-          "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
-          "disadvantages": ["Complex format", "Must follow role position rules"],
-          "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"]
-        },
-        "openAI": {
-          "name": "OpenAI Format",
-          "description": "OpenAI API compatible format, simplified version of ShareGPT",
-          "structure": "messages + roles",
-          "advantages": ["API compatible", "Simple to use", "Widely supported"],
-          "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
-          "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"]
-        },
-        "alpacaCOT": {
-          "name": "Alpaca-COT Format",
-          "description": "Alpaca format with chain of thought, suitable for reasoning task training",
-          "structure": "instruction + input + chain_of_thought + output",
-          "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
-          "disadvantages": ["Complex data construction", "Requires professional annotation"],
-          "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"]
-        },
-        "csv": {
-          "name": "CSV Format",
-          "description": "Simple table format, suitable for classification and annotation tasks",
-          "structure": "text, label",
-          "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
-          "disadvantages": ["Limited functionality", "No complex structure support"],
-          "bestFor": ["Text classification", "Label annotation", "Simple tasks"]
-        }
-      },
-      "aiModels": {
-        "gpt4": "GPT-4",
-        "gpt35Turbo": "GPT-3.5 Turbo",
-        "claude3": "Claude-3",
-        "geminiPro": "Gemini Pro",
-        "localLlm": "Local Model"
-      },
-      "steps": {
-        "selectData": {
-          "name": "Select Data",
-          "description": "Select files from raw data"
-        },
-        "configDataset": {
-          "name": "Configure Dataset",
-          "description": "Select dataset type and format"
-        },
-        "configModel": {
-          "name": "Configure Model",
-          "description": "Configure AI model and processing parameters"
-        },
-        "previewConfirm": {
-          "name": "Preview & Confirm",
-          "description": "Preview generation settings and confirm"
-        },
-        "generateDataset": {
-          "name": "Generate Dataset",
-          "description": "AI processes and generates dataset"
-        }
-      },
-      "datasetTypes": {
-        "qaPairs": {
-          "name": "QA Pairs",
-          "description": "Generate question-answer pairs from document content, suitable for QA system training",
-          "useCase": "Smart customer service, knowledge Q&A, educational assistance",
-          "example": "{\"instruction\": \"What is artificial intelligence?\", \"input\": \"\", \"output\": \"Artificial intelligence is a branch of computer science...\"}"
-        },
-        "instructionTuning": {
-          "name": "Instruction Tuning",
-          "description": "Generate instruction-input-output triplets for instruction-following model training",
-          "useCase": "Smart office, document processing, personalized assistant",
-          "example": "{\"instruction\": \"Translate the following text to English\", \"input\": \"Hello World\", \"output\": \"Hello World\"}"
-        },
-        "textClassification": {
-          "name": "Text Classification",
-          "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
-          "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
-          "example": "{\"text\": \"This product is amazing!\", \"label\": \"positive\"}"
-        },
-        "dialogue": {
-          "name": "Dialogue Tuning",
-          "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
-          "useCase": "Smart customer service, chatbots, voice assistants",
-          "example": "{\"conversations\": [{\"role\": \"user\", \"content\": \"Hello\"}, {\"role\": \"assistant\", \"content\": \"Hello! How can I help you?\"}]}"
-        },
-        "domainAdaptation": {
-          "name": "Domain Adaptation",
-          "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
-          "useCase": "Medical diagnosis, legal consultation, financial analysis",
-          "example": "{\"instruction\": \"Analyze patient symptoms\", \"input\": \"Patient has chest pain for 3 hours\", \"output\": \"Recommend ECG examination...\", \"domain\": \"medical\"}"
-        },
-        "reasoning": {
-          "name": "Reasoning Tuning",
-          "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
-          "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
-          "example": "{\"instruction\": \"Solve math problem\", \"input\": \"3×5+2=?\", \"chain_of_thought\": \"First multiply: 3×5=15, then add 2: 15+2=17\", \"output\": \"17\"}"
-        },
-        "knowledgeDistillation": {
-          "name": "Knowledge Distillation",
-          "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
-          "useCase": "Model compression, edge deployment, cost optimization",
-          "example": "Training data generated based on GPT-4 output, used to train smaller models"
-        }
-      },
-      "formatDetails": {
-        "alpaca": {
-          "name": "Alpaca Format",
-          "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
-          "structure": "instruction + input + output",
-          "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
-          "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
-          "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"],
-          "example": "{\n  \"instruction\": \"Translate the following Chinese to English\",\n  \"input\": \"Hello, World!\",\n  \"output\": \"Hello, World!\"\n}"
-        },
-        "shareGPT": {
-          "name": "ShareGPT Format",
-          "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
-          "structure": "conversations + tools + roles",
-          "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
-          "disadvantages": ["Complex format", "Must follow role position rules"],
-          "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"],
-          "example": "{\n  \"conversations\": [\n    {\"role\": \"user\", \"content\": \"How's the weather today?\"},\n    {\"role\": \"assistant\", \"content\": \"Let me help you check the weather...\"}\n  ]\n}"
-        },
-        "openAI": {
-          "name": "OpenAI Format",
-          "description": "OpenAI API compatible format, simplified version of ShareGPT",
-          "structure": "messages + roles",
-          "advantages": ["API compatible", "Simple to use", "Widely supported"],
-          "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
-          "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"],
-          "example": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant\"},\n    {\"role\": \"user\", \"content\": \"Please introduce AI\"},\n    {\"role\": \"assistant\", \"content\": \"AI stands for Artificial Intelligence...\"}\n  ]\n}"
-        },
-        "alpacaCOT": {
-          "name": "Alpaca-COT Format",
-          "description": "Alpaca format with chain of thought, suitable for reasoning task training",
-          "structure": "instruction + input + chain_of_thought + output",
-          "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
-          "disadvantages": ["Complex data construction", "Requires professional annotation"],
-          "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"],
-          "example": "{\n  \"instruction\": \"Solve this math problem\",\n  \"input\": \"If a square has side length 5cm, find the area\",\n  \"chain_of_thought\": \"Square area formula is side length squared, so area = 5 × 5 = 25\",\n  \"output\": \"25 square centimeters\"\n}"
-        },
-        "csv": {
-          "name": "CSV Format",
-          "description": "Simple table format, suitable for classification and annotation tasks",
-          "structure": "text, label",
-          "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
-          "disadvantages": ["Limited functionality", "No complex structure support"],
-          "bestFor": ["Text classification", "Label annotation", "Simple tasks"],
-          "example": "text,label\n\"This product is great\",positive\n\"Poor service\",negative"
-        }
-      },
-      "aiModels": {
-        "gpt4": "GPT-4",
-        "gpt35Turbo": "GPT-3.5 Turbo",
-        "claude3": "Claude-3",
-        "geminiPro": "Gemini Pro",
-        "localLlm": "Local Model"
-      }
+    },
+    "modelSelect": {
+      "title": "Select Model",
+      "description": "Choose a model to process your data"
     }
   },
   "tasks": {
-    "title": "Task Management",
-    "description": "Monitor and manage all background data processing tasks",
-    "statistics": {
-      "totalTasks": "Total Tasks",
-      "running": "Running",
-      "pending": "Pending",
-      "completed": "Completed",
-      "failed": "Failed"
-    },
-    "tabs": {
-      "taskList": "Task List",
-      "taskQueue": "Task Queue",
-      "systemMonitor": "System Monitor"
-    },
-    "actions": {
-      "pauseSelected": "Pause Selected",
-      "cancelSelected": "Cancel Selected",
-      "refresh": "Refresh",
-      "autoRefreshStatus": "Auto-refreshing every 10 seconds"
-    },
-    "filters": {
-      "searchPlaceholder": "Search task names, libraries or datasets...",
-      "allStatuses": "All Statuses",
-      "allTypes": "All Types",
-      "typeLabels": {
-        "fileConversion": "File Conversion",
-        "datasetGeneration": "Dataset Generation",
-        "dataDistillation": "Data Distillation",
-        "batchProcessing": "Batch Processing",
-        "modelTraining": "Model Training",
-        "dataPreprocessing": "Data Preprocessing"
-      }
-    },
-    "table": {
-      "taskInfo": "Task Information",
-      "type": "Type",
-      "status": "Status",
-      "progress": "Progress",
-      "priority": "Priority",
-      "duration": "Duration",
-      "creator": "Creator",
-      "actions": "Actions"
-    },
-    "status": {
-      "pending": "Pending",
-      "running": "Running",
-      "completed": "Completed",
-      "failed": "Failed",
-      "cancelled": "Cancelled",
-      "unknown": "Unknown"
-    },
-    "priority": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "urgent": "Urgent"
-    },
-    "duration": {
-      "minutes": "{{count}} minutes",
-      "hoursMinutes": "{{hours}} hours {{minutes}} minutes"
-    },
-    "progress": {
-      "processed": "Processed",
-      "processing": "Processing",
-      "currentItem": "Current: {{item}}",
-      "estimatedRemaining": "Estimated remaining: {{time}}",
-      "errors": "Errors: {{count}}",
-      "warnings": "Warnings: {{count}}",
-      "aiProcessing": "AI processing..."
-    },
-    "operations": {
-      "viewDetails": "View Details",
-      "pauseTask": "Pause Task",
-      "resumeTask": "Resume Task",
-      "retryTask": "Retry Task",
-      "cancelTask": "Cancel Task",
-      "deleteTask": "Delete Task",
-      "downloadResult": "Download Result"
-    },
-    "messages": {
-      "noTasks": "No tasks",
-      "noMatchingTasks": "No matching tasks found",
-      "loading": "Loading task data...",
-      "deletionSuccess": "Successfully deleted {{count}} tasks{{failed}}",
-      "cancellationSuccess": "Successfully cancelled {{count}} tasks{{failed}}",
-      "operationSuccess": "{{operation}} task successful",
-      "operationFailed": "{{operation}} task failed"
-    },
-    "pagination": {
-      "showing": "Showing {{start}} - {{end}} of {{total}} items",
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {{current}} / {{total}}"
-    },
-    "details": {
-      "title": "Task Details",
-      "basicInfo": "Basic Information",
-      "progressInfo": "Progress Information",
-      "taskLogs": "Task Logs",
-      "taskName": "Task Name",
-      "taskType": "Task Type",
-      "startTime": "Start Time",
-      "endTime": "End Time",
-      "creator": "Creator",
-      "priority": "Priority",
-      "overallProgress": "Overall Progress",
-      "processedItems": "Processed Items",
-      "totalItems": "Total Items",
-      "errorCount": "Error Count",
-      "warningCount": "Warning Count",
-      "realTimeUpdate": "Real-time updating",
-      "taskExecuting": "Task executing, logs will update automatically...",
-      "close": "Close"
-    }
+    "title": "Tasks",
+    "description": "Monitor and manage all system tasks",
+    "taskQueue": "Task Queue",
+    "taskHistory": "Task History",
+    "clearAll": "Clear All Completed",
+    "id": "ID",
+    "name": "Name",
+    "status": "Status",
+    "progress": "Progress",
+    "createdAt": "Created At",
+    "startedAt": "Started At",
+    "finishedAt": "Finished At",
+    "actions": "Actions",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "delete": "Delete",
+    "details": "Details",
+    "noTasks": "No tasks found"
+  },
+  "storage": {
+    "title": "Storage",
+    "description": "Manage your storage resources",
+    "totalCapacity": "Total Capacity",
+    "usedSpace": "Used Space",
+    "availableSpace": "Available Space",
+    "byDataType": "Usage by Data Type",
+    "rawFiles": "Raw Files",
+    "datasets": "Datasets",
+    "cache": "Cache",
+    "others": "Others",
+    "manageStorage": "Manage Storage",
+    "cleanCache": "Clean Cache",
+    "confirmCleanCache": "Are you sure you want to clean the cache? This may affect performance temporarily.",
+    "cleaning": "Cleaning..."
+  },
+  "common": {
+    "search": "Search...",
+    "filter": "Filter",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "page": "Page",
+    "of": "of",
+    "rowsPerPage": "Rows per page",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "status": "Status",
+    "actions": "Actions",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "logout": "Logout",
+    "profile": "Profile"
   }
 }
