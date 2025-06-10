@@ -10,8 +10,10 @@ export const LanguageSwitcher = ({ isCollapsed = false }: LanguageSwitcherProps)
   const { i18n } = useTranslation();
 
   const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'zh' : 'en';
-    i18n.changeLanguage(newLang);
+    const languages = ['en', 'zh', 'ja'];
+    const currentIndex = languages.indexOf(i18n.language);
+    const nextIndex = (currentIndex + 1) % languages.length;
+    i18n.changeLanguage(languages[nextIndex]);
   };
 
   return (
@@ -22,11 +24,11 @@ export const LanguageSwitcher = ({ isCollapsed = false }: LanguageSwitcherProps)
     >
       {isCollapsed ? (
         <span className="w-6 h-6 flex items-center justify-center">
-          {i18n.language === 'en' ? '中' : 'En'}
+          {i18n.language === 'en' ? '中' : i18n.language === 'zh' ? '日' : 'En'}
         </span>
       ) : (
         <span>
-          {i18n.language === 'en' ? '中文' : 'English'}
+          {i18n.language === 'en' ? '中文' : i18n.language === 'zh' ? '日本語' : 'English'}
         </span>
       )}
     </Button>

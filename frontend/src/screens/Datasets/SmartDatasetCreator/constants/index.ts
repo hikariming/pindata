@@ -1,6 +1,87 @@
 import { DatasetType, FormatDetail, AIModel } from '../types';
 
-// 数据集类型定义
+// 静态数据集类型定义（用于类型检查和基础逻辑）
+export const DATASET_TYPES: DatasetType[] = [
+  {
+    id: 'qa-pairs',
+    name: 'Q&A Pairs',
+    description: 'Question and Answer pairs for conversational AI training',
+    icon: '💬',
+    formats: ['Alpaca', 'ShareGPT', 'OpenAI'],
+    multimodal: true,
+    category: 'supervised',
+    useCase: 'Conversational AI, Customer Service',
+    example: 'User questions with detailed answers'
+  },
+  {
+    id: 'instruction-tuning',
+    name: 'Instruction Tuning',
+    description: 'Task instructions with examples for model fine-tuning',
+    icon: '📝',
+    formats: ['Alpaca', 'ShareGPT'],
+    multimodal: true,
+    category: 'supervised',
+    useCase: 'Task-specific AI, Assistant Training',
+    example: 'Task instructions with input/output examples'
+  },
+  {
+    id: 'text-classification',
+    name: 'Text Classification',
+    description: 'Text samples with category labels for classification tasks',
+    icon: '🏷️',
+    formats: ['Alpaca', 'CSV'],
+    multimodal: false,
+    category: 'supervised',
+    useCase: 'Content Categorization, Sentiment Analysis',
+    example: 'Text samples with category labels'
+  },
+  {
+    id: 'dialogue',
+    name: 'Dialogue',
+    description: 'Multi-turn conversations for dialogue systems',
+    icon: '💭',
+    formats: ['ShareGPT', 'OpenAI'],
+    multimodal: true,
+    category: 'supervised',
+    useCase: 'Chat Systems, Virtual Assistants',
+    example: 'Multi-turn conversation flows'
+  },
+  {
+    id: 'domain-adaptation',
+    name: 'Domain Adaptation',
+    description: 'Domain-specific data for specialized model training',
+    icon: '🎯',
+    formats: ['Alpaca', 'ShareGPT'],
+    multimodal: true,
+    category: 'supervised',
+    useCase: 'Domain-specific AI, Professional Applications',
+    example: 'Specialized domain knowledge and tasks'
+  },
+  {
+    id: 'reasoning',
+    name: 'Reasoning',
+    description: 'Logic and reasoning tasks with step-by-step solutions',
+    icon: '🧮',
+    formats: ['Alpaca-COT', 'ShareGPT'],
+    multimodal: false,
+    category: 'reasoning',
+    useCase: 'Logical Reasoning, Problem Solving',
+    example: 'Step-by-step reasoning processes'
+  },
+  {
+    id: 'knowledge-distillation',
+    name: 'Knowledge Distillation',
+    description: 'Knowledge transfer data for model compression',
+    icon: '⚗️',
+    formats: ['Alpaca', 'ShareGPT'],
+    multimodal: true,
+    category: 'distillation',
+    useCase: 'Model Compression, Knowledge Transfer',
+    example: 'Teacher-student learning examples'
+  }
+];
+
+// 支持国际化的数据集类型定义
 export const getDatasetTypes = (t: (key: string) => string): DatasetType[] => [
   {
     id: 'qa-pairs',
@@ -81,7 +162,111 @@ export const getDatasetTypes = (t: (key: string) => string): DatasetType[] => [
   }
 ];
 
-// 数据格式详细说明
+// 静态格式详细说明（用于类型检查和基础逻辑）
+export const FORMAT_DETAILS: Record<string, FormatDetail> = {
+  'Alpaca': {
+    name: 'Alpaca Format',
+    description: 'Simple instruction-based format inspired by Stanford Alpaca',
+    structure: 'JSON with instruction, input, output fields',
+    advantages: [
+      'Simple and clean structure',
+      'Widely supported',
+      'Easy to understand'
+    ],
+    disadvantages: [
+      'Limited conversation context',
+      'No multi-turn support'
+    ],
+    bestFor: [
+      'Single-turn instructions',
+      'Task-specific training',
+      'Simple Q&A pairs'
+    ],
+    example: '{"instruction": "Task description", "input": "Input data", "output": "Expected output"}'
+  },
+  'ShareGPT': {
+    name: 'ShareGPT Format',
+    description: 'Multi-turn conversation format from ShareGPT',
+    structure: 'JSON with conversations array containing role and content',
+    advantages: [
+      'Multi-turn conversation support',
+      'Rich dialogue context',
+      'Natural conversation flow'
+    ],
+    disadvantages: [
+      'More complex structure',
+      'Larger file sizes'
+    ],
+    bestFor: [
+      'Dialogue systems',
+      'Conversational AI',
+      'Multi-turn interactions'
+    ],
+    example: '{"conversations": [{"from": "human", "value": "Question"}, {"from": "gpt", "value": "Answer"}]}'
+  },
+  'OpenAI': {
+    name: 'OpenAI Format',
+    description: 'OpenAI fine-tuning format for chat completions',
+    structure: 'JSONL with messages array containing role and content',
+    advantages: [
+      'Native OpenAI support',
+      'Optimized for GPT models',
+      'System message support'
+    ],
+    disadvantages: [
+      'Vendor-specific format',
+      'Limited to OpenAI ecosystem'
+    ],
+    bestFor: [
+      'OpenAI model fine-tuning',
+      'GPT-based applications',
+      'System-guided conversations'
+    ],
+    example: '{"messages": [{"role": "system", "content": "System prompt"}, {"role": "user", "content": "User message"}]}'
+  },
+  'Alpaca-COT': {
+    name: 'Alpaca Chain-of-Thought',
+    description: 'Extended Alpaca format with reasoning steps',
+    structure: 'JSON with instruction, input, reasoning, output fields',
+    advantages: [
+      'Explicit reasoning steps',
+      'Better for complex tasks',
+      'Improved model understanding'
+    ],
+    disadvantages: [
+      'More complex to create',
+      'Requires reasoning annotation'
+    ],
+    bestFor: [
+      'Mathematical reasoning',
+      'Step-by-step solutions',
+      'Logic problems'
+    ],
+    example: '{"instruction": "Solve", "input": "Problem", "reasoning": "Step-by-step", "output": "Solution"}'
+  },
+  'CSV': {
+    name: 'CSV Format',
+    description: 'Comma-separated values for simple tabular data',
+    structure: 'CSV with columns for text and labels',
+    advantages: [
+      'Simple tabular format',
+      'Easy to process',
+      'Universal support'
+    ],
+    disadvantages: [
+      'Limited for complex data',
+      'No nested structures'
+    ],
+    bestFor: [
+      'Text classification',
+      'Simple labeling tasks',
+      'Tabular datasets'
+    ],
+    example: '"text","label"\n"Sample text","category"'
+  }
+};
+
+// 支持国际化的数据格式详细说明
 export const getFormatDetails = (t: (key: string) => string): Record<string, FormatDetail> => ({
   'Alpaca': {
     name: t('smartDatasetCreator.constants.formatDetails.alpaca.name'),
@@ -185,7 +370,16 @@ export const getFormatDetails = (t: (key: string) => string): Record<string, For
   }
 });
 
-// 模型配置选项
+// 静态AI模型配置选项
+export const AI_MODELS: AIModel[] = [
+  { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', quality: 'high', speed: 'medium' },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI', quality: 'medium', speed: 'fast' },
+  { id: 'claude-3', name: 'Claude 3', provider: 'Anthropic', quality: 'high', speed: 'medium' },
+  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', quality: 'medium', speed: 'fast' },
+  { id: 'local-llm', name: 'Local LLM', provider: 'Local', quality: 'custom', speed: 'variable' }
+];
+
+// 支持国际化的模型配置选项
 export const getAIModels = (t: (key: string) => string): AIModel[] => [
   { id: 'gpt-4', name: t('smartDatasetCreator.constants.aiModels.gpt4'), provider: 'OpenAI', quality: 'high', speed: 'medium' },
   { id: 'gpt-3.5-turbo', name: t('smartDatasetCreator.constants.aiModels.gpt35Turbo'), provider: 'OpenAI', quality: 'medium', speed: 'fast' },
@@ -194,7 +388,16 @@ export const getAIModels = (t: (key: string) => string): AIModel[] => [
   { id: 'local-llm', name: t('smartDatasetCreator.constants.aiModels.localLlm'), provider: 'Local', quality: 'custom', speed: 'variable' }
 ];
 
-// 步骤配置
+// 静态步骤配置
+export const STEPS = [
+  { id: 1, name: 'Select Data', description: 'Choose files and collections for dataset creation' },
+  { id: 2, name: 'Configure Dataset', description: 'Set dataset type, format and basic information' },
+  { id: 3, name: 'Configure Model', description: 'Choose AI model and processing parameters' },
+  { id: 4, name: 'Preview & Confirm', description: 'Review settings and preview generated prompt' },
+  { id: 5, name: 'Generate Dataset', description: 'Process files and generate the dataset' }
+];
+
+// 支持国际化的步骤配置
 export const getSteps = (t: (key: string) => string) => [
   { id: 1, name: t('smartDatasetCreator.constants.steps.selectData.name'), description: t('smartDatasetCreator.constants.steps.selectData.description') },
   { id: 2, name: t('smartDatasetCreator.constants.steps.configDataset.name'), description: t('smartDatasetCreator.constants.steps.configDataset.description') },

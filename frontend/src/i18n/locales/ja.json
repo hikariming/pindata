@@ -1,0 +1,724 @@
+{
+  "appName": "pindata",
+  "navigation": {
+    "overview": "概要",
+    "datasets": "データセット",
+    "tasks": "タスク",
+    "rawData": "生データ",
+    "plugins": "プラグイン",
+    "settings": "設定",
+    "storage": "ストレージ",
+    "expand": "サイドバーを展開",
+    "collapse": "サイドバーを折りたたみ"
+  },
+  "overview": {
+    "welcome": "pindataへようこそ",
+    "welcomeDescription": "データセットの探索、タスクの管理、ストレージ使用状況の監視を開始します。",
+    "systemOverview": "システム概要",
+    "recentActivity": "最近のアクティビティ",
+    "quickActions": "クイックアクション",
+    "systemNotifications": "システム通知",
+    "comingSoon": "近日公開",
+    "pluginsDevelopment": "プラグインサポートは現在開発中です"
+  },
+  "settings": {
+    "title": "システム設定",
+    "description": "大規模言語モデルの設定を管理し、システムログを表示します",
+    "llmConfig": "LLM設定",
+    "llmConfigDescription": "大規模言語モデル設定を構成します",
+    "modelSettings": "モデル設定",
+    "modelType": "モデルタイプ",
+    "modelPath": "モデルパス",
+    "maxTokens": "最大トークン数",
+    "temperature": "温度",
+    "apiSettings": "API設定",
+    "apiKey": "APIキー",
+    "apiEndpoint": "APIエンドポイント",
+    "save": "変更を保存",
+    "logs": "システムログ",
+    "logsDescription": "システムログを表示・分析します",
+    "logLevel": "ログレベル",
+    "timestamp": "タイムスタンプ",
+    "level": "レベル",
+    "message": "メッセージ",
+    "source": "ソース",
+    "clearLogs": "ログをクリア",
+    "downloadLogs": "ログをダウンロード",
+    "logLevels": {
+      "error": "エラー",
+      "warn": "警告",
+      "info": "情報",
+      "debug": "デバッグ"
+    },
+    "filterLogs": "ログをフィルタ",
+    "searchLogs": "ログを検索...",
+    "noLogs": "ログが見つかりません",
+    "lastUpdated": "最終更新",
+    "totalLogs": "合計",
+    "logPause": "一時停止",
+    "logResume": "再開",
+    "exportLogs": "エクスポート",
+    "allLevels": "すべてのレベル",
+    "loadingLogs": "ログを読み込み中...",
+    "llm": {
+      "modelConfigList": "モデル設定リスト",
+      "modelConfigDescription": "大規模言語モデルの設定を管理します。「テスト」をクリックして設定が正しいかを確認し、システムがテストリクエストを送信して詳細な結果を表示します。",
+      "refresh": "更新",
+      "addModel": "モデルを追加",
+      "addNewModel": "新しいモデル設定を追加",
+      "addModelDescription": "新しい大規模モデルインターフェースを設定します。OpenAI、Claude、Gemini、カスタムインターフェースをサポートします",
+      "configName": "設定名",
+      "configNamePlaceholder": "例：GPT-4 本番環境",
+      "provider": "モデルプロバイダー",
+      "modelName": "モデル名",
+      "modelNamePlaceholder": "例：gpt-4-vision-preview",
+      "modelNameTip": "カスタムモデルを含む任意のモデル名を入力できます",
+      "viewSupportedModels": "サポートされているモデルを表示",
+      "apiKeyLabel": "APIキー",
+      "apiUrlLabel": "APIインターフェースURL",
+      "temperatureParam": "温度パラメータ",
+      "maxTokensParam": "最大トークン数",
+      "enableConfig": "この設定を有効にする",
+      "visionSupport": "ビジョンサポート",
+      "visionSupportTip": "このオプションを有効にすると、モデルが画像認識をサポートし、ビジョン関連のタスクに使用できることを示します",
+      "cancel": "キャンセル",
+      "confirm": "確認",
+      "editModel": "モデル設定を編集",
+      "editModelDescription": "既存のモデル設定情報を変更します",
+      "confirmDelete": "削除の確認",
+      "deleteDescription": "このモデル設定を削除してもよろしいですか？この操作は元に戻せません。",
+      "delete": "削除",
+      "testResult": "接続テスト結果",
+      "close": "閉じる",
+      "retestConnection": "再テスト",
+      "loading": "設定を読み込み中...",
+      "noConfigs": "設定がありません。最初のモデル設定を追加してください",
+      "defaultLabel": "デフォルト",
+      "visionSupportLabel": "ビジョンサポート",
+      "test": "テスト",
+      "setDefault": "デフォルトに設定",
+      "defaultConfig": "デフォルト設定",
+      "apiUrl": "API URL",
+      "temperature": "温度",
+      "maxTokens": "最大トークン数",
+      "visionSupportStatus": "ビジョンサポート",
+      "support": "サポート済み",
+      "notSupport": "サポートなし",
+      "status": "ステータス",
+      "enabled": "有効",
+      "disabled": "無効",
+      "customInterface": "カスタムインターフェース",
+      "connectionSuccess": "接続成功",
+      "authFailed": "APIキー認証失敗",
+      "connectionFailed": "接続失敗",
+      "modelNotFound": "モデルが見つかりません",
+      "rateLimited": "レート制限",
+      "testFailed": "テスト失敗",
+      "unknownError": "不明なエラー",
+      "responseLatency": "応答遅延",
+      "testTime": "テスト時間",
+      "modelInfo": "モデル情報",
+      "provider": "プロバイダー",
+      "model": "モデル",
+      "responsePreview": "応答プレビュー",
+      "errorDetails": "エラー詳細",
+      "suggestedSolutions": "推奨ソリューション",
+      "authFailedTips": [
+        "APIキーが正しく有効かを確認してください",
+        "APIキーに必要な権限があることを確認してください"
+      ],
+      "connectionFailedTips": [
+        "ネットワーク接続が正常かを確認してください",
+        "APIインターフェースアドレスが正しいかを確認してください",
+        "ファイアウォール設定を確認してください"
+      ],
+      "modelNotFoundTips": [
+        "モデル名が正しいかを確認してください",
+        "このモデルへのアクセス権があるかを確認してください"
+      ],
+      "rateLimitedTips": [
+        "後で再試行してください",
+        "API呼び出しレート制限を確認してください"
+      ],
+      "testSuccessMessage": "接続テスト成功！遅延：{{latency}}ms",
+      "testFailedMessage": "接続テスト失敗"
+    }
+  },
+  "rawData": {
+    "title": "ファイルライブラリ",
+    "libraryManagement": "ソースデータ管理",
+    "createLibrary": "ライブラリを作成",
+    "createNewLibrary": "新しいライブラリを作成",
+    "createLibraryDescription": "ファイルを整理・管理するための新しいライブラリを作成します",
+    "libraryList": "ライブラリリスト",
+    "libraryName": "ライブラリ名",
+    "libraryNamePlaceholder": "ライブラリ名を入力",
+    "libraryDescription": "説明",
+    "libraryDescriptionPlaceholder": "ライブラリの説明を入力",
+    "fileCount": "ファイル数",
+    "lastUpdated": "最終更新",
+    "actions": "アクション",
+    "view": "ライブラリを表示",
+    "delete": "ライブラリを削除",
+    "backToList": "ライブラリに戻る",
+    "uploadFiles": "ファイルをアップロード",
+    "fileName": "ファイル名",
+    "fileType": "タイプ",
+    "fileSize": "サイズ",
+    "uploadDate": "アップロード日",
+    "status": "ステータス",
+    "processSelected": "選択したものを処理",
+    "deleteSelected": "選択したものを削除",
+    "refreshData": "データを更新",
+    "conversionSettings": "変換設定",
+    "totalLibraries": "ライブラリ総数",
+    "totalFiles": "ファイル総数",
+    "processed": "処理済み",
+    "conversionRate": "変換率",
+    "totalSize": "合計サイズ",
+    "libraryInfo": "ライブラリ情報",
+    "dataType": "データタイプ",
+    "processingProgress": "処理進行状況",
+    "viewDetails": "詳細を表示",
+    "editSettings": "設定を編集",
+    "noLibrariesMessage": "ライブラリデータがありません。「ライブラリを作成」をクリックして追加を開始してください",
+    "description": "多源異種データを管理し、大規模モデル訓練とデータ蒸留のためのMDへのバッチ変換をサポートします",
+    "totalLibrariesCount": "合計{{count}}個のライブラリ",
+    "processing": "処理中",
+    "fileStatus": {
+      "pending": "保留中",
+      "processing": "処理中",
+      "processed": "処理済み",
+      "failed": "失敗"
+    },
+    "fileDetails": {
+      "title": "ファイル詳細",
+      "preview": "プレビュー",
+      "parsedFile": "解析済みファイル",
+      "parsedContent": "解析されたコンテンツがここに表示されます",
+      "parseSettings": "解析設定",
+      "parserType": "パーサータイプ",
+      "defaultParser": "デフォルトパーサー",
+      "reParse": "再解析",
+      "properties": "プロパティ",
+      "processingHistory": "処理履歴",
+      "processingSteps": "処理ステップ",
+      "step": "ステップ{{number}}",
+      "completed": "完了",
+      "duration": "所要時間",
+      "startTime": "開始時間",
+      "endTime": "終了時間",
+      "close": "閉じる",
+      "download": "ダウンロード",
+      "delete": "削除",
+      "noPreview": "プレビューがありません"
+    }
+  },
+  "tasks": {
+  },
+  "common": {
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "justNow": "たった今",
+    "pageNotFound": "ページが見つかりません"
+  },
+  "actions": {
+    "createDataset": "データセットを作成",
+    "startNewTask": "新しいタスクを開始",
+    "edit": "編集",
+    "delete": "削除",
+    "view": "表示"
+  },
+  "time": {
+    "hoursAgo": "{{count}}時間前",
+    "daysAgo": "{{count}}日前"
+  },
+  "datasets": {
+    "title": "データセット",
+    "totalDatasets": "{{count}}個のデータセット",
+    "smartCreate": "スマート作成",
+    "createDataset": "データセットを作成",
+    "searchPlaceholder": "データセット名または説明を検索...",
+    "taskType": "タスクタイプ",
+    "allTaskTypes": "すべて",
+    "nlp": "自然言語処理",
+    "qa": "質問応答",
+    "textClassification": "テキスト分類",
+    "computerVision": "コンピュータビジョン",
+    "codeGeneration": "コード生成",
+    "sorting": "ソート",
+    "sortByTrending": "トレンド",
+    "sortByNewest": "最新",
+    "sortByUpdated": "最近更新",
+    "sortByDownloads": "ダウンロード数",
+    "sortByLikes": "いいね数",
+    "filterAll": "すべてのデータセット",
+    "filterMyDatasets": "マイデータセット",
+    "filterLiked": "いいね済み",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "retry": "再試行",
+    "noDatasets": "データセットが見つかりません",
+    "recommended": "おすすめ",
+    "pagination": {
+      "showing": "{{start}} - {{end}}を表示中、全{{total}}データセット",
+      "previous": "前へ",
+      "next": "次へ",
+      "page": "{{current}}ページ目、全{{total}}ページ"
+    },
+    "detail": {
+      "backToList": "リストに戻る",
+      "dataPreview": "データプレビュー",
+      "versionManagement": "バージョン管理",
+      "detailInfo": "詳細情報",
+      "settings": "設定",
+      "datasetId": "データセットID",
+      "name": "名前",
+      "status": "ステータス",
+      "published": "公開済み",
+      "createdAt": "作成日時",
+      "currentVersion": "現在のバージョン",
+      "versionType": "バージョンタイプ",
+      "fileCount": "ファイル数",
+      "totalSize": "合計サイズ",
+      "description": "説明",
+      "versionInfo": "バージョン情報",
+      "commitHash": "コミットハッシュ",
+      "author": "作成者",
+      "commitMessage": "コミットメッセージ",
+      "settingsInDevelopment": "設定機能は開発中...",
+      "noVersion": "バージョンなし",
+      "files": "ファイル"
+    },
+    "create": {
+      "title": "データセットを作成",
+      "backToList": "データセットリストに戻る",
+      "subtitle": "データセットの作成方法を選択し、関連情報を入力してください。",
+      "creationFailed": "作成に失敗しました",
+      "selectMethod": "作成方法を選択",
+      "createEmpty": "空のデータセットを作成",
+      "createEmptyDesc": "新しい空のデータセットディレクトリを作成し、後でデータファイルをアップロード・管理できます。",
+      "importHuggingface": "Hugging Face インポート",
+      "importHuggingfaceDesc": "Hugging Face Hubから既存のデータセットをインポートします。URLまたはデータセットパスをサポートします。",
+      "importModelscope": "ModelScope インポート",
+      "importModelscopeDesc": "ModelScopeコミュニティから中国語最適化データセットをインポートします。中国語AI応用シナリオに特化しています。",
+      "importInfo": "インポート情報",
+      "datasetUrl": "データセットURLまたはパス",
+      "required": "必須",
+      "urlPlaceholder": "例：squad または https://huggingface.co/datasets/squad",
+      "modelscopeUrlPlaceholder": "例：open-r1/Mixture-of-Thoughts または完全URL",
+      "urlHint": "データセット名（open-r1/Mixture-of-Thoughtsなど）または完全URLをサポートします",
+      "modelscopeUrlHint": "パス形式（open-r1/Mixture-of-Thoughtsなど）または完全URLをサポートし、システムが自動的にデータセット情報を取得します",
+      "visitHuggingface": "Hugging Faceにアクセス",
+      "visitModelscope": "ModelScopeにアクセス",
+      "basicInfo": "基本情報",
+      "datasetName": "データセット名",
+      "datasetNamePlaceholder": "データセット名を入力...",
+      "owner": "所有者",
+      "ownerPlaceholder": "所有者のユーザー名または組織名を入力...",
+      "ownerHint": "所有者とデータセット名の組み合わせは一意である必要があります",
+      "license": "ライセンス",
+      "taskType": "タスクタイプ",
+      "tags": "タグ",
+      "tagsPlaceholder": "タグをカンマで区切ってください。例：nlp, japanese, qa...",
+      "descriptionPlaceholder": "データセットの内容、目的、特徴を説明してください...",
+      "createExplanation": "作成説明",
+      "importExplanation": "インポート説明",
+      "emptyDatasetSteps": [
+        "• システムが新しい空のデータセットディレクトリを作成します",
+        "• 後でファイル管理インターフェースからデータファイルをアップロードできます",
+        "• 複数形式をサポート：JSON、CSV、Parquet、TXTなど"
+      ],
+      "huggingfaceSteps": [
+        "• システムがHugging Face Hubから指定されたデータセットをダウンロードします",
+        "• データセット情報（名前、説明など）がソースから自動取得されます",
+        "• インポート処理はデータセットサイズによって数分かかる場合があります"
+      ],
+      "modelscopeSteps": [
+        "• システムがModelScopeコミュニティから指定されたデータセットをダウンロードします",
+        "• データセット情報（名前、説明など）がソースから自動取得されます",
+        "• インポート処理はデータセットサイズによって数分かかる場合があります"
+      ],
+      "reselect": "再選択",
+      "creating": "作成中...",
+      "importing": "インポート中...",
+      "success": {
+        "title": "データセットの作成に成功しました！",
+        "redirecting": "データセットリストにリダイレクト中...",
+        "importStarted": "インポートタスクが開始されました！",
+        "importMessage": "データセットが{{source}}からインポートされています。進行状況はタスク管理ページで確認できます。",
+        "viewTaskProgress": "タスクの進行状況を表示",
+        "backToDatasetList": "データセットリストに戻る"
+      }
+    },
+    "tasks": {
+      "title": "データセットタスク",
+      "subtitle": "データセット作成タスクの進行状況を監視・管理します",
+      "backToList": "データセットリストに戻る",
+      "refreshStatus": "ステータスを更新",
+      "running": "実行中",
+      "completed": "完了",
+      "pending": "保留中",
+      "failed": "失敗",
+      "paused": "一時停止",
+      "allTasks": "すべてのタスク",
+      "taskInfo": "タスク情報",
+      "type": "タイプ",
+      "status": "ステータス",
+      "progress": "進行状況",
+      "time": "時間",
+      "actions": "アクション",
+      "fileExtraction": "ファイル抽出",
+      "networkDownload": "ネットワークダウンロード",
+      "modelDistillation": "モデル蒸留",
+      "startTime": "開始",
+      "completedTime": "完了",
+      "estimatedTime": "推定",
+      "duration": "所要時間",
+      "minutes": "{{count}}分",
+      "hours": "{{count}}時間{{mins}}分",
+      "error": "エラー",
+      "pause": "一時停止",
+      "resume": "再開",
+      "stop": "停止",
+      "retry": "再試行",
+      "downloadResult": "結果をダウンロード",
+      "deleteTask": "タスクを削除",
+      "noTasks": "{{status}}タスクはありません"
+    }
+  },
+  "smartDatasetCreator": {
+    "constants": {
+      "datasetTypes": {
+        "qaPairs": {
+          "name": "質問応答ペア",
+          "description": "文書内容から質問と回答のペアを生成し、QAシステムの訓練に適用",
+          "useCase": "スマートカスタマーサービス、知識Q&A、教育支援",
+          "category": "教師あり学習"
+        },
+        "instructionTuning": {
+          "name": "指示調整",
+          "description": "指示に従うモデル訓練のための指示-入力-出力三つ組を生成",
+          "useCase": "スマートオフィス、文書処理、パーソナライズドアシスタント",
+          "category": "教師あり学習"
+        },
+        "textClassification": {
+          "name": "テキスト分類",
+          "description": "文書の断片を抽出し、感情分析やコンテンツモデレーションなどの分類ラベルを生成",
+          "useCase": "感情分析、コンテンツモデレーション、ニュース分類、意図認識",
+          "category": "教師あり学習"
+        },
+        "dialogue": {
+          "name": "対話調整",
+          "description": "マルチターン対話データを生成し、対話の一貫性と文脈理解を向上",
+          "useCase": "スマートカスタマーサービス、チャットボット、音声アシスタント",
+          "category": "教師あり学習"
+        },
+        "domainAdaptation": {
+          "name": "ドメイン適応",
+          "description": "専門分野でのモデル性能向上のためのドメイン固有知識ファインチューニング",
+          "useCase": "医療診断、法律相談、金融分析",
+          "category": "教師あり学習"
+        },
+        "reasoning": {
+          "name": "推論調整",
+          "description": "思考の連鎖を含む推論データで、モデルの論理推論能力を訓練",
+          "useCase": "数学問題解決、コード生成、論理推論、複雑な分析",
+          "category": "推論訓練"
+        },
+        "knowledgeDistillation": {
+          "name": "知識蒸留",
+          "description": "大規模モデルから知識を抽出して小規模モデルを訓練し、性能とコストのバランスを取る",
+          "useCase": "モデル圧縮、エッジ展開、コスト最適化",
+          "category": "知識蒸留"
+        }
+      },
+      "formatDetails": {
+        "alpaca": {
+          "name": "Alpaca形式",
+          "description": "スタンフォード大学がリリースした古典的な指示調整形式。シンプルな構造でシングルターンタスクに適用",
+          "structure": "instruction + input + output",
+          "advantages": ["シンプルな構造", "明確なタスク指向", "幅広いコミュニティサポート"],
+          "disadvantages": ["マルチターン対話は手動で連結が必要", "ツール呼び出しサポートなし"],
+          "bestFor": ["指示調整", "Q&Aシステム", "テキスト生成"]
+        },
+        "shareGPT": {
+          "name": "ShareGPT形式",
+          "description": "マルチターン対話とツール呼び出しをサポートする形式。実際のインタラクションシナリオに近い",
+          "structure": "conversations + tools + roles",
+          "advantages": ["マルチターン対話サポート", "ツール呼び出し機能", "役割管理"],
+          "disadvantages": ["複雑な形式", "役割位置ルールに従う必要"],
+          "bestFor": ["対話システム", "ツール呼び出し", "マルチモーダルインタラクション"]
+        },
+        "openAI": {
+          "name": "OpenAI形式",
+          "description": "OpenAI API互換形式。ShareGPTの簡略版",
+          "structure": "messages + roles",
+          "advantages": ["API互換", "使いやすい", "幅広いサポート"],
+          "disadvantages": ["比較的シンプルな機能", "拡張性に制限"],
+          "bestFor": ["API統合", "シンプルな対話", "クイックプロトタイピング"]
+        },
+        "alpacaCOT": {
+          "name": "Alpaca-COT形式",
+          "description": "思考の連鎖を含むAlpaca形式。推論タスクの訓練に適用",
+          "structure": "instruction + input + chain_of_thought + output",
+          "advantages": ["推論プロセスをサポート", "明確な論理", "良い教育効果"],
+          "disadvantages": ["複雑なデータ構築", "専門的なアノテーションが必要"],
+          "bestFor": ["数学推論", "論理分析", "ステップ分解"]
+        },
+        "csv": {
+          "name": "CSV形式",
+          "description": "シンプルなテーブル形式。分類とアノテーションタスクに適用",
+          "structure": "text, label",
+          "advantages": ["シンプルで直感的", "編集しやすい", "多くのツールサポート"],
+          "disadvantages": ["機能制限", "複雑な構造をサポートしない"],
+          "bestFor": ["テキスト分類", "ラベルアノテーション", "シンプルなタスク"]
+        }
+      },
+      "aiModels": {
+        "gpt4": "GPT-4",
+        "gpt35Turbo": "GPT-3.5 Turbo",
+        "claude3": "Claude-3",
+        "geminiPro": "Gemini Pro",
+        "localLlm": "ローカルモデル"
+      },
+      "steps": {
+        "selectData": {
+          "name": "データを選択",
+          "description": "生データからファイルを選択"
+        },
+        "configDataset": {
+          "name": "データセットを設定",
+          "description": "データセットタイプと形式を選択"
+        },
+        "configModel": {
+          "name": "モデルを設定",
+          "description": "AIモデルと処理パラメータを設定"
+        },
+        "previewConfirm": {
+          "name": "プレビューと確認",
+          "description": "生成設定をプレビューして確認"
+        },
+        "generateDataset": {
+          "name": "データセットを生成",
+          "description": "AIが処理してデータセットを生成"
+        }
+      },
+      "datasetTypes": {
+        "qaPairs": {
+          "name": "質問応答ペア",
+          "description": "文書内容から質問と回答のペアを生成し、QAシステムの訓練に適用",
+          "useCase": "スマートカスタマーサービス、知識Q&A、教育支援",
+          "example": "{\"instruction\": \"人工知能とは何ですか？\", \"input\": \"\", \"output\": \"人工知能はコンピュータサイエンスの分野です...\"}"
+        },
+        "instructionTuning": {
+          "name": "指示調整",
+          "description": "指示に従うモデル訓練のための指示-入力-出力三つ組を生成",
+          "useCase": "スマートオフィス、文書処理、パーソナライズドアシスタント",
+          "example": "{\"instruction\": \"以下のテキストを英語に翻訳してください\", \"input\": \"こんにちは世界\", \"output\": \"Hello World\"}"
+        },
+        "textClassification": {
+          "name": "テキスト分類",
+          "description": "文書の断片を抽出し、感情分析やコンテンツモデレーションなどの分類ラベルを生成",
+          "useCase": "感情分析、コンテンツモデレーション、ニュース分類、意図認識",
+          "example": "{\"text\": \"この商品は素晴らしい！\", \"label\": \"positive\"}"
+        },
+        "dialogue": {
+          "name": "対話調整",
+          "description": "マルチターン対話データを生成し、対話の一貫性と文脈理解を向上",
+          "useCase": "スマートカスタマーサービス、チャットボット、音声アシスタント",
+          "example": "{\"conversations\": [{\"role\": \"user\", \"content\": \"こんにちは\"}, {\"role\": \"assistant\", \"content\": \"こんにちは！何かお手伝いできることはありますか？\"}]}"
+        },
+        "domainAdaptation": {
+          "name": "ドメイン適応",
+          "description": "専門分野でのモデル性能向上のためのドメイン固有知識ファインチューニング",
+          "useCase": "医療診断、法律相談、金融分析",
+          "example": "{\"instruction\": \"患者の症状を分析\", \"input\": \"患者は3時間前から胸痛\", \"output\": \"心電図検査を推奨...\", \"domain\": \"医療\"}"
+        },
+        "reasoning": {
+          "name": "推論調整",
+          "description": "思考の連鎖を含む推論データで、モデルの論理推論能力を訓練",
+          "useCase": "数学問題解決、コード生成、論理推論、複雑な分析",
+          "example": "{\"instruction\": \"数学問題を解く\", \"input\": \"3×5+2=?\", \"chain_of_thought\": \"まず掛け算：3×5=15、次に足し算：15+2=17\", \"output\": \"17\"}"
+        },
+        "knowledgeDistillation": {
+          "name": "知識蒸留",
+          "description": "大規模モデルから知識を抽出して小規模モデルを訓練し、性能とコストのバランスを取る",
+          "useCase": "モデル圧縮、エッジ展開、コスト最適化",
+          "example": "GPT-4の出力に基づいて生成された訓練データ、小規模モデルの訓練に使用"
+        }
+      },
+      "formatDetails": {
+        "alpaca": {
+          "name": "Alpaca形式",
+          "description": "スタンフォード大学がリリースした古典的な指示調整形式。シンプルな構造でシングルターンタスクに適用",
+          "structure": "instruction + input + output",
+          "advantages": ["シンプルな構造", "明確なタスク指向", "幅広いコミュニティサポート"],
+          "disadvantages": ["マルチターン対話は手動で連結が必要", "ツール呼び出しサポートなし"],
+          "bestFor": ["指示調整", "Q&Aシステム", "テキスト生成"],
+          "example": "{\n  \"instruction\": \"以下の日本語を英語に翻訳してください\",\n  \"input\": \"こんにちは、世界！\",\n  \"output\": \"Hello, World!\"\n}"
+        },
+        "shareGPT": {
+          "name": "ShareGPT形式",
+          "description": "マルチターン対話とツール呼び出しをサポートする形式。実際のインタラクションシナリオに近い",
+          "structure": "conversations + tools + roles",
+          "advantages": ["マルチターン対話サポート", "ツール呼び出し機能", "役割管理"],
+          "disadvantages": ["複雑な形式", "役割位置ルールに従う必要"],
+          "bestFor": ["対話システム", "ツール呼び出し", "マルチモーダルインタラクション"],
+          "example": "{\n  \"conversations\": [\n    {\"role\": \"user\", \"content\": \"今日の天気はどうですか？\"},\n    {\"role\": \"assistant\", \"content\": \"天気を確認します...\"}\n  ]\n}"
+        },
+        "openAI": {
+          "name": "OpenAI形式",
+          "description": "OpenAI API互換形式。ShareGPTの簡略版",
+          "structure": "messages + roles",
+          "advantages": ["API互換", "使いやすい", "幅広いサポート"],
+          "disadvantages": ["比較的シンプルな機能", "拡張性に制限"],
+          "bestFor": ["API統合", "シンプルな対話", "クイックプロトタイピング"],
+          "example": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"あなたは役立つアシスタントです\"},\n    {\"role\": \"user\", \"content\": \"AIについて紹介してください\"},\n    {\"role\": \"assistant\", \"content\": \"AIは人工知能の略で...\"}\n  ]\n}"
+        },
+        "alpacaCOT": {
+          "name": "Alpaca-COT形式",
+          "description": "思考の連鎖を含むAlpaca形式。推論タスクの訓練に適用",
+          "structure": "instruction + input + chain_of_thought + output",
+          "advantages": ["推論プロセスをサポート", "明確な論理", "良い教育効果"],
+          "disadvantages": ["複雑なデータ構築", "専門的なアノテーションが必要"],
+          "bestFor": ["数学推論", "論理分析", "ステップ分解"],
+          "example": "{\n  \"instruction\": \"この数学問題を解いてください\",\n  \"input\": \"正方形の辺の長さが5cmの場合、面積を求めてください\",\n  \"chain_of_thought\": \"正方形の面積の公式は辺の長さの二乗なので、面積 = 5 × 5 = 25\",\n  \"output\": \"25平方センチメートル\"\n}"
+        },
+        "csv": {
+          "name": "CSV形式",
+          "description": "シンプルなテーブル形式。分類とアノテーションタスクに適用",
+          "structure": "text, label",
+          "advantages": ["シンプルで直感的", "編集しやすい", "多くのツールサポート"],
+          "disadvantages": ["機能制限", "複雑な構造をサポートしない"],
+          "bestFor": ["テキスト分類", "ラベルアノテーション", "シンプルなタスク"],
+          "example": "text,label\n\"この製品は素晴らしい\",positive\n\"サービスが悪い\",negative"
+        }
+      },
+      "aiModels": {
+        "gpt4": "GPT-4",
+        "gpt35Turbo": "GPT-3.5 Turbo",
+        "claude3": "Claude-3",
+        "geminiPro": "Gemini Pro",
+        "localLlm": "ローカルモデル"
+      }
+    }
+  },
+  "tasks": {
+    "title": "タスク管理",
+    "description": "すべてのバックグラウンドデータ処理タスクを監視・管理します",
+    "statistics": {
+      "totalTasks": "総タスク数",
+      "running": "実行中",
+      "pending": "保留中",
+      "completed": "完了",
+      "failed": "失敗"
+    },
+    "tabs": {
+      "taskList": "タスクリスト",
+      "taskQueue": "タスクキュー",
+      "systemMonitor": "システムモニター"
+    },
+    "actions": {
+      "pauseSelected": "選択したものを一時停止",
+      "cancelSelected": "選択したものをキャンセル",
+      "refresh": "更新",
+      "autoRefreshStatus": "10秒ごとに自動更新中"
+    },
+    "filters": {
+      "searchPlaceholder": "タスク名、ライブラリ、またはデータセットを検索...",
+      "allStatuses": "すべてのステータス",
+      "allTypes": "すべてのタイプ",
+      "typeLabels": {
+        "fileConversion": "ファイル変換",
+        "datasetGeneration": "データセット生成",
+        "dataDistillation": "データ蒸留",
+        "batchProcessing": "バッチ処理",
+        "modelTraining": "モデル訓練",
+        "dataPreprocessing": "データ前処理"
+      }
+    },
+    "table": {
+      "taskInfo": "タスク情報",
+      "type": "タイプ",
+      "status": "ステータス",
+      "progress": "進行状況",
+      "priority": "優先度",
+      "duration": "所要時間",
+      "creator": "作成者",
+      "actions": "アクション"
+    },
+    "status": {
+      "pending": "保留中",
+      "running": "実行中",
+      "completed": "完了",
+      "failed": "失敗",
+      "cancelled": "キャンセル済み",
+      "unknown": "不明"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "緊急"
+    },
+    "duration": {
+      "minutes": "{{count}}分",
+      "hoursMinutes": "{{hours}}時間{{minutes}}分"
+    },
+    "progress": {
+      "processed": "処理済み",
+      "processing": "処理中",
+      "currentItem": "現在：{{item}}",
+      "estimatedRemaining": "推定残り時間：{{time}}",
+      "errors": "エラー：{{count}}",
+      "warnings": "警告：{{count}}",
+      "aiProcessing": "AI処理中..."
+    },
+    "operations": {
+      "viewDetails": "詳細を表示",
+      "pauseTask": "タスクを一時停止",
+      "resumeTask": "タスクを再開",
+      "retryTask": "タスクを再試行",
+      "cancelTask": "タスクをキャンセル",
+      "deleteTask": "タスクを削除",
+      "downloadResult": "結果をダウンロード"
+    },
+    "messages": {
+      "noTasks": "タスクはありません",
+      "noMatchingTasks": "一致するタスクが見つかりません",
+      "loading": "タスクデータを読み込み中...",
+      "deletionSuccess": "{{count}}個のタスクを正常に削除しました{{failed}}",
+      "cancellationSuccess": "{{count}}個のタスクを正常にキャンセルしました{{failed}}",
+      "operationSuccess": "{{operation}}タスクが成功しました",
+      "operationFailed": "{{operation}}タスクが失敗しました"
+    },
+    "pagination": {
+      "showing": "{{start}} - {{end}}を表示中、全{{total}}項目",
+      "previous": "前へ",
+      "next": "次へ",
+      "page": "{{current}} / {{total}}ページ"
+    },
+    "details": {
+      "title": "タスク詳細",
+      "basicInfo": "基本情報",
+      "progressInfo": "進行状況情報",
+      "taskLogs": "タスクログ",
+      "taskName": "タスク名",
+      "taskType": "タスクタイプ",
+      "startTime": "開始時間",
+      "endTime": "終了時間",
+      "creator": "作成者",
+      "priority": "優先度",
+      "overallProgress": "全体進行状況",
+      "processedItems": "処理済み項目",
+      "totalItems": "総項目数",
+      "errorCount": "エラー数",
+      "warningCount": "警告数",
+      "realTimeUpdate": "リアルタイム更新中",
+      "taskExecuting": "タスク実行中、ログは自動的に更新されます...",
+      "close": "閉じる"
+    }
+  }
+}
