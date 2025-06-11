@@ -123,6 +123,9 @@ class EnhancedDatasetService:
             relative_path = f"datasets/{version.dataset_id}/versions/{version.id}/{file.filename}"
             object_name = f"datasets/{version.dataset_id}/v{version.version}/{uuid.uuid4().hex}{file_extension}"
             
+            # 获取实际使用的bucket名称（与storage_service保持一致）
+            actual_bucket = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
+            
             # 上传到MinIO
             uploaded_object, file_size = storage_service.upload_file(
                 file_data=file,
@@ -146,7 +149,7 @@ class EnhancedDatasetService:
                 file_type=file_type,
                 file_size=file_size,
                 checksum=checksum,
-                minio_bucket='datasets',
+                minio_bucket=actual_bucket,  # 使用实际的bucket名称
                 minio_object_name=uploaded_object,
                 file_metadata=EnhancedDatasetService._extract_file_metadata(file, file_type)
             )
