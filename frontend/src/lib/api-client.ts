@@ -61,8 +61,12 @@ export class ApiClient {
     }
 
     try {
-      const data = await response.json();
-      return data;
+      const jsonResponse = await response.json();
+      // 如果响应包含 data 字段，返回 data 的内容，否则返回整个响应
+      if (jsonResponse && typeof jsonResponse === 'object' && 'data' in jsonResponse) {
+        return jsonResponse.data;
+      }
+      return jsonResponse;
     } catch {
       throw new ApiError('响应数据格式错误', response.status);
     }

@@ -10,11 +10,29 @@ from .system_log import SystemLog, LogLevel
 from .conversion_job import ConversionJob, ConversionStatus
 from .conversion_file_detail import ConversionFileDetail
 
+# User management models
+from .user import User, UserStatus
+from .organization import Organization, OrganizationStatus
+from .role import Role, RoleType, RoleStatus
+from .permission import Permission, PermissionType
+from .user_organization import UserOrganization, UserOrgStatus
+from .user_role import UserRole, UserRoleStatus
+from .role_permission import RolePermission
+from .resource_permission import ResourcePermission, ResourcePermissionType, ResourcePermissionStatus
+from .user_session import UserSession, SessionStatus
+from .audit_log import AuditLog, AuditStatus
+
 __all__ = [
     'Dataset', 'DatasetVersion', 'DatasetTag', 'DatasetLike', 'DatasetDownload',
     'EnhancedDatasetVersion', 'EnhancedDatasetFile', 'VersionType',
     'Task', 'TaskType', 'TaskStatus', 'Plugin', 'RawData', 
     'Library', 'LibraryFile', 'DataType', 'ProcessStatus',
     'LLMConfig', 'ProviderType', 'SystemLog', 'LogLevel',
-    'ConversionJob', 'ConversionStatus', 'ConversionFileDetail'
+    'ConversionJob', 'ConversionStatus', 'ConversionFileDetail',
+    # User management
+    'User', 'UserStatus', 'Organization', 'OrganizationStatus',
+    'Role', 'RoleType', 'RoleStatus', 'Permission', 'PermissionType',
+    'UserOrganization', 'UserOrgStatus', 'UserRole', 'UserRoleStatus',
+    'RolePermission', 'ResourcePermission', 'ResourcePermissionType', 'ResourcePermissionStatus',
+    'UserSession', 'SessionStatus', 'AuditLog', 'AuditStatus'
 ] 

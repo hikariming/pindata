@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""
+数据库迁移CLI工具
+
+使用方法:
+  ./migrate status                 # 显示迁移状态
+  ./migrate migrate                # 执行所有待迁移
+  ./migrate migrate --target v1.1.0  # 迁移到指定版本
+  ./migrate detect                 # 检测当前数据库状态
+  ./migrate create <description>   # 创建新的迁移脚本
+
+环境变量:
+  DATABASE_URL - 数据库连接字符串 (默认从.env读取)
+"""
+
+import os
+import sys
+import argparse
+from datetime import datetime
+
+# 添加当前目录到Python路径
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from migrations.migration_manager import MigrationManager
+
+
+def get_database_url():
+    """从环境变量或.env文件获取数据库URL"""
+    # 首先尝试环境变量
+    db_url = os.getenv('DATABASE_URL')
+    if db_url:
+        return db_url
+    
+    # 尝试从.env文件读取
+    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            for line in f:
+                if line.startswith('DATABASE_URL='):
+                    return line.split('=', 1)[1].strip()
+    
+    # 默认值
+    return 'postgresql://postgres:password@localhost:5432/pindata_dataset'
+
+
+def create_migration(description: str):
+    """创建新的迁移脚本"""
+    # 生成版本号 (简单递增)
+    migrations_dir = os.path.join(os.path.dirname(__file__), 'migrations')
+    
+    # 找到最新版本
+    latest_version = "v0.0.0"
+    for filename in os.listdir(migrations_dir):
+        if filename.endswith('_migration.py') and filename.startswith('v'):
+            version = filename.split('_')[0]
+            if version > latest_version:
+                latest_version = version
+    
+    # 递增版本号
+    major, minor, patch = map(int, latest_version[1:].split('.'))
+    new_version = f"v{major}.{minor}.{patch + 1}"
+    
+    # 生成文件名
+    safe_description = description.lower().replace(' ', '_').replace('-', '_')
+    filename = f"{new_version}_{safe_description}_migration.py"
+    filepath = os.path.join(migrations_dir, filename)
+    
+    # 读取模板
+    template_path = os.path.join(migrations_dir, 'migration_template.py')
+    with open(template_path, 'r') as f:
+        template_content = f.read()
+    
+    # 替换模板内容
+    content = template_content.replace(
+        'MIGRATION_VERSION = "v1.0.0"',
+        f'MIGRATION_VERSION = "{new_version}"'
+    ).replace(
+        'MIGRATION_DESCRIPTION = "模板迁移脚本"',
+        f'MIGRATION_DESCRIPTION = "{description}"'
+    ).replace(
+        'MIGRATION_DATE = datetime.now().isoformat()',
+        f'MIGRATION_DATE = "{datetime.now().isoformat()}"'
+    )
+    
+    # 写入文件
+    with open(filepath, 'w') as f:
+        f.write(content)
+    
+    print(f"✅ 迁移脚本已创建: {filename}")
+    print(f"   路径: {filepath}")
+    print(f"   请编辑该文件实现 up() 和 down() 函数")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='数据库迁移管理工具',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例:
+  ./migrate status                    # 查看迁移状态
+  ./migrate migrate                   # 执行所有待迁移
+  ./migrate migrate --target v1.1.0  # 迁移到指定版本
+  ./migrate detect                    # 检测数据库状态
+  ./migrate create "add user avatar"  # 创建新迁移
+        """
+    )
+    
+    parser.add_argument(
+        'command', 
+        choices=['status', 'migrate', 'detect', 'create'],
+        help='要执行的命令'
+    )
+    
+    parser.add_argument(
+        'description',
+        nargs='?',
+        help='迁移描述 (用于create命令)'
+    )
+    
+    parser.add_argument(
+        '--target',
+        help='目标版本 (用于migrate命令)'
+    )
+    
+    parser.add_argument(
+        '--database-url',
+        default=get_database_url(),
+        help='数据库连接URL'
+    )
+    
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='只显示将要执行的操作，不实际执行'
+    )
+    
+    args = parser.parse_args()
+    
+    if args.command == 'create':
+        if not args.description:
+            parser.error('create命令需要提供描述: ./migrate create "description"')
+        create_migration(args.description)
+        return
+    
+    # 其他命令需要数据库连接
+    try:
+        manager = MigrationManager(args.database_url)
+        
+        if args.command == 'status':
+            manager.status()
+            
+        elif args.command == 'migrate':
+            if args.dry_run:
+                pending = manager.get_pending_migrations()
+                if pending:
+                    print("将要执行的迁移:")
+                    for m in pending:
+                        print(f"  - {m['version']}: {m['filename']}")
+                else:
+                    print("没有待执行的迁移")
+            else:
+                success = manager.migrate(args.target)
+                sys.exit(0 if success else 1)
+                
+        elif args.command == 'detect':
+            schema_info = manager.detect_current_schema()
+            
+            # 根据检测结果给出建议
+            if not schema_info['has_migration_table']:
+                print("\n💡 建议:")
+                print("   数据库没有迁移管理表，建议运行: ./migrate migrate")
+            elif not schema_info['has_auth_system']:
+                print("\n💡 建议:")
+                print("   数据库缺少用户认证系统，建议运行: ./migrate migrate")
+            else:
+                print("\n✅ 数据库状态正常")
+    
+    except Exception as e:
+        print(f"❌ 错误: {e}")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
