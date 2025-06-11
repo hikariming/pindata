@@ -6,6 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.db import db
 from app.models import User, UserSession, Role, Permission, UserRole, RolePermission
+from app.models.user import UserStatus
 from config.config import get_config
 
 
@@ -22,7 +23,7 @@ class AuthService:
         if not user or not check_password_hash(user.password_hash, password):
             return None
         
-        if user.status.value != 'active':
+        if user.status != UserStatus.ACTIVE:
             return None
         
         # 更新最后登录时间
@@ -168,9 +169,10 @@ class AuthService:
         permissions = set()
         
         # 获取用户角色权限
+        from app.models.user_role import UserRoleStatus
         user_roles = db.session.query(UserRole).filter_by(
             user_id=user_id, 
-            status='active'
+            status=UserRoleStatus.ACTIVE
         ).all()
         
         for user_role in user_roles:
@@ -202,7 +204,7 @@ class AuthService:
             user_id=user_id,
             resource_type=resource_type,
             resource_id=resource_id,
-            status='active'
+            status='ACTIVE'
         ).first()
         
         if not permission:

@@ -155,17 +155,194 @@ class AuthService {
     await apiClient.delete(`/api/v1/auth/sessions/${sessionId}`);
   }
 
+  // User Administration Methods (Admin Only)
+
+  /**
+   * 获取用户列表（管理员功能）
+   */
+  async getUsers(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+  }): Promise<{ users: User[]; total: number; page: number; limit: number }> {
+    const response = await apiClient.get<{ users: User[]; total: number; page: number; limit: number }>('/api/v1/users', params);
+    return response;
+  }
+
+  /**
+   * 创建用户（管理员功能）
+   */
+  async createUser(data: {
+    username: string;
+    email: string;
+    password: string;
+    full_name?: string;
+    phone?: string;
+    role_ids?: string[];
+    organization_ids?: string[];
+  }): Promise<User> {
+    const response = await apiClient.post<User>('/api/v1/users', data);
+    return response;
+  }
+
+  /**
+   * 更新用户（管理员功能）
+   */
+  async updateUser(userId: string, data: Partial<User>): Promise<User> {
+    const response = await apiClient.put<User>(`/api/v1/users/${userId}`, data);
+    return response;
+  }
+
+  /**
+   * 删除用户（管理员功能）
+   */
+  async deleteUser(userId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/users/${userId}`);
+  }
+
+  /**
+   * 获取用户详情（管理员功能）
+   */
+  async getUserById(userId: string): Promise<User> {
+    const response = await apiClient.get<User>(`/api/v1/users/${userId}`);
+    return response;
+  }
+
+  /**
+   * 分配角色给用户（管理员功能）
+   */
+  async assignRoleToUser(userId: string, roleId: string, organizationId?: string): Promise<void> {
+    await apiClient.post(`/api/v1/users/${userId}/roles`, {
+      role_id: roleId,
+      organization_id: organizationId
+    });
+  }
+
+  /**
+   * 撤销用户角色（管理员功能）
+   */
+  async revokeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/users/${userId}/roles/${roleId}`);
+  }
+
+  /**
+   * 重置用户密码（管理员功能）
+   */
+  async resetUserPassword(userId: string): Promise<{ new_password: string }> {
+    const response = await apiClient.post<{ new_password: string }>(`/api/v1/users/${userId}/reset-password`);
+    return response;
+  }
+
+  /**
+   * 获取用户权限（管理员功能）
+   */
+  async getUserPermissions(userId: string): Promise<string[]> {
+    const response = await apiClient.get<string[]>(`/api/v1/users/${userId}/permissions`);
+    return response;
+  }
+
+  /**
+   * 获取用户会话（管理员功能）
+   */
+  async getUserSessions(userId: string): Promise<UserSession[]> {
+    const response = await apiClient.get<UserSession[]>(`/api/v1/users/${userId}/sessions`);
+    return response;
+  }
+
+  /**
+   * 撤销用户会话（管理员功能）
+   */
+  async revokeUserSession(userId: string, sessionId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/users/${userId}/sessions/${sessionId}`);
+  }
+
+  // Role Management Methods (Admin Only)
+
+  /**
+   * 获取角色列表
+   */
+  async getRoles(): Promise<Role[]> {
+    const response = await apiClient.get<Role[]>('/api/v1/roles');
+    return response;
+  }
+
+  /**
+   * 创建角色
+   */
+  async createRole(data: {
+    name: string;
+    code: string;
+    description?: string;
+    permission_ids?: string[];
+  }): Promise<Role> {
+    const response = await apiClient.post<Role>('/api/v1/roles', data);
+    return response;
+  }
+
+  /**
+   * 更新角色
+   */
+  async updateRole(roleId: string, data: Partial<Role>): Promise<Role> {
+    const response = await apiClient.put<Role>(`/api/v1/roles/${roleId}`, data);
+    return response;
+  }
+
+  /**
+   * 删除角色
+   */
+  async deleteRole(roleId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/roles/${roleId}`);
+  }
+
+  // Organization Management Methods (Admin Only)
+
+  /**
+   * 获取组织列表
+   */
+  async getOrganizations(): Promise<Organization[]> {
+    const response = await apiClient.get<Organization[]>('/api/v1/organizations');
+    return response;
+  }
+
+  /**
+   * 创建组织
+   */
+  async createOrganization(data: {
+    name: string;
+    code: string;
+    description?: string;
+    parent_id?: string;
+  }): Promise<Organization> {
+    const response = await apiClient.post<Organization>('/api/v1/organizations', data);
+    return response;
+  }
+
+  /**
+   * 更新组织
+   */
+  async updateOrganization(orgId: string, data: Partial<Organization>): Promise<Organization> {
+    const response = await apiClient.put<Organization>(`/api/v1/organizations/${orgId}`, data);
+    return response;
+  }
+
+  /**
+   * 删除组织
+   */
+  async deleteOrganization(orgId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/organizations/${orgId}`);
+  }
+
   /**
    * 设置认证令牌
    */
   setAuthToken(token: string): void {
-    // 注意：这里需要根据实际的 apiClient 实现来调整
-    // 可能需要调用 apiClient 的特定方法来设置认证头
     if (token) {
-      // apiClient.setAuthHeader(`Bearer ${token}`);
+      apiClient.setAuthToken(token);
       console.log('Setting auth token:', token);
     } else {
-      // apiClient.clearAuthHeader();
+      apiClient.removeAuthToken();
       console.log('Clearing auth token');
     }
   }

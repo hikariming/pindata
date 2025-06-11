@@ -14,7 +14,7 @@ from .conversion_file_detail import ConversionFileDetail
 from .user import User, UserStatus
 from .organization import Organization, OrganizationStatus
 from .role import Role, RoleType, RoleStatus
-from .permission import Permission, PermissionType
+from .permission import Permission
 from .user_organization import UserOrganization, UserOrgStatus
 from .user_role import UserRole, UserRoleStatus
 from .role_permission import RolePermission
@@ -31,7 +31,7 @@ __all__ = [
     'ConversionJob', 'ConversionStatus', 'ConversionFileDetail',
     # User management
     'User', 'UserStatus', 'Organization', 'OrganizationStatus',
-    'Role', 'RoleType', 'RoleStatus', 'Permission', 'PermissionType',
+    'Role', 'RoleType', 'RoleStatus', 'Permission',
     'UserOrganization', 'UserOrgStatus', 'UserRole', 'UserRoleStatus',
     'RolePermission', 'ResourcePermission', 'ResourcePermissionType', 'ResourcePermissionStatus',
     'UserSession', 'SessionStatus', 'AuditLog', 'AuditStatus'

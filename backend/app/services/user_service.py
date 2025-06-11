@@ -198,7 +198,7 @@ class UserService:
         
         # 添加角色信息
         user_roles = db.session.query(UserRole).filter_by(
-            user_id=user_id, status='active'
+            user_id=user_id, status='ACTIVE'
         ).all()
         user_data['roles'] = [
             {
@@ -212,7 +212,7 @@ class UserService:
         
         # 添加组织信息
         user_orgs = db.session.query(UserOrganization).filter_by(
-            user_id=user_id, status='active'
+            user_id=user_id, status='ACTIVE'
         ).all()
         user_data['organizations'] = [
             {
@@ -246,11 +246,11 @@ class UserService:
         ).first()
         
         if existing:
-            if existing.status.value == 'active':
+            if existing.status.value == 'ACTIVE':
                 raise ValueError("用户已拥有该角色")
             else:
                 # 重新激活
-                existing.status = 'active'
+                existing.status = 'ACTIVE'
                 existing.granted_by = granted_by
                 existing.granted_at = db.func.now()
         else:
@@ -280,13 +280,13 @@ class UserService:
             user_id=user_id,
             role_id=role_id,
             organization_id=organization_id,
-            status='active'
+            status='ACTIVE'
         ).first()
         
         if not user_role:
             raise ValueError("用户角色分配不存在")
         
-        user_role.status = 'inactive'
+        user_role.status = 'INACTIVE'
         db.session.commit()
         
         # 记录审计日志
@@ -307,11 +307,11 @@ class UserService:
         ).first()
         
         if existing:
-            if existing.status.value == 'active':
+            if existing.status.value == 'ACTIVE':
                 raise ValueError("用户已在该组织中")
             else:
                 # 重新激活
-                existing.status = 'active'
+                existing.status = 'ACTIVE'
                 existing.position = position
                 existing.is_primary = is_primary
         else:
@@ -333,13 +333,13 @@ class UserService:
         user_org = UserOrganization.query.filter_by(
             user_id=user_id,
             organization_id=organization_id,
-            status='active'
+            status='ACTIVE'
         ).first()
         
         if not user_org:
             raise ValueError("用户不在该组织中")
         
-        user_org.status = 'inactive'
+        user_org.status = 'INACTIVE'
         db.session.commit()
         return True
     

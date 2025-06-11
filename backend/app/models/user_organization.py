@@ -20,7 +20,7 @@ class UserOrganization(db.Model):
     organization_id = Column(String(36), ForeignKey('organizations.id'), nullable=False, index=True)
     is_primary = Column(Boolean, default=False, index=True)  # 是否主组织
     position = Column(String(100))  # 职位
-    join_date = Column(Date)
+    joined_at = Column(DateTime, default=datetime.utcnow)
     status = Column(SQLEnum(UserOrgStatus), default=UserOrgStatus.ACTIVE)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -36,7 +36,7 @@ class UserOrganization(db.Model):
             'organization_id': self.organization_id,
             'is_primary': self.is_primary,
             'position': self.position,
-            'join_date': self.join_date.isoformat() if self.join_date else None,
+            'joined_at': self.joined_at.isoformat() if self.joined_at else None,
             'status': self.status.value,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

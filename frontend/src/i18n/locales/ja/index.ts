@@ -10,10 +10,10 @@ import dataPreview from './dataPreview.json';
 import libraryDetails from './libraryDetails.json';
 import time from './time.json';
 import actions from './actions.json';
+import auth from './auth.json';
 
 export default {
-  appName: 'pindata',
-  common,
+  ...common,
   navigation,
   overview,
   settings,
@@ -25,4 +25,5 @@ export default {
   libraryDetails,
   time,
   actions,
+  auth
 };

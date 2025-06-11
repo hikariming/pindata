@@ -8,9 +8,9 @@ from app.db import db
 
 
 class UserRoleStatus(enum.Enum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    EXPIRED = "expired"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    EXPIRED = "EXPIRED"
 
 
 class UserRole(db.Model):

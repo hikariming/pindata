@@ -12,21 +12,21 @@ class RolePermission(db.Model):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     role_id = Column(String(36), ForeignKey('roles.id'), nullable=False, index=True)
     permission_id = Column(String(36), ForeignKey('permissions.id'), nullable=False, index=True)
-    granted_by = Column(String(36), ForeignKey('users.id'))
-    granted_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String(36), ForeignKey('users.id'))
+    created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     role = relationship("Role", back_populates="role_permissions")
     permission = relationship("Permission", back_populates="role_permissions")
-    granter = relationship("User", foreign_keys=[granted_by])
+    creator = relationship("User", foreign_keys=[created_by])
     
     def to_dict(self, include_role=False, include_permission=False):
         result = {
             'id': self.id,
             'role_id': self.role_id,
             'permission_id': self.permission_id,
-            'granted_by': self.granted_by,
-            'granted_at': self.granted_at.isoformat() if self.granted_at else None
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
         
         if include_role and self.role:
