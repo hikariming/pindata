@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
@@ -32,6 +33,7 @@ import { useFileConversion } from '../../hooks/useFileConversion';
 import { ConvertToMarkdownDialog, ConversionConfig } from '../RawData/LibraryDetails/components/ConvertToMarkdownDialog';
 
 export const FilePreview = (): JSX.Element => {
+  const { t } = useTranslation();
   const { libraryId, fileId } = useParams();
   const navigate = useNavigate();
   const [file, setFile] = useState<LibraryFile | null>(null);
@@ -65,7 +67,7 @@ export const FilePreview = (): JSX.Element => {
       fetchFileDetails();
     } else {
       setLoading(false);
-      setError('文件ID或库ID缺失，无法加载文件详情。');
+      setError(t('rawData.filePreview.missingFileId'));
     }
   }, [fileId, libraryId]);
 
@@ -84,7 +86,7 @@ export const FilePreview = (): JSX.Element => {
       }
     } catch (err) {
       console.error('获取文件详情失败:', err);
-      setError('获取文件详情失败');
+      setError(t('rawData.filePreview.loadingFailed'));
     } finally {
       setLoading(false);
     }
@@ -97,7 +99,7 @@ export const FilePreview = (): JSX.Element => {
       setMarkdownContent(content);
     } catch (err) {
       console.error('获取Markdown内容失败:', err);
-      setMarkdownContent('获取Markdown内容失败');
+      setMarkdownContent(t('rawData.filePreview.getMarkdownFailed'));
     } finally {
       setLoadingMarkdown(false);
     }
@@ -136,15 +138,15 @@ export const FilePreview = (): JSX.Element => {
         }
         setPreviewMethod('image');
       } else if (fileType === 'pdf') {
-        setOriginalContent('PDF 文件预览建议使用专门的PDF查看器或直接下载文件。');
+        setOriginalContent(t('rawData.filePreview.content.pdfPreviewTip'));
         setPreviewMethod('unsupported');
       } else { // 其他如 docx, pptx, xlsx 等
-        setOriginalContent(`.${fileType} 文件类型不支持直接预览，请下载查看。`);
+        setOriginalContent(t('rawData.filePreview.content.unsupportedFormat', { fileType }));
         setPreviewMethod('unsupported');
       }
     } catch (err) {
       console.error('获取原始内容失败:', err);
-      setOriginalContent('无法预览此文件类型的内容或加载时发生错误。');
+      setOriginalContent(t('rawData.filePreview.getOriginalFailed'));
       setPreviewMethod('unsupported');
     } finally {
       setLoadingOriginal(false);
@@ -191,15 +193,15 @@ export const FilePreview = (): JSX.Element => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'pending':
-        return '等待处理';
+        return t('rawData.filePreview.status.pending');
       case 'processing':
-        return '处理中';
+        return t('rawData.filePreview.status.processing');
       case 'completed':
-        return '已完成';
+        return t('rawData.filePreview.status.completed');
       case 'failed':
-        return '失败';
+        return t('rawData.filePreview.status.failed');
       default:
-        return '未知';
+        return t('rawData.filePreview.status.failed');
     }
   };
 
@@ -214,7 +216,7 @@ export const FilePreview = (): JSX.Element => {
         setIsEditing(false);
       } catch (err) {
         console.error('更新文件名失败:', err);
-        showNotification('error', '更新文件名失败');
+        showNotification('error', t('rawData.filePreview.updateFileNameFailed'));
       }
     } else {
       setIsEditing(false);
@@ -222,7 +224,7 @@ export const FilePreview = (): JSX.Element => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('确定要删除这个文件吗？此操作不可恢复。')) {
+    if (window.confirm(t('rawData.filePreview.confirmDelete'))) {
       try {
         await fileService.deleteFile(libraryId!, fileId!);
         navigate(`/rawdata`);
@@ -264,14 +266,14 @@ export const FilePreview = (): JSX.Element => {
     
     const job = await convertFiles(libraryId, [file.id], config);
     if (job) {
-      showNotification('success', '转换任务已提交，正在处理中...');
+      showNotification('success', t('rawData.filePreview.conversionSubmitted'));
       setShowConvertDialog(false);
       // 刷新文件详情以获取最新状态
       setTimeout(() => {
         fetchFileDetails();
       }, 2000);
     } else {
-      showNotification('error', '转换任务提交失败');
+      showNotification('error', t('rawData.filePreview.conversionFailed'));
     }
   };
 
@@ -306,9 +308,9 @@ export const FilePreview = (): JSX.Element => {
     return (
       <div className="w-full max-w-[1400px] p-6">
         <div className="text-center">
-          <div className="text-red-600 mb-4">{error || '文件不存在'}</div>
+          <div className="text-red-600 mb-4">{error || t('rawData.filePreview.fileNotExists')}</div>
           <Button onClick={() => navigate('/rawdata')} variant="outline">
-            返回数据库
+            {t('rawData.filePreview.backToLibrary')}
           </Button>
         </div>
       </div>
@@ -325,10 +327,10 @@ export const FilePreview = (): JSX.Element => {
           className="text-[#4f7096] hover:text-[#0c141c] hover:bg-[#e8edf2]"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-2" />
-          返回数据库
+          {t('rawData.filePreview.backToLibrary')}
         </Button>
         <div className="mx-2 text-[#4f7096]">/</div>
-        <span className="text-[#0c141c] font-medium">文件详情</span>
+        <span className="text-[#0c141c] font-medium">{t('rawData.filePreview.title')}</span>
       </div>
 
       {/* 文件基本信息 */}
@@ -346,11 +348,11 @@ export const FilePreview = (): JSX.Element => {
                       className="text-xl font-bold border-[#d1dbe8] focus:border-[#1977e5]"
                       onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
                     />
-                    <Button size="sm" onClick={handleSaveName}>保存</Button>
+                    <Button size="sm" onClick={handleSaveName}>{t('rawData.filePreview.save')}</Button>
                     <Button size="sm" variant="outline" onClick={() => {
                       setIsEditing(false);
                       setEditName(file.original_filename || file.filename);
-                    }}>取消</Button>
+                    }}>{t('rawData.filePreview.cancel')}</Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -369,9 +371,9 @@ export const FilePreview = (): JSX.Element => {
               
               <div className="flex flex-wrap gap-4 text-sm text-[#4f7096] mb-3">
                 <span>{file.file_type.toUpperCase()} • {file.file_size_human}</span>
-                {file.page_count && <span>{file.page_count} 页</span>}
-                {file.word_count && <span>{file.word_count.toLocaleString()} 词</span>}
-                <span>上传于 {new Date(file.uploaded_at).toLocaleString('zh-CN')}</span>
+                {file.page_count && <span>{file.page_count} {t('rawData.filePreview.pages')}</span>}
+                {file.word_count && <span>{file.word_count.toLocaleString()} {t('rawData.filePreview.words')}</span>}
+                <span>{t('rawData.filePreview.uploadedAt')} {new Date(file.uploaded_at).toLocaleString('zh-CN')}</span>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-3">
@@ -389,7 +391,7 @@ export const FilePreview = (): JSX.Element => {
                 onClick={handleDownloadMarkdown}
               >
                 <DownloadIcon className="w-4 h-4 mr-2" />
-                下载MD
+                {t('rawData.filePreview.downloadMD')}
               </Button>
             )}
             {/* 转换为MD按钮 */}
@@ -400,11 +402,11 @@ export const FilePreview = (): JSX.Element => {
               disabled={convertLoading}
             >
               <FileEditIcon className="w-4 h-4 mr-2" />
-              {convertLoading ? '转换中...' : '转换为MD'}
+              {convertLoading ? t('rawData.filePreview.converting') : t('rawData.filePreview.convertToMD')}
             </Button>
             <Button variant="outline" className="border-[#d1dbe8]" onClick={handleDownloadOriginal}>
               <DownloadIcon className="w-4 h-4 mr-2" />
-              下载原文件
+              {t('rawData.filePreview.downloadOriginal')}
             </Button>
             <Button 
               variant="outline" 
@@ -412,7 +414,7 @@ export const FilePreview = (): JSX.Element => {
               className="border-[#d1dbe8] text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <TrashIcon className="w-4 h-4 mr-2" />
-              删除
+              {t('rawData.filePreview.delete')}
             </Button>
           </div>
         </div>
@@ -421,7 +423,7 @@ export const FilePreview = (): JSX.Element => {
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center text-red-700">
               <AlertCircleIcon className="w-5 h-5 mr-2" />
-              <span className="font-medium">处理失败</span>
+              <span className="font-medium">{t('rawData.filePreview.processingError.title')}</span>
             </div>
             <div className="text-sm text-red-600 mt-1">{file.conversion_error}</div>
           </div>
@@ -431,15 +433,15 @@ export const FilePreview = (): JSX.Element => {
       {/* 详细信息标签页 */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="w-full justify-start mb-6">
-          <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="content">内容预览</TabsTrigger>
+          <TabsTrigger value="overview">{t('rawData.filePreview.tabs.overview')}</TabsTrigger>
+          <TabsTrigger value="content">{t('rawData.filePreview.tabs.content')}</TabsTrigger>
           <TabsTrigger 
             value="markdown" 
             disabled={!file.converted_object_name || file.process_status !== 'completed'}
           >
-            Markdown
+            {t('rawData.filePreview.tabs.markdown')}
           </TabsTrigger>
-          <TabsTrigger value="metadata">元数据</TabsTrigger>
+          <TabsTrigger value="metadata">{t('rawData.filePreview.tabs.metadata')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -448,32 +450,32 @@ export const FilePreview = (): JSX.Element => {
             <Card className="border-[#d1dbe8] bg-white p-6">
               <h3 className="font-semibold text-[#0c141c] mb-4 flex items-center">
                 <FileSearchIcon className="w-5 h-5 mr-2" />
-                文件统计
+                {t('rawData.filePreview.overview.fileStats')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">文件大小</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.fileSize')}</span>
                   <span className="text-[#0c141c] font-medium">{file.file_size_human}</span>
                 </div>
                 {file.page_count && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">页数</span>
+                    <span className="text-[#4f7096]">{t('rawData.filePreview.overview.pageCount')}</span>
                     <span className="text-[#0c141c] font-medium">{file.page_count}</span>
                   </div>
                 )}
                 {file.word_count && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">词数</span>
+                    <span className="text-[#4f7096]">{t('rawData.filePreview.overview.wordCount')}</span>
                     <span className="text-[#0c141c] font-medium">{file.word_count.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">文件类型</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.fileType')}</span>
                   <span className="text-[#0c141c] font-medium">{file.file_type.toUpperCase()}</span>
                 </div>
                 {file.language && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">语言</span>
+                    <span className="text-[#4f7096]">{t('rawData.filePreview.overview.language')}</span>
                     <span className="text-[#0c141c] font-medium">{file.language}</span>
                   </div>
                 )}
@@ -484,18 +486,18 @@ export const FilePreview = (): JSX.Element => {
             <Card className="border-[#d1dbe8] bg-white p-6">
               <h3 className="font-semibold text-[#0c141c] mb-4 flex items-center">
                 <ZapIcon className="w-5 h-5 mr-2" />
-                处理信息
+                {t('rawData.filePreview.overview.processingInfo')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">处理状态</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.processingStatus')}</span>
                   <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusColor(file.process_status)}`}>
                     {getStatusLabel(file.process_status)}
                   </span>
                 </div>
                 {file.converted_format && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">输出格式</span>
+                    <span className="text-[#4f7096]">{t('rawData.filePreview.overview.outputFormat')}</span>
                     <span className="text-[#0c141c] font-medium">
                       {file.converted_format === 'markdown' ? 'Markdown' : file.converted_format}
                     </span>
@@ -503,19 +505,19 @@ export const FilePreview = (): JSX.Element => {
                 )}
                 {file.conversion_method && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">转换方法</span>
+                    <span className="text-[#4f7096]">{t('rawData.filePreview.overview.conversionMethod')}</span>
                     <span className="text-[#0c141c] font-medium">{file.conversion_method}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">上传时间</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.uploadTime')}</span>
                   <span className="text-[#0c141c] font-medium">
                     {new Date(file.uploaded_at).toLocaleDateString('zh-CN')}
                   </span>
                 </div>
                 {file.processed_at && (
                   <div className="flex justify-between">
-                    <span className="text-[#4f7096]">处理时间</span>
+                    <span className="text-[#4f7096]">{t('rawData.filePreview.overview.processingTime')}</span>
                     <span className="text-[#0c141c] font-medium">
                       {new Date(file.processed_at).toLocaleDateString('zh-CN')}
                     </span>
@@ -528,25 +530,25 @@ export const FilePreview = (): JSX.Element => {
             <Card className="border-[#d1dbe8] bg-white p-6">
               <h3 className="font-semibold text-[#0c141c] mb-4 flex items-center">
                 <BrainIcon className="w-5 h-5 mr-2" />
-                训练价值评估
+                {t('rawData.filePreview.overview.trainingValue')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">内容完整性</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.contentIntegrity')}</span>
                   <span className="text-green-600 font-medium">
-                    {file.process_status === 'completed' ? '优秀' : '待评估'}
+                    {file.process_status === 'completed' ? t('rawData.filePreview.overview.excellent') : t('rawData.filePreview.overview.pending')}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">格式规范性</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.formatStandard')}</span>
                   <span className="text-green-600 font-medium">
-                    {file.converted_format ? '良好' : '待处理'}
+                    {file.converted_format ? t('rawData.filePreview.overview.good') : t('rawData.filePreview.overview.toBeProcessed')}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4f7096]">信息密度</span>
+                  <span className="text-[#4f7096]">{t('rawData.filePreview.overview.informationDensity')}</span>
                   <span className="text-yellow-600 font-medium">
-                    {file.word_count && file.word_count > 1000 ? '高' : '中等'}
+                    {file.word_count && file.word_count > 1000 ? t('rawData.filePreview.overview.high') : t('rawData.filePreview.overview.medium')}
                   </span>
                 </div>
 
@@ -558,7 +560,7 @@ export const FilePreview = (): JSX.Element => {
         <TabsContent value="content">
           <Card className="border-[#d1dbe8] bg-white p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-[#0c141c]">原文内容预览</h3>
+              <h3 className="font-semibold text-[#0c141c]">{t('rawData.filePreview.content.originalPreview')}</h3>
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
@@ -567,7 +569,7 @@ export const FilePreview = (): JSX.Element => {
                   disabled={loadingOriginal}
                 >
                   <RefreshCwIcon className={`w-4 h-4 mr-2 ${loadingOriginal ? 'animate-spin' : ''}`} />
-                  刷新
+                  {t('rawData.filePreview.refresh')}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -576,7 +578,7 @@ export const FilePreview = (): JSX.Element => {
                   disabled={!originalContent || previewMethod !== 'text'}
                 >
                   <CopyIcon className="w-4 h-4 mr-2" />
-                  复制文本
+                  {t('rawData.filePreview.copyText')}
                 </Button>
               </div>
             </div>
@@ -590,33 +592,33 @@ export const FilePreview = (): JSX.Element => {
                   {originalContent}
                 </pre>
               ) : previewMethod === 'image' ? (
-                <img 
+                                  <img 
                   src={originalContent} 
                   alt={file.original_filename || file.filename} 
                   style={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', margin: 'auto', border: '1px solid #e8edf2', objectFit: 'contain' }} 
                   onError={() => {
                       setPreviewMethod('unsupported');
-                      setOriginalContent(`无法加载图片预览。请确认文件格式 (${file.file_type}) 或尝试下载。`);
+                      setOriginalContent(t('rawData.filePreview.content.imageLoadError', { fileType: file.file_type }));
                   }}
                 />
               ) : previewMethod === 'unsupported' ? (
                 <div className="text-center py-10">
                   <FileIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 px-4">{originalContent || '此文件类型不支持预览。'}</p>
+                  <p className="text-gray-600 px-4">{originalContent || t('rawData.filePreview.content.unsupportedFileType')}</p>
                   <Button 
                     variant="outline" 
                     className="mt-6"
                     onClick={handleDownloadOriginal}
                   >
                     <DownloadIcon className="w-4 h-4 mr-2" />
-                    下载原文件
+                    {t('rawData.filePreview.downloadOriginal')}
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-10">
                   <FileSearchIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">
-                    {originalContent || (file?.minio_object_name ? '点击"刷新"按钮加载内容预览。' : '文件信息不完整，无法加载预览。')}
+                    {originalContent || (file?.minio_object_name ? t('rawData.filePreview.content.loadPreview') : t('rawData.filePreview.content.incompleteFileInfo'))}
                   </p>
                 </div>
               )}
@@ -628,7 +630,7 @@ export const FilePreview = (): JSX.Element => {
           {file.process_status === 'completed' && file.converted_object_name ? (
             <Card className="border-[#d1dbe8] bg-white p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-[#0c141c]">Markdown 内容</h3>
+                <h3 className="font-semibold text-[#0c141c]">{t('rawData.filePreview.markdown.title')}</h3>
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 
@@ -637,7 +639,7 @@ export const FilePreview = (): JSX.Element => {
                     disabled={loadingMarkdown}
                   >
                     <RefreshCwIcon className={`w-4 h-4 mr-2 ${loadingMarkdown ? 'animate-spin' : ''}`} />
-                    刷新
+                    {t('rawData.filePreview.refresh')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -646,7 +648,7 @@ export const FilePreview = (): JSX.Element => {
                     disabled={!markdownContent}
                   >
                     <CopyIcon className="w-4 h-4 mr-2" />
-                    复制
+                    {t('rawData.filePreview.copy')}
                   </Button>
                   <Button 
                     size="sm" 
@@ -654,7 +656,7 @@ export const FilePreview = (): JSX.Element => {
                     onClick={handleDownloadMarkdown}
                   >
                     <DownloadIcon className="w-4 h-4 mr-2" />
-                    下载
+                    {t('rawData.filePreview.download')}
                   </Button>
                 </div>
               </div>
@@ -665,7 +667,7 @@ export const FilePreview = (): JSX.Element => {
                   </div>
                 ) : (
                   <pre className="whitespace-pre-wrap text-sm text-[#0c141c] font-mono">
-                    {markdownContent || '点击刷新加载内容...'}
+                    {markdownContent || t('rawData.filePreview.markdown.loadContent')}
                   </pre>
                 )}
               </div>
@@ -674,11 +676,11 @@ export const FilePreview = (): JSX.Element => {
             <Card className="border-[#d1dbe8] bg-white p-6">
               <div className="text-center py-8">
                 <ClockIcon className="w-12 h-12 text-[#4f7096] mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[#0c141c] mb-2">Markdown 内容不可用</h3>
+                <h3 className="text-lg font-medium text-[#0c141c] mb-2">{t('rawData.filePreview.markdown.unavailable')}</h3>
                 <p className="text-[#4f7096]">
-                  {file.process_status === 'pending' && '文件还未开始处理'}
-                  {file.process_status === 'processing' && '正在转换为 Markdown 格式...'}
-                  {file.process_status === 'failed' && '转换失败，请重试'}
+                  {file.process_status === 'pending' && t('rawData.filePreview.markdown.notStarted')}
+                  {file.process_status === 'processing' && t('rawData.filePreview.markdown.converting')}
+                  {file.process_status === 'failed' && t('rawData.filePreview.markdown.conversionFailed')}
                 </p>
               </div>
             </Card>
@@ -687,54 +689,54 @@ export const FilePreview = (): JSX.Element => {
 
         <TabsContent value="metadata">
           <Card className="border-[#d1dbe8] bg-white p-6">
-            <h3 className="font-semibold text-[#0c141c] mb-4">文件元数据</h3>
+            <h3 className="font-semibold text-[#0c141c] mb-4">{t('rawData.filePreview.metadata.title')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">文件名</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.fileName')}</label>
                   <div className="text-[#0c141c]">{file.original_filename || file.filename}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">原始文件名</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.originalFileName')}</label>
                   <div className="text-[#0c141c]">{file.original_filename}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">文件类型</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.fileType')}</label>
                   <div className="text-[#0c141c]">{file.file_type.toUpperCase()}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">文件大小</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.fileSize')}</label>
                   <div className="text-[#0c141c]">{file.file_size_human}</div>
                 </div>
                 {file.language && (
                   <div>
-                    <label className="text-sm font-medium text-[#4f7096]">语言</label>
+                    <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.language')}</label>
                     <div className="text-[#0c141c]">{file.language}</div>
                   </div>
                 )}
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">上传时间</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.uploadTime')}</label>
                   <div className="text-[#0c141c]">{new Date(file.uploaded_at).toLocaleString('zh-CN')}</div>
                 </div>
                 {file.processed_at && (
                   <div>
-                    <label className="text-sm font-medium text-[#4f7096]">处理时间</label>
+                    <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.processingTime')}</label>
                     <div className="text-[#0c141c]">{new Date(file.processed_at).toLocaleString('zh-CN')}</div>
                   </div>
                 )}
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">最后更新</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.lastUpdate')}</label>
                   <div className="text-[#0c141c]">{new Date(file.updated_at).toLocaleString('zh-CN')}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-[#4f7096]">存储路径</label>
+                  <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.storagePath')}</label>
                   <div className="text-[#0c141c] text-sm font-mono break-all">{file.minio_object_name}</div>
                 </div>
                 {file.converted_object_name && (
                   <div>
-                    <label className="text-sm font-medium text-[#4f7096]">转换文件路径</label>
+                    <label className="text-sm font-medium text-[#4f7096]">{t('rawData.filePreview.metadata.convertedPath')}</label>
                     <div className="text-[#0c141c] text-sm font-mono break-all">{file.converted_object_name}</div>
                   </div>
                 )}

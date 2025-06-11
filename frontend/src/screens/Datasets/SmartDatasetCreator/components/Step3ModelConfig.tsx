@@ -15,10 +15,12 @@ import {
   LayersIcon,
   ZapIcon
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
 import { DATASET_TYPES, FORMAT_DETAILS } from '../constants';
 
 export const Step3ModelConfig: React.FC = () => {
+  const { t } = useTranslation();
   const {
     processingConfig,
     availableLLMConfigs,
@@ -72,7 +74,7 @@ export const Step3ModelConfig: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <BrainIcon className="w-6 h-6 text-[#1977e5]" />
-              <h3 className="text-lg font-semibold text-[#0c141c]">选择AI模型</h3>
+              <h3 className="text-lg font-semibold text-[#0c141c]">{t('smartDatasetCreator.step3.modelSelection.title')}</h3>
             </div>
             <Button 
               variant="outline" 
@@ -85,20 +87,20 @@ export const Step3ModelConfig: React.FC = () => {
               ) : (
                 <RefreshCwIcon className="w-4 h-4" />
               )}
-              刷新
+              {t('smartDatasetCreator.step3.modelSelection.refresh')}
             </Button>
           </div>
 
           {loadingLLMConfigs ? (
             <div className="flex items-center justify-center py-8">
               <Loader2Icon className="w-6 h-6 animate-spin mr-2" />
-              <span>加载模型配置...</span>
+              <span>{t('smartDatasetCreator.step3.modelSelection.loading')}</span>
             </div>
           ) : availableLLMConfigs.length === 0 ? (
             <div className="text-center py-8 text-[#6b7280]">
               <CpuIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>暂无可用的模型配置</p>
-              <p className="text-sm mt-1">请先在系统设置中配置LLM模型</p>
+              <p>{t('smartDatasetCreator.step3.modelSelection.noModels')}</p>
+              <p className="text-sm mt-1">{t('smartDatasetCreator.step3.modelSelection.noModelsHint')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -118,20 +120,20 @@ export const Step3ModelConfig: React.FC = () => {
                         <div className="flex items-center gap-3 mb-2">
                           <h5 className="font-semibold text-[#0c141c]">{config.name}</h5>
                           {config.is_default && (
-                            <span className="px-2 py-1 bg-[#1977e5] text-white text-xs rounded-full">默认</span>
+                            <span className="px-2 py-1 bg-[#1977e5] text-white text-xs rounded-full">{t('smartDatasetCreator.step3.modelSelection.default')}</span>
                           )}
                           {config.supports_vision && (
-                            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">视觉</span>
+                            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">{t('smartDatasetCreator.step3.modelSelection.vision')}</span>
                           )}
                         </div>
                         <p className="text-sm text-[#4f7096] mb-1">
                           {config.provider.toUpperCase()} • {config.model_name}
                         </p>
                         <div className="flex items-center gap-4 text-xs text-[#6b7280]">
-                          <span>使用次数: {config.usage_count}</span>
-                          <span>Token总数: {config.total_tokens_used.toLocaleString()}</span>
+                          <span>{t('smartDatasetCreator.step3.modelSelection.usage')}: {config.usage_count}</span>
+                          <span>{t('smartDatasetCreator.step3.modelSelection.tokens')}: {config.total_tokens_used.toLocaleString()}</span>
                           {config.last_used_at && (
-                            <span>最后使用: {new Date(config.last_used_at).toLocaleDateString()}</span>
+                            <span>{t('smartDatasetCreator.step3.modelSelection.lastUsed')}: {new Date(config.last_used_at).toLocaleDateString()}</span>
                           )}
                         </div>
                       </div>
@@ -139,7 +141,7 @@ export const Step3ModelConfig: React.FC = () => {
                         <span className={`px-2 py-1 text-xs rounded ${
                           config.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                         }`}>
-                          {config.is_active ? '激活' : '禁用'}
+                          {config.is_active ? t('smartDatasetCreator.step3.modelSelection.active') : t('smartDatasetCreator.step3.modelSelection.disabled')}
                         </span>
                       </div>
                     </div>
@@ -156,13 +158,13 @@ export const Step3ModelConfig: React.FC = () => {
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
             <SettingsIcon className="w-6 h-6 text-[#1977e5]" />
-            <h3 className="text-lg font-semibold text-[#0c141c]">模型参数</h3>
+            <h3 className="text-lg font-semibold text-[#0c141c]">{t('smartDatasetCreator.step3.modelParams.title')}</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-[#0c141c] mb-2">
-                温度 (Temperature): {processingConfig.temperature}
+                {t('smartDatasetCreator.step3.modelParams.temperature')}: {processingConfig.temperature}
               </label>
               <input
                 type="range"
@@ -173,11 +175,11 @@ export const Step3ModelConfig: React.FC = () => {
                 onChange={(e) => setProcessingConfig({ temperature: parseFloat(e.target.value) })}
                 className="w-full accent-[#1977e5]"
               />
-              <p className="text-xs text-[#4f7096] mt-1">控制生成内容的创造性，值越高越有创意</p>
+              <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.modelParams.temperatureDesc')}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#0c141c] mb-2">最大Token数</label>
+              <label className="block text-sm font-medium text-[#0c141c] mb-2">{t('smartDatasetCreator.step3.modelParams.maxTokens')}</label>
               <Input
                 type="number"
                 className="border-[#d1dbe8]"
@@ -186,11 +188,11 @@ export const Step3ModelConfig: React.FC = () => {
                 min="100"
                 max="8000"
               />
-              <p className="text-xs text-[#4f7096] mt-1">单次处理的最大token数量</p>
+              <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.modelParams.maxTokensDesc')}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#0c141c] mb-2">批处理大小</label>
+              <label className="block text-sm font-medium text-[#0c141c] mb-2">{t('smartDatasetCreator.step3.modelParams.batchSize')}</label>
               <Input
                 type="number"
                 className="border-[#d1dbe8]"
@@ -199,11 +201,11 @@ export const Step3ModelConfig: React.FC = () => {
                 min="1"
                 max="50"
               />
-              <p className="text-xs text-[#4f7096] mt-1">同时处理的文档数量，影响处理速度</p>
+              <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.modelParams.batchSizeDesc')}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#0c141c] mb-2">当前模型</label>
+              <label className="block text-sm font-medium text-[#0c141c] mb-2">{t('smartDatasetCreator.step3.modelParams.currentModel')}</label>
               <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
                 {selectedModel ? (
                   <div>
@@ -211,7 +213,7 @@ export const Step3ModelConfig: React.FC = () => {
                     <p className="text-sm text-[#4f7096]">{selectedModel.model_name}</p>
                   </div>
                 ) : (
-                  <p className="text-[#6b7280]">请选择模型</p>
+                  <p className="text-[#6b7280]">{t('smartDatasetCreator.step3.modelParams.selectModel')}</p>
                 )}
               </div>
             </div>
@@ -224,12 +226,12 @@ export const Step3ModelConfig: React.FC = () => {
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
             <LayersIcon className="w-6 h-6 text-[#1977e5]" />
-            <h3 className="text-lg font-semibold text-[#0c141c]">文档分片设置</h3>
+            <h3 className="text-lg font-semibold text-[#0c141c]">{t('smartDatasetCreator.step3.chunkSettings.title')}</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-[#0c141c] mb-2">分片大小（字符数）</label>
+              <label className="block text-sm font-medium text-[#0c141c] mb-2">{t('smartDatasetCreator.step3.chunkSettings.chunkSize')}</label>
               <Input
                 type="number"
                 className="border-[#d1dbe8]"
@@ -238,11 +240,11 @@ export const Step3ModelConfig: React.FC = () => {
                 min="100"
                 max="4000"
               />
-              <p className="text-xs text-[#4f7096] mt-1">每个文档分片的字符数量</p>
+              <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.chunkSettings.chunkSizeDesc')}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#0c141c] mb-2">重叠大小（字符数）</label>
+              <label className="block text-sm font-medium text-[#0c141c] mb-2">{t('smartDatasetCreator.step3.chunkSettings.chunkOverlap')}</label>
               <Input
                 type="number"
                 className="border-[#d1dbe8]"
@@ -251,13 +253,13 @@ export const Step3ModelConfig: React.FC = () => {
                 min="0"
                 max="500"
               />
-              <p className="text-xs text-[#4f7096] mt-1">相邻分片之间的重叠字符数</p>
+              <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.chunkSettings.chunkOverlapDesc')}</p>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-[#0c141c]">保持文档结构</label>
-                <p className="text-xs text-[#4f7096] mt-1">尽量保持标题、段落等结构完整</p>
+                <label className="text-sm font-medium text-[#0c141c]">{t('smartDatasetCreator.step3.chunkSettings.preserveStructure')}</label>
+                <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.chunkSettings.preserveStructureDesc')}</p>
               </div>
               <Switch
                 checked={processingConfig.preserveStructure}
@@ -267,8 +269,8 @@ export const Step3ModelConfig: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-[#0c141c]">按标题分割</label>
-                <p className="text-xs text-[#4f7096] mt-1">优先在markdown标题处分割文档</p>
+                <label className="text-sm font-medium text-[#0c141c]">{t('smartDatasetCreator.step3.chunkSettings.splitByHeaders')}</label>
+                <p className="text-xs text-[#4f7096] mt-1">{t('smartDatasetCreator.step3.chunkSettings.splitByHeadersDesc')}</p>
               </div>
               <Switch
                 checked={processingConfig.splitByHeaders}
@@ -282,23 +284,23 @@ export const Step3ModelConfig: React.FC = () => {
             <div className="mt-6 p-4 bg-[#f8fbff] border border-[#e3f2fd] rounded-lg">
               <div className="flex items-center gap-2 mb-3">
                 <FileTextIcon className="w-4 h-4 text-[#1977e5]" />
-                <span className="text-sm font-medium text-[#0c141c]">分片预估</span>
+                <span className="text-sm font-medium text-[#0c141c]">{t('smartDatasetCreator.step3.chunkSettings.chunkPreview')}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-[#4f7096]">文件数量: </span>
+                  <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.chunkSettings.fileCount')}: </span>
                   <span className="font-medium">{selectedFiles.length}</span>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">分片大小: </span>
+                  <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.chunkSettings.chunkSizeLabel')}: </span>
                   <span className="font-medium">{processingConfig.chunkSize}</span>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">重叠大小: </span>
+                  <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.chunkSettings.overlapSize')}: </span>
                   <span className="font-medium">{processingConfig.chunkOverlap}</span>
                 </div>
                 <div>
-                  <span className="text-[#4f7096]">预估分片: </span>
+                  <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.chunkSettings.estimatedChunks')}: </span>
                   <span className="font-medium">~{Math.ceil(selectedFiles.length * 2000 / processingConfig.chunkSize)}</span>
                 </div>
               </div>
@@ -313,17 +315,17 @@ export const Step3ModelConfig: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <ZapIcon className="w-6 h-6 text-[#1977e5]" />
-              <h3 className="text-lg font-semibold text-[#0c141c]">处理提示词配置</h3>
+              <h3 className="text-lg font-semibold text-[#0c141c]">{t('smartDatasetCreator.step3.promptConfig.title')}</h3>
               {processingConfig.customPrompt && canGeneratePrompt && (
                 <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                  已自动生成
+                  {t('smartDatasetCreator.step3.promptConfig.autoGenerated')}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2">
               {!canGeneratePrompt && (
                 <span className="text-xs text-[#f97316] bg-orange-50 px-2 py-1 rounded">
-                  需要先完成Step2配置
+                  {t('smartDatasetCreator.step3.promptConfig.needStep2Config')}
                 </span>
               )}
               {canGeneratePrompt && (
@@ -334,7 +336,7 @@ export const Step3ModelConfig: React.FC = () => {
                   size="sm"
                 >
                   <SparklesIcon className="w-4 h-4" />
-                  重新生成
+                  {t('smartDatasetCreator.step3.promptConfig.regenerate')}
                 </Button>
               )}
             </div>
@@ -344,12 +346,12 @@ export const Step3ModelConfig: React.FC = () => {
           {canGeneratePrompt && (
             <div className="mb-4 p-3 bg-[#f0f9ff] border border-[#bae6fd] rounded-lg">
               <div className="text-sm text-[#0369a1]">
-                <p className="font-medium mb-1">当前配置概览 (提示词会根据以下配置自动更新):</p>
+                <p className="font-medium mb-1">{t('smartDatasetCreator.step3.promptConfig.configOverview')}</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                  <span>数据集: {DATASET_TYPES.find(t => t.id === datasetType)?.name}</span>
-                  <span>格式: {FORMAT_DETAILS[outputFormat as keyof typeof FORMAT_DETAILS]?.name || outputFormat}</span>
-                  <span>文件: {selectedFiles.length}个</span>
-                  <span>分片: ~{Math.ceil(selectedFiles.length * 2000 / processingConfig.chunkSize)}个</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.dataset')}: {DATASET_TYPES.find(t => t.id === datasetType)?.name}</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.format')}: {FORMAT_DETAILS[outputFormat as keyof typeof FORMAT_DETAILS]?.name || outputFormat}</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.files')}: {selectedFiles.length}个</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.chunks')}: ~{Math.ceil(selectedFiles.length * 2000 / processingConfig.chunkSize)}个</span>
                 </div>
               </div>
             </div>
@@ -358,8 +360,8 @@ export const Step3ModelConfig: React.FC = () => {
           <Textarea
             className="border-[#d1dbe8] min-h-[250px] font-mono text-sm"
             placeholder={canGeneratePrompt ? 
-              "提示词将基于您的配置自动生成。您可以在此基础上进行个性化修改..." :
-              "请先在Step2中完成数据集类型、输出格式和文件选择的配置，系统将自动生成专业提示词..."
+              t('smartDatasetCreator.step3.promptConfig.placeholder') :
+              t('smartDatasetCreator.step3.promptConfig.placeholderWaiting')
             }
             value={processingConfig.customPrompt}
             onChange={(e) => setProcessingConfig({ customPrompt: e.target.value })}
@@ -368,8 +370,7 @@ export const Step3ModelConfig: React.FC = () => {
           
           <div className="mt-3 flex items-start justify-between">
             <div className="text-xs text-[#4f7096] max-w-3xl">
-              💡 <strong>智能提示词生成:</strong> 
-              系统已根据您在Step2中的配置（数据集类型、输出格式、文件选择）以及当前的模型参数和分片设置自动生成了专业的提示词。当您修改相关配置时，提示词会自动更新。您可以在生成的基础上进行个性化调整。
+              💡 <strong>{t('smartDatasetCreator.step3.promptConfig.smartGenHint')}</strong>
             </div>
           </div>
 
@@ -379,22 +380,22 @@ export const Step3ModelConfig: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
                   <div className="text-sm">
-                    <span className="text-[#4f7096]">提示词长度</span>
-                    <p className="font-semibold text-[#0c141c]">{processingConfig.customPrompt.length} 字符</p>
+                    <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.promptConfig.promptLength')}</span>
+                    <p className="font-semibold text-[#0c141c]">{processingConfig.customPrompt.length} {t('smartDatasetCreator.step3.chunkSettings.characters')}</p>
                   </div>
                 </div>
                 <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
                   <div className="text-sm">
-                    <span className="text-[#4f7096]">预估Token</span>
+                    <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.promptConfig.estimatedTokens')}</span>
                     <p className="font-semibold text-[#0c141c]">~{Math.ceil(processingConfig.customPrompt.length / 3)}</p>
                   </div>
                 </div>
                 <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
                   <div className="text-sm">
-                    <span className="text-[#4f7096]">复杂度评估</span>
+                    <span className="text-[#4f7096]">{t('smartDatasetCreator.step3.promptConfig.complexity')}</span>
                     <p className="font-semibold text-[#0c141c]">
-                      {processingConfig.customPrompt.length < 500 ? '简单' :
-                       processingConfig.customPrompt.length < 1500 ? '中等' : '复杂'}
+                      {processingConfig.customPrompt.length < 500 ? t('smartDatasetCreator.step3.promptConfig.simple') :
+                       processingConfig.customPrompt.length < 1500 ? t('smartDatasetCreator.step3.promptConfig.medium') : t('smartDatasetCreator.step3.promptConfig.complex')}
                     </p>
                   </div>
                 </div>
@@ -404,7 +405,7 @@ export const Step3ModelConfig: React.FC = () => {
               <div className="mt-4 p-3 bg-[#fafafa] border border-[#e5e7eb] rounded-lg">
                 <details className="group">
                   <summary className="text-sm font-medium text-[#4f7096] cursor-pointer hover:text-[#1977e5] flex items-center gap-2">
-                    <span>提示词结构预览</span>
+                    <span>{t('smartDatasetCreator.step3.promptConfig.structurePreview')}</span>
                     <span className="transform group-open:rotate-180 transition-transform">▼</span>
                   </summary>
                   <div className="mt-3 text-xs text-[#6b7280] space-y-2">
@@ -414,7 +415,7 @@ export const Step3ModelConfig: React.FC = () => {
                       return (
                         <div key={index} className="flex justify-between items-center py-1 border-b border-[#f3f4f6] last:border-b-0">
                           <span className="font-medium">{index === 0 ? title : `## ${title}`}</span>
-                          <span className="text-[#9ca3af]">{lineCount} 行</span>
+                          <span className="text-[#9ca3af]">{lineCount} {t('smartDatasetCreator.step3.promptConfig.lines')}</span>
                         </div>
                       );
                     })}
@@ -429,32 +430,32 @@ export const Step3ModelConfig: React.FC = () => {
             <div className="mt-4 p-4 bg-[#f8fbff] border border-[#e3f2fd] rounded-lg">
               <div className="flex items-center gap-2 mb-3">
                 <SparklesIcon className="w-4 h-4 text-[#1977e5]" />
-                <span className="text-sm font-medium text-[#0c141c]">自动生成的提示词包含</span>
+                <span className="text-sm font-medium text-[#0c141c]">{t('smartDatasetCreator.step3.promptConfig.autoInclude')}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#1977e5] rounded-full"></span>
-                  <span>项目背景与目标</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.projectBackground')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#1977e5] rounded-full"></span>
-                  <span>技术规格要求</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.techSpecs')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#1977e5] rounded-full"></span>
-                  <span>格式规范说明</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.formatSpecs')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#1977e5] rounded-full"></span>
-                  <span>质量标准定义</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.qualityStandards')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#1977e5] rounded-full"></span>
-                  <span>处理策略指导</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.processingStrategy')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#1977e5] rounded-full"></span>
-                  <span>类型特定指令</span>
+                  <span>{t('smartDatasetCreator.step3.promptConfig.typeSpecific')}</span>
                 </div>
               </div>
             </div>
@@ -465,15 +466,15 @@ export const Step3ModelConfig: React.FC = () => {
             <div className="mt-4 p-4 bg-[#fef3cd] border border-[#f6e05e] rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[#d97706]">⚠️</span>
-                <span className="text-sm font-medium text-[#92400e]">等待配置完成</span>
+                <span className="text-sm font-medium text-[#92400e]">{t('smartDatasetCreator.step3.promptConfig.waitingConfig')}</span>
               </div>
               <p className="text-xs text-[#92400e]">
-                请先在Step2中完成以下配置，系统将自动生成专业的处理提示词：
+                {t('smartDatasetCreator.step3.promptConfig.configIncomplete')}
               </p>
               <ul className="mt-2 text-xs text-[#92400e] space-y-1 ml-4">
-                <li>• 选择数据集类型</li>
-                <li>• 设置输出格式</li>
-                <li>• 选择要处理的文件</li>
+                <li>• {t('smartDatasetCreator.step3.promptConfig.selectDatasetType')}</li>
+                <li>• {t('smartDatasetCreator.step3.promptConfig.setOutputFormat')}</li>
+                <li>• {t('smartDatasetCreator.step3.promptConfig.selectFiles')}</li>
               </ul>
             </div>
           )}

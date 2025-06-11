@@ -1,0 +1,4 @@
+{
+  "hoursAgo": "{{count}}小时前",
+  "daysAgo": "{{count}}天前"
+}

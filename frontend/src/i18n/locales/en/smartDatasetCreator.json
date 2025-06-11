@@ -1,0 +1,495 @@
+{
+  "stepIndicator": {
+    "progress": "Step {{current}} / {{total}}",
+    "completed": "Completed"
+  },
+  "navigation": {
+    "prevStep": "Previous",
+    "nextStep": "Next"
+  },
+  "title": "Smart Dataset Creator",
+  "description": "Use AI technology to automatically generate high-quality training datasets from raw data, supporting multiple dataset types and formats.",
+  "constants": {
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "QA Pairs",
+        "description": "Generate question-answer pairs from document content, suitable for QA system training",
+        "useCase": "Smart customer service, knowledge Q&A, educational assistance",
+        "category": "supervised"
+      },
+      "instructionTuning": {
+        "name": "Instruction Tuning",
+        "description": "Generate instruction-input-output triplets for instruction-following model training",
+        "useCase": "Smart office, document processing, personalized assistant",
+        "category": "supervised"
+      },
+      "textClassification": {
+        "name": "Text Classification",
+        "description": "Extract document fragments and generate classification labels for sentiment analysis, content moderation, etc.",
+        "useCase": "Sentiment analysis, content moderation, news classification, intent recognition",
+        "category": "supervised"
+      },
+      "dialogue": {
+        "name": "Dialogue Tuning",
+        "description": "Generate multi-turn dialogue data to improve dialogue coherence and context understanding",
+        "useCase": "Smart customer service, chatbots, voice assistants",
+        "category": "supervised"
+      },
+      "domainAdaptation": {
+        "name": "Domain Adaptation",
+        "description": "Domain-specific knowledge fine-tuning to improve model performance in professional fields",
+        "useCase": "Medical diagnosis, legal consultation, financial analysis",
+        "category": "supervised"
+      },
+      "reasoning": {
+        "name": "Reasoning Tuning",
+        "description": "Reasoning data with chain of thought to train model logical reasoning abilities",
+        "useCase": "Math problem solving, code generation, logical reasoning, complex analysis",
+        "category": "reasoning"
+      },
+      "knowledgeDistillation": {
+        "name": "Knowledge Distillation",
+        "description": "Extract knowledge from large models to train smaller models, balancing performance and cost",
+        "useCase": "Model compression, edge deployment, cost optimization",
+        "category": "distillation"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca Format",
+        "description": "Classic instruction tuning format released by Stanford University, simple structure, suitable for single-turn tasks",
+        "structure": "instruction + input + output",
+        "advantages": ["Simple structure", "Clear task orientation", "Wide community support"],
+        "disadvantages": ["Multi-turn dialogue requires manual concatenation", "Lacks tool calling support"],
+        "bestFor": ["Instruction tuning", "Q&A systems", "Text generation"]
+      },
+      "shareGPT": {
+        "name": "ShareGPT Format",
+        "description": "Format supporting multi-turn dialogue and tool calling, closer to real interaction scenarios",
+        "structure": "conversations + tools + roles",
+        "advantages": ["Multi-turn dialogue support", "Tool calling capability", "Role management"],
+        "disadvantages": ["Complex format", "Must follow role position rules"],
+        "bestFor": ["Dialogue systems", "Tool calling", "Multimodal interaction"]
+      },
+      "openAI": {
+        "name": "OpenAI Format",
+        "description": "OpenAI API compatible format, simplified version of ShareGPT",
+        "structure": "messages + roles",
+        "advantages": ["API compatible", "Simple to use", "Widely supported"],
+        "disadvantages": ["Relatively simple functionality", "Limited extensibility"],
+        "bestFor": ["API integration", "Simple dialogue", "Quick prototyping"]
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT Format",
+        "description": "Alpaca format with chain of thought, suitable for reasoning task training",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["Supports reasoning process", "Clear logic", "Good teaching effect"],
+        "disadvantages": ["Complex data construction", "Requires professional annotation"],
+        "bestFor": ["Math reasoning", "Logic analysis", "Step decomposition"]
+      },
+      "csv": {
+        "name": "CSV Format",
+        "description": "Simple table format, suitable for classification and annotation tasks",
+        "structure": "text, label",
+        "advantages": ["Simple and intuitive", "Easy to edit", "Many tool support"],
+        "disadvantages": ["Limited functionality", "No complex structure support"],
+        "bestFor": ["Text classification", "Label annotation", "Simple tasks"]
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "Local Model"
+    },
+    "steps": {
+      "selectData": {
+        "name": "Select Data",
+        "description": "Select files from raw data"
+      },
+      "configDataset": {
+        "name": "Configure Dataset",
+        "description": "Select dataset type and format"
+      },
+      "configModel": {
+        "name": "Configure Model",
+        "description": "Configure AI model and processing parameters"
+      },
+      "previewConfirm": {
+        "name": "Preview & Confirm",
+        "description": "Preview generation settings and confirm"
+      },
+      "generateDataset": {
+        "name": "Generate Dataset",
+        "description": "AI processes and generates dataset"
+      }
+    }
+  },
+  "prompt": {
+    "expertTitle": "Professional AI Data Annotation Expert",
+    "taskOverview": "Task Overview",
+    "projectBackground": "Project Background",
+    "datasetName": "Dataset Name",
+    "projectDescription": "Project Description",
+    "consistencyNote": "Please ensure the generated data is consistent with project objectives.",
+    "techSpecs": "Technical Specifications",
+    "outputFormat": "Output Format",
+    "dataType": "Data Type",
+    "applicationField": "Application Field",
+    "documentSharding": "Document Sharding",
+    "formatRequirements": "Format Requirements",
+    "formatFeatures": "Format Features",
+    "dataStructure": "Data Structure",
+    "applicableScenarios": "Applicable Scenarios",
+    "formatExample": "Format Example",
+    "strictFormatOutput": "Please strictly follow the specified format for data output.",
+    "qualityStandards": "Quality Standards",
+    "accuracy": "Accuracy: Ensure extracted information is accurate and error-free, do not add content that does not exist in the document",
+    "completeness": "Completeness: Cover key information points in the document, avoid missing important content",
+    "diversity": "Diversity: Generate training samples of different types and difficulty levels",
+    "consistency": "Consistency: Maintain consistency and standardization of data formats",
+    "relevance": "Relevance: Ensure generated data is highly relevant to {{useCase}} scenarios",
+    "processingStrategy": "Processing Strategy",
+    "documentUnderstanding": "Document Understanding: Deep understanding of document content and structure",
+    "intelligentExtraction": "Intelligent Extraction: Identify key information and concepts",
+    "formatConversion": "Format Conversion: Convert content to {{format}} format",
+    "qualityValidation": "Quality Validation: Ensure each data item meets quality standards",
+    "documentProcessingConfig": "Document Processing Configuration",
+    "structurePreservation": "Structure Preservation: Prioritize maintaining the original structure of the document (titles, paragraphs, lists, etc.)",
+    "headerSplitting": "Header Splitting: Prioritize splitting documents at markdown headers",
+    "shardProcessing": "Shard Processing: The document will be divided into approximately {{totalChunks}} segments, please ensure each segment can generate valuable training data",
+    "fileList": "File List to Process",
+    "fileCount": "Total Files: {{count}}",
+    "finalInstruction": "Please process each document segment one by one, generating the corresponding amount of high-quality training data for each segment. Ensure all generated data strictly follows {{format}} format specifications and reflects the characteristics of {{datasetType}}.",
+    "qaGuide": {
+      "title": "Q&A Pair Generation Guide",
+      "questionDesign": "Question Design Principles",
+      "hierarchicalQuestions": "Hierarchical Questions: Include factual, comprehension, application, analytical, and creative questions covering multiple levels of Bloom's taxonomy",
+      "naturalLanguage": "Natural Language: Use natural, conversational question expressions that mimic real user questioning habits",
+      "clearDirection": "Clear Direction: Each question should have a clear answer direction, avoiding vague or overly open-ended questions",
+      "practicality": "Practicality: Questions should be those users might ask in real scenarios, with practical significance",
+      "diversityDepth": "Diversity & Depth: Cover different difficulty levels, from basic cognition to deep analysis, ensuring data richness",
+      "answerQuality": "Answer Quality Requirements",
+      "accurateComplete": "Accurate & Complete: Provide accurate, complete answers based on document content, do not fabricate information",
+      "clearStructure": "Clear Structure: Use appropriate paragraphs, bullet points, and logical structure to organize answers",
+      "appropriateDepth": "Appropriate Depth: Include necessary details while maintaining conciseness and clarity, avoiding redundancy",
+      "contextRelevant": "Context Relevant: Answers should be closely related to questions and document context",
+      "professionalTone": "Professional Tone: Maintain professional, friendly tone that reflects professional knowledge level",
+      "generationStrategy": "Generation Strategy",
+      "quantityPerChunk": "Generate 5-8 high-quality Q&A pairs per document segment, ensuring full utilization of content",
+      "keyPointCoverage": "Cover main information points in segments, including core concepts, key details, and practical information",
+      "appropriateDiversity": "Ensure appropriate diversity among Q&A pairs, avoiding repetition or excessive similarity",
+      "difficultyGradient": "Include questions of different difficulty gradients, from simple to complex in progression",
+      "practicalApplication": "Combine with practical application scenarios to generate Q&A pairs with practical value"
+    },
+    "instructionGuide": {
+      "title": "Instruction Tuning Data Generation Guide",
+      "instructionDesign": "Instruction Design Principles",
+      "taskClear": "Task Clarity: Clearly describe the specific task to be executed, avoiding ambiguity",
+      "actionable": "Actionability: Instructions should be executable and specific with clear operational steps",
+      "scenarioBased": "Scenario-based: Design instructions based on practical application scenarios, close to real usage needs",
+      "diversified": "Diversified: Include different types and complexity levels of task instructions, covering multiple application scenarios",
+      "scalable": "Scalable: Instruction format should support decomposition and combination of complex tasks",
+      "inputOutputDesign": "Input-Output Design",
+      "inputRelevance": "Input Relevance: Input content should be highly relevant to instructions, providing necessary contextual information",
+      "outputQuality": "Output Quality: Provide high-quality output examples that meet expectations and reflect professional standards",
+      "logicalConsistency": "Logical Consistency: Ensure instruction-input-output triplets are logically consistent, forming complete task loops",
+      "practicalValue": "Practical Value: Output should have practical application value and solve real problems",
+      "taskTypeCoverage": "Task Type Coverage",
+      "extractionSummary": "Information extraction and summarization tasks: Extract key information from complex documents",
+      "conversionFormatting": "Content conversion and formatting tasks: Convert content between different formats",
+      "analysisJudgment": "Analysis and judgment tasks: Professional analysis based on given information",
+      "creationGeneration": "Creation and generation tasks: Generate new content based on requirements",
+      "qaGuidance": "Q&A and guidance tasks: Provide professional answers and guidance suggestions"
+    },
+    "classificationGuide": {
+      "title": "Text Classification Data Generation Guide",
+      "textSelection": "Text Segment Selection",
+      "representative": "Representative: Select typical text segments that represent different categories",
+      "appropriateLength": "Appropriate Length: Text length suitable for classification tasks (recommended 100-300 characters)",
+      "completeInfo": "Complete Information: Ensure text segments contain sufficient classification feature information",
+      "clearBoundaries": "Clear Boundaries: Avoid vague or difficult-to-classify boundary cases",
+      "labelDesign": "Label Design Principles",
+      "categoryClarity": "Category Clarity: Each label has clear definition and boundaries",
+      "mutualExclusive": "Mutual Exclusivity: Ensure categories are mutually exclusive, avoiding overlap",
+      "balanced": "Balanced: Try to maintain data balance among various categories",
+      "practical": "Practical: Labels should meet actual application needs",
+      "qualityAssurance": "Quality Assurance",
+      "samplesPerChunk": "Extract 3-6 classification samples per document segment",
+      "labelAccuracy": "Ensure accuracy and consistency of labels",
+      "positiveNegative": "Include typical positive and negative examples",
+      "avoidBias": "Avoid biased and discriminatory content"
+    },
+    "dialogueGuide": {
+      "title": "Dialogue Data Generation Guide",
+      "dialogueDesign": "Dialogue Design Principles",
+      "naturalFluent": "Natural & Fluent: Dialogues should conform to natural language communication habits",
+      "contextCoherent": "Context Coherent: Multi-turn dialogues maintain logical coherence",
+      "roleConsistent": "Role Consistent: Maintain consistent role characteristics for dialogue participants",
+      "informationRich": "Information Rich: Convey valuable information through dialogue",
+      "multiTurnStrategy": "Multi-turn Dialogue Strategy",
+      "progressiveDisclosure": "Progressive Disclosure: Gradually deepen topic exploration",
+      "intentUnderstanding": "Intent Understanding: Accurately understand and respond to user needs",
+      "contextMemory": "Context Memory: Maintain continuity of dialogue history",
+      "naturalTransition": "Natural Transition: Topic transitions should be natural and reasonable",
+      "qualityRequirements": "Dialogue Quality Requirements",
+      "sequencesPerChunk": "Generate 3-5 dialogue sequences per document segment",
+      "interactionRounds": "Each dialogue contains 4-10 rounds of interaction",
+      "scenariosCoverage": "Cover different user inquiry scenarios",
+      "professionalAttitude": "Reflect professional knowledge and service attitude"
+    },
+    "domainGuide": {
+      "title": "Domain Adaptation Data Generation Guide",
+      "domainFeatures": "Domain Feature Representation",
+      "professionalTerms": "Professional Terms: Accurately use domain-related professional terminology and concepts",
+      "knowledgeDepth": "Knowledge Depth: Reflect domain-specific knowledge depth and breadth",
+      "applicationScenarios": "Application Scenarios: Combine with specific domain application scenarios and practical cases",
+      "professionalStandards": "Professional Standards: Comply with industry norms and professional standards",
+      "knowledgeStructuring": "Knowledge Structuring",
+      "conceptAssociation": "Concept Association: Establish associative relationships between domain concepts",
+      "hierarchicalOrganization": "Hierarchical Organization: Organize by knowledge difficulty and importance levels",
+      "theoryPractice": "Theory-Practice Integration: Combine theoretical knowledge with practical applications",
+      "richCases": "Rich Cases: Provide typical domain application cases and best practices",
+      "adaptationStrategy": "Adaptation Strategy",
+      "samplesPerChunk": "Generate 4-7 domain-specialized samples per document segment",
+      "domainKnowledge": "Highlight domain-specific knowledge points and core skills",
+      "proficiencyLevels": "Include learning materials for different proficiency levels",
+      "latestTrends": "Reflect latest trends and cutting-edge developments in the domain"
+    },
+    "reasoningGuide": {
+      "title": "Reasoning Data Generation Guide",
+      "reasoningChain": "Reasoning Chain Construction",
+      "clearSteps": "Clear Steps: Each reasoning step should be clear and specific, easy to follow",
+      "logicalRigorous": "Logical Rigor: Ensure logical consistency and rigor of the reasoning process",
+      "verifiable": "Verifiable: Each step can be independently verified for correctness",
+      "completeness": "Completeness: Complete reasoning chain from premise to conclusion, without skipping steps",
+      "thinkingProcess": "Thinking Process Display",
+      "explicitReasoning": "Explicit Reasoning: Clearly display thinking process and decision basis",
+      "keyAssumptions": "Key Assumptions: Explain key assumptions and conditions in reasoning",
+      "alternativeApproaches": "Alternative Approaches: Consider other possible reasoning paths and solutions",
+      "uncertainty": "Uncertainty: Appropriately express uncertainty and limitations in reasoning",
+      "reasoningTypes": "Reasoning Type Coverage",
+      "deductiveReasoning": "Deductive Reasoning: Logical derivation from general to specific",
+      "inductiveReasoning": "Inductive Reasoning: Pattern summarization from specific to general",
+      "analogicalReasoning": "Analogical Reasoning: Reasoning and analogical analysis based on similarity",
+      "causalReasoning": "Causal Reasoning: Analyze cause-and-effect relationship chains",
+      "mathematicalReasoning": "Mathematical Reasoning: Calculation and proof processes based on mathematical logic"
+    },
+    "distillationGuide": {
+      "title": "Knowledge Distillation Data Generation Guide",
+      "knowledgeExtraction": "Knowledge Extraction Principles",
+      "coreConceptst": "Core Concepts: Extract core knowledge points and key concepts from documents",
+      "simplifiedExpression": "Simplified Expression: Express complex concepts in simpler ways while maintaining comprehensibility",
+      "fidelity": "Fidelity: Ensure simplification does not lose original meaning, maintaining knowledge accuracy",
+      "understandability": "Understandability: Improve knowledge comprehensibility and memorability",
+      "hierarchicalOrganization": "Hierarchical Organization",
+      "knowledgeHierarchy": "Knowledge Hierarchy: Organize by importance and complexity levels",
+      "dependencies": "Dependencies: Clarify dependency relationships and logical order between knowledge points",
+      "learningPath": "Learning Path: Design reasonable learning sequence and progression routes",
+      "difficultyGradient": "Difficulty Gradient: Progressive arrangement from simple to complex",
+      "efficiencyOptimization": "Efficiency Optimization",
+      "keyInformation": "Key Information: Highlight the most important information and core points",
+      "redundancyElimination": "Redundancy Elimination: Remove unnecessary repetitive content and redundant information",
+      "structured": "Structured: Organize knowledge in structured ways for easy understanding and memory",
+      "easyRetrieval": "Easy Retrieval: Convenient for quick search and application, improving usage efficiency"
+    }
+  },
+  "step1": {
+    "title": "Select MD Data Files",
+    "loading": "Loading data collections...",
+    "selectedCount": "Selected {{selected}} / {{total}} MD files",
+    "refresh": "Refresh",
+    "noMdFiles": "No converted MD files in this collection",
+    "preview": "Preview",
+    "selectedFiles": {
+      "title": "Selected Files",
+      "count": "{{count}} files"
+    },
+    "noCollections": {
+      "title": "No available data collections",
+      "description": "Please create a data collection and upload files in raw data management first"
+    }
+  },
+  "step3": {
+    "modelSelection": {
+      "title": "Select AI Model",
+      "refresh": "Refresh",
+      "loading": "Loading model configurations...",
+      "noModels": "No available model configurations",
+      "noModelsHint": "Please configure LLM models in system settings first",
+      "default": "Default",
+      "vision": "Vision",
+      "usage": "Usage Count",
+      "tokens": "Total Tokens",
+      "lastUsed": "Last Used",
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "modelParams": {
+      "title": "Model Parameters",
+      "temperature": "Temperature",
+      "temperatureDesc": "Controls creativity of generated content, higher values are more creative",
+      "maxTokens": "Max Tokens",
+      "maxTokensDesc": "Maximum number of tokens per processing",
+      "batchSize": "Batch Size",
+      "batchSizeDesc": "Number of documents processed simultaneously, affects processing speed",
+      "currentModel": "Current Model",
+      "selectModel": "Please select a model"
+    },
+    "chunkSettings": {
+      "title": "Document Chunking Settings",
+      "chunkSize": "Chunk Size (Characters)",
+      "chunkSizeDesc": "Number of characters per document chunk",
+      "chunkOverlap": "Overlap Size (Characters)",
+      "chunkOverlapDesc": "Number of overlapping characters between adjacent chunks",
+      "preserveStructure": "Preserve Document Structure",
+      "preserveStructureDesc": "Maintain structure integrity like headings, paragraphs, etc.",
+      "splitByHeaders": "Split by Headers",
+      "splitByHeadersDesc": "Prioritize splitting documents at Markdown headers",
+      "chunkPreview": "Chunk Preview",
+      "fileCount": "File Count",
+      "chunkSizeLabel": "Chunk Size",
+      "overlapSize": "Overlap Size",
+      "estimatedChunks": "Estimated Chunks"
+    },
+    "promptConfig": {
+      "title": "Processing Prompt Configuration",
+      "autoGenerated": "Auto Generated",
+      "needStep2Config": "Need to complete Step2 configuration first",
+      "regenerate": "Regenerate",
+      "configOverview": "Current Configuration Overview (Prompt will auto-update based on these configs):",
+      "dataset": "Dataset",
+      "format": "Format",
+      "files": "Files",
+      "chunks": "Chunks",
+      "placeholder": "Prompt will be automatically generated based on your configuration. You can make personalized modifications on this basis...",
+      "placeholderWaiting": "Please complete dataset type, output format, and file selection configuration in Step2 first, the system will automatically generate professional prompts...",
+      "smartGenHint": "Smart Prompt Generation: The system has automatically generated professional prompts based on your Step2 configuration (dataset type, output format, file selection) as well as current model parameters and chunking settings. The prompt will auto-update when you modify related configurations. You can make personalized adjustments based on the generated content.",
+      "promptLength": "Prompt Length",
+      "estimatedTokens": "Estimated Tokens",
+      "complexity": "Complexity Assessment",
+      "simple": "Simple",
+      "medium": "Medium",
+      "complex": "Complex",
+      "structurePreview": "Prompt Structure Preview",
+      "lines": "Lines",
+      "autoInclude": "Auto-generated prompt includes",
+      "projectBackground": "Project Background & Goals",
+      "techSpecs": "Technical Specifications",
+      "formatSpecs": "Format Specification",
+      "qualityStandards": "Quality Standards Definition",
+      "processingStrategy": "Processing Strategy Guidance",
+      "typeSpecific": "Type-specific Instructions",
+      "waitingConfig": "Waiting for Configuration Completion",
+      "configIncomplete": "Please complete the following configuration in Step2 first, the system will automatically generate professional processing prompts:",
+      "selectDatasetType": "Select dataset type",
+      "setOutputFormat": "Set output format",
+      "selectFiles": "Select files to process"
+    }
+  },
+  "step4": {
+    "configCheck": {
+      "complete": "Configuration Check Complete",
+      "incomplete": "Configuration Check",
+      "allReady": "All required configurations completed, ready to start processing dataset",
+      "issuesFound": "The following configuration items need to be completed:",
+      "missingDatasetName": "Dataset name not set",
+      "missingModel": "No AI model selected",
+      "missingPrompt": "Processing prompt is empty",
+      "missingFiles": "No files selected"
+    },
+    "dataSourceOverview": {
+      "title": "Data Source Overview",
+      "filesCount": "{{count}} files",
+      "totalFiles": "Total Files",
+      "totalSize": "Total Size",
+      "fileTypes": "File Types",
+      "avgSize": "Average Size",
+      "selectedFiles": "Selected Files ({{count}} files)"
+    },
+    "datasetConfigOverview": {
+      "title": "Dataset Configuration",
+      "datasetType": "Dataset Type",
+      "outputFormat": "Output Format",
+      "datasetName": "Dataset Name",
+      "notSet": "Not Set",
+      "datasetDescription": "Dataset Description",
+      "noDescription": "No Description"
+    },
+    "modelConfigOverview": {
+      "title": "AI Model Configuration",
+      "temperature": "Temperature",
+      "maxTokens": "Max Tokens",
+      "batchSize": "Batch Size",
+      "creativity": "Creativity",
+      "conservative": "Conservative",
+      "balanced": "Balanced",
+      "innovative": "Innovative",
+      "modelNotSelected": "No AI model selected, please return to Step3 for configuration"
+    },
+    "chunkSettingsOverview": {
+      "title": "Document Chunking Settings",
+      "hidePreview": "Hide Preview",
+      "showPreview": "Preview Chunks",
+      "chunkSize": "Chunk Size",
+      "overlapSize": "Overlap Size",
+      "estimatedChunks": "Estimated Chunks",
+      "efficiency": "Chunking Efficiency",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "preserveStructure": "Preserve Document Structure",
+      "splitByHeaders": "Split by Headers",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "realChunkPreview": "Real Document Chunk Preview",
+      "basedOnActualFiles": "Based on actual content of selected files",
+      "loadingContent": "Loading document content...",
+      "chunk": "Chunk",
+      "source": "Source",
+      "position": "Position",
+      "size": "Size",
+      "characters": "characters",
+      "overlap": "Overlap",
+      "previewLength": "Preview Length",
+      "contentTruncated": "* Content truncated for display",
+      "showingChunks": "* Showing first {{count}} chunks from actual content of selected files",
+      "noChunksToPreview": "No chunks available for preview"
+    },
+    "promptConfigOverview": {
+      "title": "Prompt Configuration",
+      "promptLength": "Prompt Length",
+      "estimatedTokens": "Estimated Tokens",
+      "complexity": "Complexity",
+      "simple": "Simple",
+      "medium": "Medium",
+      "complex": "Complex",
+      "promptPreview": "Prompt Preview",
+      "promptNotConfigured": "Prompt not configured, please return to Step3 for setup"
+    },
+    "processingEstimation": {
+      "title": "Processing Estimation",
+      "estimatedTime": "Estimated Time",
+      "minutes": "minutes",
+      "estimatedEntries": "Estimated Entries",
+      "tokenConsumption": "Token Consumption",
+      "outputSize": "Output Size",
+      "processOverview": "Process Overview",
+      "documentParsing": "Document Parsing & Chunking",
+      "aiProcessing": "AI Model Processing",
+      "formatOutput": "Format Output",
+      "datasetGeneration": "Dataset Generation"
+    },
+    "generateDataset": {
+      "title": "Start Dataset Generation",
+      "description": "After confirming all configurations are correct, click to start generating your smart dataset",
+      "backToModify": "Back to Modify",
+      "startGenerate": "Start Dataset Generation",
+      "generating": "Generating...",
+      "configIncomplete": "Configuration Incomplete",
+      "generationFailed": "Dataset generation failed",
+      "retry": "Retry Generation"
+    }
+  }
+}

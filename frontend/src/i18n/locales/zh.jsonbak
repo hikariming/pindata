@@ -183,7 +183,6 @@
   "rawData": {
     "title": "文件库",
     "libraryManagement": "原数据管理",
-    "createLibrary": "创建数据库",
     "createNewLibrary": "创建新文件库",
     "createLibraryDescription": "创建新的文件库以组织和管理您的文件",
     "libraryList": "数据库列表",
@@ -199,6 +198,25 @@
     "backToList": "返回文件库",
     "uploadFiles": "上传文件",
     "fileName": "文件名",
+    "fileUpload": {
+      "title": "上传训练数据文件",
+      "supportedFormats": "支持格式：{{formats}} | 单文件最大50MB",
+      "dragDropArea": "拖拽文件到此处或点击选择文件",
+      "batchUploadSupport": "支持批量上传多个文件",
+      "selectFiles": "选择文件",
+      "pendingFiles": "待上传文件",
+      "totalSize": "总大小：{{size}}",
+      "uploading": "上传中... {{progress}}%",
+      "fileSizeExceeded": "文件大小不能超过50MB",
+      "unsupportedFormat": "不支持的文件格式。支持的格式：{{formats}}",
+      "errorFiles": "{{count}} 个文件有错误，请检查并重新选择",
+      "validFiles": "{{count}} 个有效文件，共 {{size}}",
+      "cancel": "取消",
+      "startUpload": "开始上传 ({{count}})",
+      "uploadingProgress": "上传中...",
+      "uploadSuccess": "上传成功",
+      "uploadError": "上传失败"
+    },
     "fileType": "类型",
     "fileSize": "大小",
     "uploadDate": "上传日期",
@@ -253,6 +271,105 @@
       "delete": "删除",
       "noPreview": "暂无预览"
     },
+    "filePreview": {
+      "title": "文件详情",
+      "backToLibrary": "返回数据库",
+      "save": "保存",
+      "cancel": "取消",
+      "edit": "编辑",
+      "download": "下载",
+      "downloadMD": "下载MD",
+      "downloadOriginal": "下载原文件",
+      "convertToMD": "转换为MD",
+      "converting": "转换中...",
+      "delete": "删除",
+      "refresh": "刷新",
+      "copy": "复制",
+      "copyText": "复制文本",
+      "confirmDelete": "确定要删除这个文件吗？此操作不可恢复。",
+      "updateFileNameFailed": "更新文件名失败",
+      "downloadFailed": "下载文件失败",
+      "conversionSubmitted": "转换任务已提交，正在处理中...",
+      "conversionFailed": "转换任务提交失败",
+      "fileNotExists": "文件不存在",
+      "loadingFailed": "获取文件详情失败",
+      "missingFileId": "文件ID或库ID缺失，无法加载文件详情。",
+      "getMarkdownFailed": "获取Markdown内容失败",
+      "getOriginalFailed": "无法预览此文件类型的内容或加载时发生错误。",
+      "pages": "页",
+      "words": "词",
+      "uploadedAt": "上传于",
+      "status": {
+        "pending": "等待处理",
+        "processing": "处理中",
+        "completed": "已完成",
+        "failed": "失败"
+      },
+      "tabs": {
+        "overview": "概览",
+        "content": "内容预览",
+        "markdown": "Markdown",
+        "metadata": "元数据"
+      },
+      "overview": {
+        "fileStats": "文件统计",
+        "fileSize": "文件大小",
+        "pageCount": "页数",
+        "wordCount": "词数",
+        "fileType": "文件类型",
+        "language": "语言",
+        "processingInfo": "处理信息",
+        "processingStatus": "处理状态",
+        "outputFormat": "输出格式",
+        "conversionMethod": "转换方法",
+        "uploadTime": "上传时间",
+        "processingTime": "处理时间",
+        "trainingValue": "训练价值评估",
+        "contentIntegrity": "内容完整性",
+        "formatStandard": "格式规范性",
+        "informationDensity": "信息密度",
+        "excellent": "优秀",
+        "good": "良好",
+        "high": "高",
+        "medium": "中等",
+        "pending": "待评估",
+        "toBeProcessed": "待处理"
+      },
+      "content": {
+        "originalPreview": "原文内容预览",
+        "loadPreview": "点击\"刷新\"按钮加载内容预览。",
+        "incompleteFileInfo": "文件信息不完整，无法加载预览。",
+        "unsupportedFileType": "此文件类型不支持预览。",
+        "pdfPreviewTip": "PDF 文件预览建议使用专门的PDF查看器或直接下载文件。",
+        "unsupportedFormat": ".{{fileType}} 文件类型不支持直接预览，请下载查看。",
+        "imageLoadError": "无法加载图片预览。请确认文件格式 ({{fileType}}) 或尝试下载。"
+      },
+      "markdown": {
+        "title": "Markdown 内容",
+        "unavailable": "Markdown 内容不可用",
+        "notStarted": "文件还未开始处理",
+        "converting": "正在转换为 Markdown 格式...",
+        "conversionFailed": "转换失败，请重试",
+        "loadContent": "点击刷新加载内容..."
+      },
+      "metadata": {
+        "title": "文件元数据",
+        "fileName": "文件名",
+        "originalFileName": "原始文件名",
+        "fileType": "文件类型",
+        "fileSize": "文件大小",
+        "language": "语言",
+        "uploadTime": "上传时间",
+        "processingTime": "处理时间",
+        "lastUpdate": "最后更新",
+        "storagePath": "存储路径",
+        "convertedPath": "转换文件路径"
+      },
+      "processingError": {
+        "title": "处理失败",
+        "description": "处理失败"
+      }
+    },
     "smartDatasetCreator": {
       "step1": {
         "title": "选择MD数据文件",
@@ -269,6 +386,30 @@
           "title": "暂无可用的数据集合",
           "description": "请先在原始数据管理中创建数据集合并上传文件"
         }
+      }
+    },
+    "createLibrary": {
+      "create": "创建数据库",
+      "basicInfo": "基本信息",
+      "dataTypeLabel": "数据类型",
+      "dataTypes": {
+        "training": "训练数据",
+        "evaluation": "评估数据",
+        "mixed": "混合数据"
+      },
+      "purposeLabel": "预期用途",
+      "purposePlaceholder": "如：科研论文理解模型训练、法律文档分析等",
+      "tagManagement": "标签管理",
+      "addTag": "添加标签",
+      "addTagPlaceholder": "添加标签",
+      "commonTags": "常用标签：",
+      "addedTags": "已添加的标签：",
+      "creating": "创建中...",
+      "validationErrors": {
+        "nameRequired": "请输入数据库名称",
+        "nameMinLength": "数据库名称长度不能少于3个字符",
+        "nameMaxLength": "数据库名称长度不能超过63个字符",
+        "nameInvalidFormat": "数据库名称只能包含中文、英文、数字、下划线和连字符，且不能以连字符开头或结尾"
       }
     }
   },
@@ -292,6 +433,143 @@
   "smartDatasetCreator": {
     "title": "智能数据集创建器",
     "description": "使用AI技术从原始数据自动生成高质量的训练数据集，支持多种数据集类型和格式。",
+    "constants": {
+      "datasetTypes": {
+        "qaPairs": {
+          "name": "问答对",
+          "description": "从文档内容生成问题和答案对，适用于问答系统训练",
+          "useCase": "智能客服、知识问答、教育辅助",
+          "category": "监督学习",
+          "example": "问题：如何使用Python处理JSON数据？\\n答案：可以使用json模块的loads()和dumps()方法来解析和生成JSON数据。"
+        },
+        "instructionTuning": {
+          "name": "指令微调",
+          "description": "生成指令-输入-输出三元组，用于指令遵循模型训练",
+          "useCase": "智能办公、文档处理、个性化助手",
+          "category": "监督学习",
+          "example": "指令：将以下段落总结为50字以内\\n输入：[长段落文本]\\n输出：[简洁摘要]"
+        },
+        "textClassification": {
+          "name": "文本分类",
+          "description": "提取文档片段并生成分类标签，用于情感分析、内容审核等",
+          "useCase": "情感分析、内容审核、新闻分类、意图识别",
+          "category": "监督学习",
+          "example": "文本：这个产品真的很棒！\\n标签：正面情感"
+        },
+        "dialogue": {
+          "name": "对话微调",
+          "description": "生成多轮对话数据，提升对话连贯性和上下文理解能力",
+          "useCase": "智能客服、聊天机器人、语音助手",
+          "category": "监督学习",
+          "example": "用户：天气怎么样？\\n助手：今天天气晴朗，温度25度，很适合出行。\\n用户：那明天呢？\\n助手：明天预计有小雨，建议带伞。"
+        },
+        "domainAdaptation": {
+          "name": "领域适应",
+          "description": "专业领域知识微调，提升模型在专业领域的表现",
+          "useCase": "医疗诊断、法律咨询、金融分析",
+          "category": "监督学习",
+          "example": "专业知识：心肌梗死的典型症状包括胸痛、呼吸困难...\\n应用场景：医疗诊断辅助"
+        },
+        "reasoning": {
+          "name": "推理微调",
+          "description": "包含思维链的推理数据，训练模型逻辑推理能力",
+          "useCase": "数学解题、代码生成、逻辑推理、复杂分析",
+          "category": "推理训练",
+          "example": "问题：如果A>B，B>C，那么A和C的关系是什么？\\n思维过程：根据传递性，如果A>B且B>C，则A>C\\n答案：A>C"
+        },
+        "knowledgeDistillation": {
+          "name": "知识蒸馏",
+          "description": "从大模型提取知识训练小模型，平衡性能与成本",
+          "useCase": "模型压缩、边缘部署、成本优化",
+          "category": "知识蒸馏",
+          "example": "大模型输出：[复杂推理过程]\\n小模型学习：[精简但准确的结果]"
+        }
+      },
+      "formatDetails": {
+        "alpaca": {
+          "name": "Alpaca格式",
+          "description": "斯坦福大学发布的经典指令微调格式，结构简单，适合单轮任务",
+          "structure": "instruction + input + output",
+          "advantages": ["结构简单", "任务明确", "社区支持广泛"],
+          "disadvantages": ["多轮对话需要手动拼接", "缺乏工具调用支持"],
+          "bestFor": ["指令微调", "问答系统", "文本生成"],
+          "example": "{\\n  \"instruction\": \"将以下文本翻译成英文\",\\n  \"input\": \"你好世界\",\\n  \"output\": \"Hello World\"\\n}"
+        },
+        "shareGPT": {
+          "name": "ShareGPT格式",
+          "description": "支持多轮对话和工具调用的格式，更贴近真实交互场景",
+          "structure": "conversations + tools + roles",
+          "advantages": ["多轮对话支持", "工具调用能力", "角色管理"],
+          "disadvantages": ["格式复杂", "必须遵循角色位置规则"],
+          "bestFor": ["对话系统", "工具调用", "多模态交互"],
+          "example": "{\\n  \"conversations\": [{\\n    \"from\": \"human\",\\n    \"value\": \"你好\"\\n  }, {\\n    \"from\": \"gpt\",\\n    \"value\": \"您好！有什么可以帮助您的吗？\"\\n  }]\\n}"
+        },
+        "openAI": {
+          "name": "OpenAI格式",
+          "description": "与OpenAI API兼容的格式，ShareGPT的简化版本",
+          "structure": "messages + roles",
+          "advantages": ["API兼容", "使用简单", "支持广泛"],
+          "disadvantages": ["功能相对简单", "扩展性有限"],
+          "bestFor": ["API集成", "简单对话", "快速原型"],
+          "example": "{\\n  \"messages\": [{\\n    \"role\": \"user\",\\n    \"content\": \"解释什么是机器学习\"\\n  }, {\\n    \"role\": \"assistant\",\\n    \"content\": \"机器学习是人工智能的一个分支...\"\\n  }]\\n}"
+        },
+        "alpacaCOT": {
+          "name": "Alpaca-COT格式",
+          "description": "带有思维链的Alpaca格式，适合推理任务训练",
+          "structure": "instruction + input + chain_of_thought + output",
+          "advantages": ["支持推理过程", "逻辑清晰", "教学效果好"],
+          "disadvantages": ["数据构建复杂", "需要专业标注"],
+          "bestFor": ["数学推理", "逻辑分析", "步骤分解"],
+          "example": "{\\n  \"instruction\": \"解方程\",\\n  \"input\": \"2x + 3 = 7\",\\n  \"chain_of_thought\": \"首先将3移到右边：2x = 7-3 = 4，然后除以2：x = 4/2 = 2\",\\n  \"output\": \"x = 2\"\\n}"
+        },
+        "csv": {
+          "name": "CSV格式",
+          "description": "简单的表格格式，适合分类和标注任务",
+          "structure": "text, label",
+          "advantages": ["简单直观", "易于编辑", "工具支持多"],
+          "disadvantages": ["功能有限", "不支持复杂结构"],
+          "bestFor": ["文本分类", "标签标注", "简单任务"],
+          "example": "text,label\\n这是一条正面评论,positive\\n这是一条负面评论,negative"
+        }
+      },
+      "aiModels": {
+        "gpt4": "GPT-4",
+        "gpt35Turbo": "GPT-3.5 Turbo",
+        "claude3": "Claude-3",
+        "geminiPro": "Gemini Pro",
+        "localLlm": "本地模型"
+      },
+      "steps": {
+        "selectData": {
+          "name": "选择数据",
+          "description": "从原始数据中选择文件"
+        },
+        "configDataset": {
+          "name": "配置数据集",
+          "description": "选择数据集类型和格式"
+        },
+        "configModel": {
+          "name": "配置模型",
+          "description": "配置AI模型和处理参数"
+        },
+        "previewConfirm": {
+          "name": "预览确认",
+          "description": "预览生成设置并确认"
+        },
+        "generateDataset": {
+          "name": "生成数据集",
+          "description": "AI处理并生成数据集"
+        }
+      }
+    },
+    "stepIndicator": {
+      "progress": "步骤 {{current}} / {{total}}",
+      "completed": "已完成"
+    },
+    "navigation": {
+      "prevStep": "上一步",
+      "nextStep": "下一步"
+    },
     "steps": {
       "selectData": "选择数据源",
       "configureDataset": "配置数据集",
@@ -421,6 +699,7 @@
     },
     "create": {
       "title": "创建数据集",
+      "description": "数据集描述",
       "backToList": "返回数据集列表",
       "subtitle": "选择您想要的数据集创建方式，然后填写相关信息。",
       "creationFailed": "创建失败",
@@ -631,5 +910,98 @@
       "taskExecuting": "任务执行中，日志将自动更新...",
       "close": "关闭"
     }
+  },
+  "dataPreview": {
+    "title": "数据预览",
+    "dataset": "数据集",
+    "version": "版本",
+    "switching": "切换中...",
+    "noVersion": "暂无版本",
+    "default": "默认",
+    "current": "当前",
+    "defaultVersion": "默认版本",
+    "draft": "草稿",
+    "deprecated": "已废弃",
+    "selectVersion": "选择版本",
+    "loading": "加载中...",
+    "totalFiles": "总文件数",
+    "previewFiles": "预览文件数",
+    "versionSwitchFailed": "版本切换失败",
+    "refreshPreview": "刷新预览",
+    "exportInfo": "导出信息",
+    "allTypes": "全部类型",
+    "selected": "已选择",
+    "files": "个文件",
+    "deleteSelected": "删除选中",
+    "uploading": "上传中...",
+    "addFiles": "添加文件",
+    "noPreviewData": "暂无可预览的数据",
+    "noDataToPreview": "暂无数据",
+    "totalRows": "总行数",
+    "columns": "列数",
+    "preview": "预览",
+    "rows": "行",
+    "format": "格式",
+    "totalItems": "总条目",
+    "items": "条",
+    "entry": "条目",
+    "size": "尺寸",
+    "mode": "模式",
+    "imagePreviewDeveloping": "图像预览功能开发中",
+    "previewDeveloping": "预览功能开发中",
+    "unsupportedPreview": "暂不支持此类型的预览",
+    "downloadFile": "下载",
+    "deleteFile": "删除",
+    "checksum": "校验和",
+    "unsupportedFileType": "暂不支持预览此文件类型",
+    "versionInfo": "版本信息",
+    "commitHash": "提交哈希",
+    "createTime": "创建时间",
+    "commitMessage": "提交信息"
+  },
+  "libraryDetails": {
+    "backToList": "返回列表",
+    "uploadFiles": "上传文件",
+    "totalFiles": "总文件数",
+    "processed": "已处理",
+    "processing": "处理中",
+    "pending": "待处理",
+    "mdFiles": "MD文件",
+    "fileList": "文件列表",
+    "totalFilesCount": "共 {count} 个文件",
+    "selectedCount": "已选择 {count} 个",
+    "convertToMD": "转换为MD",
+    "batchDelete": "批量删除",
+    "refresh": "刷新",
+    "loadingFiles": "加载文件列表中...",
+    "loadFailed": "加载文件列表失败",
+    "retry": "重试",
+    "noFiles": "暂无文件",
+    "uploadTip": "点击上方“上传文件”按钮开始添加文件",
+    "fileName": "文件名",
+    "type": "类型",
+    "size": "大小",
+    "status": "状态",
+    "uploadTime": "上传时间",
+    "actions": "操作",
+    "selectAll": "全选",
+    "selectFile": "选择文件",
+    "convertToMDAction": "转换为MD",
+    "viewDetails": "查看详情",
+    "deleteFileAction": "删除文件",
+    "downloadFileAction": "下载文件",
+    "uploadSuccess": "成功上传 {count} 个文件",
+    "deleteSuccess": "文件 {fileName} 删除成功",
+    "deleteFailed": "文件 {fileName} 删除失败",
+    "downloadStart": "文件 {fileName} 下载开始",
+    "downloadFailed": "文件 {fileName} 下载失败",
+    "deleteConfirm": "确定要删除文件 {fileName} 吗？",
+    "batchDeleteConfirm": "⚠️ 警告：您即将删除 {count} 个文件！\n\n文件列表：\n{fileNames}\n\n此操作不可撤销，确定要继续吗？",
+    "batchDeleteSuccess": "成功删除 {count} 个文件",
+    "batchDeletePartial": "删除完成：成功 {successCount} 个，失败 {failCount} 个",
+    "convertSubmitted": "已提交 {count} 个文件的转换任务",
+    "convertFailed": "转换任务提交失败",
+    "cancelSuccess": "转换任务已取消",
+    "cancelFailed": "取消任务失败"
   }
 }

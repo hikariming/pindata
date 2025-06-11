@@ -1,0 +1,30 @@
+{
+  "title": "任务管理",
+  "description": "监控和管理所有后台运行的数据处理任务",
+  "statistics": {
+    "totalTasks": "总任务数",
+    "running": "运行中",
+    "pending": "等待中",
+    "completed": "已完成",
+    "failed": "失败"
+  },
+  "tabs": {
+    "taskList": "任务列表",
+    "taskQueue": "任务队列",
+    "systemMonitor": "系统监控"
+  },
+  "actions": {
+    "pauseSelected": "暂停选中",
+    "cancelSelected": "取消选中",
+    "refresh": "刷新",
+    "autoRefreshStatus": "每10秒自动刷新中"
+  },
+  "status": {
+    "pending": "等待中",
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败",
+    "cancelled": "已取消",
+    "unknown": "未知"
+  }
+}

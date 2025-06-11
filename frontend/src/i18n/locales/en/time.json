@@ -1,0 +1,4 @@
+{
+  "hoursAgo": "{{count}} hours ago",
+  "daysAgo": "{{count}} days ago"
+}

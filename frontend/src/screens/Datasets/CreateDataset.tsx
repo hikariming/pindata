@@ -35,6 +35,7 @@ interface DatasetCreationSuccessProps {
 }
 
 const DatasetCreationSuccess: React.FC<DatasetCreationSuccessProps> = ({ createMethod }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   if (createMethod === 'empty') {
@@ -485,21 +486,21 @@ export const CreateDataset = (): JSX.Element => {
                     <ul className="text-sm text-[#4f7096] space-y-1">
                       {createMethod === 'empty' && (
                         <>
-                          {t('datasets.create.emptyDatasetSteps', { returnObjects: true }).map((step, index) => (
+                          {(t('datasets.create.emptyDatasetSteps', { returnObjects: true }) as string[]).map((step: string, index: number) => (
                             <li key={index}>{step}</li>
                           ))}
                         </>
                       )}
                       {createMethod === 'huggingface' && (
                         <>
-                          {t('datasets.create.huggingfaceSteps', { returnObjects: true }).map((step, index) => (
+                          {(t('datasets.create.huggingfaceSteps', { returnObjects: true }) as string[]).map((step: string, index: number) => (
                             <li key={index}>{step}</li>
                           ))}
                         </>
                       )}
                       {createMethod === 'modelscope' && (
                         <>
-                          {t('datasets.create.modelscopeSteps', { returnObjects: true }).map((step, index) => (
+                          {(t('datasets.create.modelscopeSteps', { returnObjects: true }) as string[]).map((step: string, index: number) => (
                             <li key={index}>{step}</li>
                           ))}
                         </>

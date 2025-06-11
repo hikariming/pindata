@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { 
@@ -30,6 +31,7 @@ interface UploadFile {
 }
 
 export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: FileUploadProps): JSX.Element => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -60,13 +62,13 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
   const validateFile = (file: File): string | undefined => {
     // 检查文件大小
     if (file.size > maxFileSize) {
-      return '文件大小不能超过50MB';
+      return t('rawData.fileUpload.fileSizeExceeded');
     }
 
     // 检查文件格式
     const extension = file.name.split('.').pop()?.toLowerCase();
     if (!extension || !supportedFormats.includes(extension)) {
-      return `不支持的文件格式。支持的格式：${supportedFormats.join(', ')}`;
+      return t('rawData.fileUpload.unsupportedFormat', { formats: supportedFormats.join(', ') });
     }
 
     return undefined;
@@ -151,7 +153,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
       return result;
     } catch (error) {
       // 上传失败
-      const errorMessage = error instanceof Error ? error.message : '上传失败';
+      const errorMessage = error instanceof Error ? error.message : t('rawData.fileUpload.uploadError');
       setUploadFiles(prev => prev.map(f => 
         f.id === uploadFile.id 
           ? { ...f, status: 'error', error: errorMessage }
@@ -179,7 +181,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
           // 上传成功后记录文件
           successFiles.push(uploadFile.file);
         } catch (error) {
-          console.error(`上传文件 ${uploadFile.file.name} 失败:`, error);
+          console.error(`${t('rawData.fileUpload.uploadError')} ${uploadFile.file.name}:`, error);
         }
       }
       
@@ -188,7 +190,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
         onUpload(successFiles);
       }
     } catch (error) {
-      console.error('批量上传失败:', error);
+      console.error(`${t('rawData.fileUpload.uploadError')}:`, error);
     } finally {
       setIsProcessing(false);
     }
@@ -210,7 +212,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
       <Card className="w-full max-w-4xl max-h-[90vh] bg-white border-[#d1dbe8] m-4 overflow-hidden">
         <div className="p-6 border-b border-[#d1dbe8]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#0c141c]">上传训练数据文件</h2>
+            <h2 className="text-xl font-bold text-[#0c141c]">{t('rawData.fileUpload.title')}</h2>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -221,7 +223,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
             </Button>
           </div>
           <p className="text-sm text-[#4f7096] mt-2">
-            支持格式：{supportedFormats.join(', ')} | 单文件最大50MB
+            {t('rawData.fileUpload.supportedFormats', { formats: supportedFormats.join(', ') })}
           </p>
         </div>
 
@@ -241,17 +243,17 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
           >
             <UploadIcon className="w-12 h-12 text-[#4f7096] mx-auto mb-4" />
             <h3 className="text-lg font-medium text-[#0c141c] mb-2">
-              拖拽文件到此处或点击选择文件
+              {t('rawData.fileUpload.dragDropArea')}
             </h3>
             <p className="text-[#4f7096] mb-4">
-              支持批量上传多个文件
+              {t('rawData.fileUpload.batchUploadSupport')}
             </p>
             <Button 
               variant="outline" 
               onClick={handleFileSelect}
               className="border-[#1977e5] text-[#1977e5] hover:bg-[#1977e5] hover:text-white"
             >
-              选择文件
+              {t('rawData.fileUpload.selectFiles')}
             </Button>
             <input
               ref={fileInputRef}
@@ -268,10 +270,10 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
             <div className="mt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-medium text-[#0c141c]">
-                  待上传文件 ({uploadFiles.length})
+                  {t('rawData.fileUpload.pendingFiles')} ({uploadFiles.length})
                 </h3>
                 <div className="text-sm text-[#4f7096]">
-                  总大小：{formatFileSize(totalSize)}
+                  {t('rawData.fileUpload.totalSize', { size: formatFileSize(totalSize) })}
                 </div>
               </div>
 
@@ -300,7 +302,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
                               ></div>
                             </div>
                             <div className="text-xs text-[#4f7096] mt-1">
-                              上传中... {uploadFile.progress}%
+                              {t('rawData.fileUpload.uploading', { progress: uploadFile.progress })}
                             </div>
                           </div>
                         )}
@@ -338,7 +340,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
               {errorFiles.length > 0 && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <div className="text-sm text-red-700">
-                    {errorFiles.length} 个文件有错误，请检查并重新选择
+                    {t('rawData.fileUpload.errorFiles', { count: errorFiles.length })}
                   </div>
                 </div>
               )}
@@ -352,7 +354,10 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
             <div className="text-sm text-[#4f7096]">
               {validFiles.length > 0 && (
                 <span>
-                  {validFiles.length} 个有效文件，共 {formatFileSize(validFiles.reduce((total, f) => total + f.file.size, 0))}
+                  {t('rawData.fileUpload.validFiles', { 
+                    count: validFiles.length, 
+                    size: formatFileSize(validFiles.reduce((total, f) => total + f.file.size, 0))
+                  })}
                 </span>
               )}
             </div>
@@ -364,7 +369,7 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
                 disabled={isProcessing}
                 className="border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
               >
-                取消
+                {t('rawData.fileUpload.cancel')}
               </Button>
               <Button
                 onClick={handleUpload}
@@ -374,12 +379,12 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
                 {isProcessing ? (
                   <>
                     <PlayIcon className="w-4 h-4 mr-2 animate-pulse" />
-                    上传中...
+                    {t('rawData.fileUpload.uploadingProgress')}
                   </>
                 ) : (
                   <>
                     <UploadIcon className="w-4 h-4 mr-2" />
-                    开始上传 ({validFiles.length})
+                    {t('rawData.fileUpload.startUpload', { count: validFiles.length })}
                   </>
                 )}
               </Button>

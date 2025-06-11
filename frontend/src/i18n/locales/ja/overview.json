@@ -1,0 +1,46 @@
+{
+  "welcome": "pindataへようこそ",
+  "welcomeDescription": "データセットの探索、タスクの管理、ストレージ使用状況の監視を開始します。",
+  "systemOverview": "システム概要",
+  "recentActivity": "最近のアクティビティ",
+  "quickActions": "クイックアクション",
+  "systemNotifications": "システム通知",
+  "comingSoon": "近日公開",
+  "pluginsDevelopment": "プラグインサポートは現在開発中です",
+  "features": {
+    "dataImport": {
+      "title": "データインポートと処理",
+      "description": "CSV、JSON、Excelなど、複数の形式の生データインポートをサポート。インテリジェントなデータ前処理、自動データ型認識、高品質なトレーニングデータセットの生成。"
+    },
+    "datasetManagement": {
+      "title": "マルチプラットフォームデータセット管理",
+      "description": "Hugging Face HubやModelScopeなどの主要プラットフォームとシームレスに統合。人気のオープンソースデータセットをワンクリックでインポート、バージョン管理と更新同期をサポート。"
+    },
+    "taskScheduling": {
+      "title": "スマートタスクスケジューリング",
+      "description": "バッチ操作とスケジュールタスクをサポートする自動化データ処理パイプライン。詳細な実行ログとパフォーマンス指標を提供するリアルタイムタスクステータス監視。"
+    },
+    "storageSharing": {
+      "title": "ストレージと共有",
+      "description": "大規模データセットの安全なストレージとバックアップをサポートするクラウドストレージ。データセット共有と権限管理をサポートするチームコラボレーション機能。"
+    }
+  },
+  "quickStart": {
+    "title": "クイックスタートガイド",
+    "step1": {
+      "title": "データのインポート",
+      "description": "ローカルファイルまたはHF、ModelScopeプラットフォーム"
+    },
+    "step2": {
+      "title": "データの処理",
+      "description": "クリーニング、変換、品質チェック"
+    },
+    "step3": {
+      "title": "データセットの生成",
+      "description": "トレーニングデータセットの作成とエクスポート"
+    }
+  },
+  "error": {
+    "loadingOverview": "概要データの読み込み中にエラーが発生しました: {{error}}"
+  }
+}

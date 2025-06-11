@@ -70,8 +70,8 @@ class StorageService:
             file_content = file_data.read()
             file_size = len(file_content)
             
-            # 统一使用 raw-data bucket，确保与下载逻辑一致
-            bucket_name = 'raw-data'
+            # 使用配置的 bucket，确保与其他方法一致
+            bucket_name = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
             
             # 确保bucket存在
             if not self._bucket_exists(bucket_name):

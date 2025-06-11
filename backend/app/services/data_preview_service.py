@@ -63,8 +63,14 @@ class DataPreviewService:
         try:
             # 从MinIO下载文件内容
             with tempfile.NamedTemporaryFile() as tmp_file:
+                # 获取实际的bucket名称
+                bucket_name = file.minio_bucket
+                if not bucket_name:
+                    # 如果文件记录中没有bucket名称，使用配置的默认bucket
+                    bucket_name = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
+                
                 storage_service.download_file(
-                    file.minio_bucket or 'datasets',  # 默认使用datasets bucket
+                    bucket_name,
                     file.minio_object_name,
                     tmp_file.name
                 )
@@ -238,8 +244,14 @@ class DataPreviewService:
             # 如果是单个图像文件
             if file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):
                 with tempfile.NamedTemporaryFile() as tmp_file:
+                    # 获取实际的bucket名称
+                    bucket_name = file.minio_bucket
+                    if not bucket_name:
+                        # 如果文件记录中没有bucket名称，使用配置的默认bucket
+                        bucket_name = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
+                    
                     storage_service.download_file(
-                        file.minio_bucket or 'datasets',  # 默认使用datasets bucket
+                        bucket_name,
                         file.minio_object_name,
                         tmp_file.name
                     )

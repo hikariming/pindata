@@ -1,0 +1,620 @@
+{
+  "title": "スマートデータセット作成ツール",
+  "description": "AI技術を活用して生データから高品質なトレーニングデータセットを自動生成し、複数のデータセットタイプと形式をサポートします。",
+  "constants": {
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "質問応答ペア",
+        "description": "文書内容から質問と回答のペアを生成し、QAシステムの訓練に適用",
+        "useCase": "スマートカスタマーサービス、知識Q&A、教育支援",
+        "category": "教師あり学習"
+      },
+      "instructionTuning": {
+        "name": "指示調整",
+        "description": "指示に従うモデル訓練のための指示-入力-出力三つ組を生成",
+        "useCase": "スマートオフィス、文書処理、パーソナライズドアシスタント",
+        "category": "教師あり学習"
+      },
+      "textClassification": {
+        "name": "テキスト分類",
+        "description": "文書の断片を抽出し、感情分析やコンテンツモデレーションなどの分類ラベルを生成",
+        "useCase": "感情分析、コンテンツモデレーション、ニュース分類、意図認識",
+        "category": "教師あり学習"
+      },
+      "dialogue": {
+        "name": "対話調整",
+        "description": "マルチターン対話データを生成し、対話の一貫性と文脈理解を向上",
+        "useCase": "スマートカスタマーサービス、チャットボット、音声アシスタント",
+        "category": "教師あり学習"
+      },
+      "domainAdaptation": {
+        "name": "ドメイン適応",
+        "description": "専門分野でのモデル性能向上のためのドメイン固有知識ファインチューニング",
+        "useCase": "医療診断、法律相談、金融分析",
+        "category": "教師あり学習"
+      },
+      "reasoning": {
+        "name": "推論調整",
+        "description": "思考の連鎖を含む推論データで、モデルの論理推論能力を訓練",
+        "useCase": "数学問題解決、コード生成、論理推論、複雑な分析",
+        "category": "推論訓練"
+      },
+      "knowledgeDistillation": {
+        "name": "知識蒸留",
+        "description": "大規模モデルから知識を抽出して小規模モデルを訓練し、性能とコストのバランスを取る",
+        "useCase": "モデル圧縮、エッジ展開、コスト最適化",
+        "category": "知識蒸留"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca形式",
+        "description": "スタンフォード大学がリリースした古典的な指示調整形式。シンプルな構造でシングルターンタスクに適用",
+        "structure": "instruction + input + output",
+        "advantages": ["シンプルな構造", "明確なタスク指向", "幅広いコミュニティサポート"],
+        "disadvantages": ["マルチターン対話は手動で連結が必要", "ツール呼び出しサポートなし"],
+        "bestFor": ["指示調整", "Q&Aシステム", "テキスト生成"]
+      },
+      "shareGPT": {
+        "name": "ShareGPT形式",
+        "description": "マルチターン対話とツール呼び出しをサポートする形式。実際のインタラクションシナリオに近い",
+        "structure": "conversations + tools + roles",
+        "advantages": ["マルチターン対話サポート", "ツール呼び出し機能", "役割管理"],
+        "disadvantages": ["複雑な形式", "役割位置ルールに従う必要"],
+        "bestFor": ["対話システム", "ツール呼び出し", "マルチモーダルインタラクション"]
+      },
+      "openAI": {
+        "name": "OpenAI形式",
+        "description": "OpenAI API互換形式。ShareGPTの簡略版",
+        "structure": "messages + roles",
+        "advantages": ["API互換", "使いやすい", "幅広いサポート"],
+        "disadvantages": ["比較的シンプルな機能", "拡張性に制限"],
+        "bestFor": ["API統合", "シンプルな対話", "クイックプロトタイピング"]
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT形式",
+        "description": "思考の連鎖を含むAlpaca形式。推論タスクの訓練に適用",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["推論プロセスをサポート", "明確な論理", "良い教育効果"],
+        "disadvantages": ["複雑なデータ構築", "専門的なアノテーションが必要"],
+        "bestFor": ["数学推論", "論理分析", "ステップ分解"]
+      },
+      "csv": {
+        "name": "CSV形式",
+        "description": "シンプルなテーブル形式。分類とアノテーションタスクに適用",
+        "structure": "text, label",
+        "advantages": ["シンプルで直感的", "編集しやすい", "多くのツールサポート"],
+        "disadvantages": ["機能制限", "複雑な構造をサポートしない"],
+        "bestFor": ["テキスト分類", "ラベルアノテーション", "シンプルなタスク"]
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "ローカルモデル"
+    },
+    "steps": {
+      "selectData": {
+        "name": "データを選択",
+        "description": "生データからファイルを選択"
+      },
+      "configDataset": {
+        "name": "データセットを設定",
+        "description": "データセットタイプと形式を選択"
+      },
+      "configModel": {
+        "name": "モデルを設定",
+        "description": "AIモデルと処理パラメータを設定"
+      },
+      "previewConfirm": {
+        "name": "プレビューと確認",
+        "description": "生成設定をプレビューして確認"
+      },
+      "generateDataset": {
+        "name": "データセットを生成",
+        "description": "AIが処理してデータセットを生成"
+      }
+    },
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "質問応答ペア",
+        "description": "文書内容から質問と回答のペアを生成し、QAシステムの訓練に適用",
+        "useCase": "スマートカスタマーサービス、知識Q&A、教育支援",
+        "example": "{\"instruction\": \"人工知能とは何ですか？\", \"input\": \"\", \"output\": \"人工知能はコンピュータサイエンスの分野です...\"}"
+      },
+      "instructionTuning": {
+        "name": "指示調整",
+        "description": "指示に従うモデル訓練のための指示-入力-出力三つ組を生成",
+        "useCase": "スマートオフィス、文書処理、パーソナライズドアシスタント",
+        "example": "{\"instruction\": \"以下のテキストを英語に翻訳してください\", \"input\": \"こんにちは世界\", \"output\": \"Hello World\"}"
+      },
+      "textClassification": {
+        "name": "テキスト分類",
+        "description": "文書の断片を抽出し、感情分析やコンテンツモデレーションなどの分類ラベルを生成",
+        "useCase": "感情分析、コンテンツモデレーション、ニュース分類、意図認識",
+        "example": "{\"text\": \"この商品は素晴らしい！\", \"label\": \"positive\"}"
+      },
+      "dialogue": {
+        "name": "対話調整",
+        "description": "マルチターン対話データを生成し、対話の一貫性と文脈理解を向上",
+        "useCase": "スマートカスタマーサービス、チャットボット、音声アシスタント",
+        "example": "{\"conversations\": [{\"role\": \"user\", \"content\": \"こんにちは\"}, {\"role\": \"assistant\", \"content\": \"こんにちは！何かお手伝いできることはありますか？\"}]}"
+      },
+      "domainAdaptation": {
+        "name": "ドメイン適応",
+        "description": "専門分野でのモデル性能向上のためのドメイン固有知識ファインチューニング",
+        "useCase": "医療診断、法律相談、金融分析",
+        "example": "{\"instruction\": \"患者の症状を分析\", \"input\": \"患者は3時間前から胸痛\", \"output\": \"心電図検査を推奨...\", \"domain\": \"医療\"}"
+      },
+      "reasoning": {
+        "name": "推論調整",
+        "description": "思考の連鎖を含む推論データで、モデルの論理推論能力を訓練",
+        "useCase": "数学問題解決、コード生成、論理推論、複雑な分析",
+        "example": "{\"instruction\": \"数学問題を解く\", \"input\": \"3×5+2=?\", \"chain_of_thought\": \"まず掛け算：3×5=15、次に足し算：15+2=17\", \"output\": \"17\"}"
+      },
+      "knowledgeDistillation": {
+        "name": "知識蒸留",
+        "description": "大規模モデルから知識を抽出して小規模モデルを訓練し、性能とコストのバランスを取る",
+        "useCase": "モデル圧縮、エッジ展開、コスト最適化",
+        "example": "GPT-4の出力に基づいて生成された訓練データ、小規模モデルの訓練に使用"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca形式",
+        "description": "スタンフォード大学がリリースした古典的な指示調整形式。シンプルな構造でシングルターンタスクに適用",
+        "structure": "instruction + input + output",
+        "advantages": ["シンプルな構造", "明確なタスク指向", "幅広いコミュニティサポート"],
+        "disadvantages": ["マルチターン対話は手動で連結が必要", "ツール呼び出しサポートなし"],
+        "bestFor": ["指示調整", "Q&Aシステム", "テキスト生成"],
+        "example": "{\n  \"instruction\": \"以下の日本語を英語に翻訳してください\",\n  \"input\": \"こんにちは、世界！\",\n  \"output\": \"Hello, World!\"\n}"
+      },
+      "shareGPT": {
+        "name": "ShareGPT形式",
+        "description": "マルチターン対話とツール呼び出しをサポートする形式。実際のインタラクションシナリオに近い",
+        "structure": "conversations + tools + roles",
+        "advantages": ["マルチターン対話サポート", "ツール呼び出し機能", "役割管理"],
+        "disadvantages": ["複雑な形式", "役割位置ルールに従う必要"],
+        "bestFor": ["対話システム", "ツール呼び出し", "マルチモーダルインタラクション"],
+        "example": "{\n  \"conversations\": [\n    {\"role\": \"user\", \"content\": \"今日の天気はどうですか？\"},\n    {\"role\": \"assistant\", \"content\": \"天気を確認します...\"}\n  ]\n}"
+      },
+      "openAI": {
+        "name": "OpenAI形式",
+        "description": "OpenAI API互換形式。ShareGPTの簡略版",
+        "structure": "messages + roles",
+        "advantages": ["API互換", "使いやすい", "幅広いサポート"],
+        "disadvantages": ["比較的シンプルな機能", "拡張性に制限"],
+        "bestFor": ["API統合", "シンプルな対話", "クイックプロトタイピング"],
+        "example": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"あなたは役立つアシスタントです\"},\n    {\"role\": \"user\", \"content\": \"AIについて紹介してください\"},\n    {\"role\": \"assistant\", \"content\": \"AIは人工知能の略で...\"}\n  ]\n}"
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT形式",
+        "description": "思考の連鎖を含むAlpaca形式。推論タスクの訓練に適用",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["推論プロセスをサポート", "明確な論理", "良い教育効果"],
+        "disadvantages": ["複雑なデータ構築", "専門的なアノテーションが必要"],
+        "bestFor": ["数学推論", "論理分析", "ステップ分解"],
+        "example": "{\n  \"instruction\": \"この数学問題を解いてください\",\n  \"input\": \"正方形の辺の長さが5cmの場合、面積を求めてください\",\n  \"chain_of_thought\": \"正方形の面積の公式は辺の長さの二乗なので、面積 = 5 × 5 = 25\",\n  \"output\": \"25平方センチメートル\"\n}"
+      },
+      "csv": {
+        "name": "CSV形式",
+        "description": "シンプルなテーブル形式。分類とアノテーションタスクに適用",
+        "structure": "text, label",
+        "advantages": ["シンプルで直感的", "編集しやすい", "多くのツールサポート"],
+        "disadvantages": ["機能制限", "複雑な構造をサポートしない"],
+        "bestFor": ["テキスト分類", "ラベルアノテーション", "シンプルなタスク"],
+        "example": "text,label\n\"この製品は素晴らしい\",positive\n\"サービスが悪い\",negative"
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "ローカルモデル"
+    }
+  },
+  "step1": {
+    "title": "MDデータファイルを選択",
+    "loading": "データコレクションを読み込み中...",
+    "selectedCount": "{{selected}} / {{total}} 個のMDファイルを選択",
+    "refresh": "更新",
+    "noMdFiles": "このコレクションには変換済みのMDファイルがありません",
+    "preview": "プレビュー",
+    "selectedFiles": {
+      "title": "選択されたファイル",
+      "count": "{{count}} 個のファイル"
+    },
+    "noCollections": {
+      "title": "利用可能なデータコレクションがありません",
+      "description": "生データ管理でデータコレクションを作成し、ファイルをアップロードしてください"
+    }
+  },
+  "stepIndicator": {
+    "progress": "ステップ {{current}} / {{total}}",
+    "completed": "完了"
+  },
+  "navigation": {
+    "prevStep": "前のステップ",
+    "nextStep": "次のステップ"
+  },
+  "steps": {
+    "selectData": "データソースを選択",
+    "configureDataset": "データセットを設定",
+    "configureModel": "モデル設定",
+    "preview": "プレビュー確認",
+    "generate": "データセット生成"
+  },
+  "dataSelection": {
+    "title": "生データファイルを選択",
+    "selectAll": "全選択",
+    "filesSelected": "{{selected}} / {{total}} 個のファイルを選択",
+    "refresh": "更新",
+    "preview": "プレビュー"
+  },
+  "generation": {
+    "title": "AIがデータセットを生成中",
+    "progress": "{{progress}}% 完了",
+    "completed": "データセット生成完了！",
+    "redirecting": "データセット管理ページにリダイレクト中..."
+  },
+  "prompt": {
+    "expertTitle": "プロフェッショナルなAIデータアノテーションエキスパート",
+    "taskOverview": "タスク概要",
+    "projectBackground": "プロジェクト背景",
+    "datasetName": "データセット名",
+    "projectDescription": "プロジェクト説明",
+    "consistencyNote": "生成されたデータがプロジェクトの目標と一致することを確認してください。",
+    "techSpecs": "技術仕様",
+    "outputFormat": "出力形式",
+    "dataType": "データタイプ",
+    "applicationField": "適用分野",
+    "documentSharding": "文書シャーディング",
+    "formatRequirements": "形式要件",
+    "formatFeatures": "形式特徴",
+    "dataStructure": "データ構造",
+    "applicableScenarios": "適用シナリオ",
+    "formatExample": "形式例",
+    "strictFormatOutput": "指定された形式でのデータ出力を厳密に遵守してください。",
+    "qualityStandards": "品質基準",
+    "accuracy": "正確性：抽出された情報が正確でエラーがないことを確認し、文書に存在しない内容を追加しない",
+    "completeness": "完全性：文書の重要な情報ポイントをカバーし、重要な内容の漏れを避ける",
+    "diversity": "多様性：異なるタイプ、異なる難易度のトレーニングサンプルを生成",
+    "consistency": "一貫性：データ形式の統一性と標準化を維持",
+    "relevance": "関連性：生成されたデータが{{useCase}}シナリオと高度に関連することを確認",
+    "processingStrategy": "処理戦略",
+    "documentUnderstanding": "文書理解：文書内容と構造の深い理解",
+    "intelligentExtraction": "インテリジェント抽出：キー情報と概念の特定、最大カバレッジの確保",
+    "formatConversion": "形式変換：内容を{{format}}形式に変換",
+    "qualityValidation": "品質検証：各データ項目が品質基準を満たすことを確認",
+    "documentProcessingConfig": "文書処理設定",
+    "structurePreservation": "構造保持：文書の元の構造（タイトル、段落、リスト等）の保持を優先",
+    "headerSplitting": "ヘッダー分割：markdownヘッダーでの文書分割を優先",
+    "shardProcessing": "シャード処理：文書は約{{totalChunks}}のセグメントに分割されます。各セグメントが最大量の価値あるトレーニングデータを生成できることを確認してください",
+    "fileList": "処理対象ファイル一覧",
+    "fileCount": "ファイル総数：{{count}}個",
+    "finalInstruction": "各文書セグメントを個別に処理し、各セグメントに対して可能な限り最大量の高品質トレーニングデータを生成してください。生成されたすべてのデータが{{format}}形式仕様に厳密に従い、{{datasetType}}の特徴を反映することを確認してください。",
+    "qaGuide": {
+      "title": "質問応答ペア生成ガイド",
+      "questionDesign": "質問設計原則",
+      "hierarchicalQuestions": "階層的質問：事実的、理解的、応用的、分析的、創造的質問を含み、ブルームの分類法の複数レベルをカバー",
+      "naturalLanguage": "自然言語：自然で口語的な質問表現を使用し、実際のユーザーの質問習慣を模倣",
+      "clearDirection": "明確な方向性：各質問は明確な回答方向を持ち、曖昧または過度にオープンエンドな質問を避ける",
+      "practicality": "実用性：質問は実際のシナリオでユーザーが尋ねる可能性があるもので、現実的な意義を持つ",
+      "diversityDepth": "多様性と深度：基礎認知から深度分析まで、異なる難易度レベルをカバーし、データの豊富性を確保",
+      "answerQuality": "回答品質要件",
+      "accurateComplete": "正確で完全：文書内容に基づいて正確で完全な回答を提供し、情報を捏造しない",
+      "clearStructure": "明確な構造：適切な段落、箇条書き、論理構造を使用して回答を整理",
+      "appropriateDepth": "適切な深度：必要な詳細を含みながら簡潔明瞭さを保持し、冗長性を避ける",
+      "contextRelevant": "文脈関連：回答は質問と文書文脈に密接に関連すべき",
+      "professionalTone": "プロフェッショナルなトーン：専門的で親しみやすいトーンを維持し、専門知識レベルを反映",
+      "generationStrategy": "生成戦略 - 最大出力",
+      "quantityPerChunk": "文書セグメントあたり8-12個の高品質質問応答ペアを生成（3-5個から増加）",
+      "keyPointCoverage": "セグメント内のすべての主要情報ポイントをカバー、コア概念、キー詳細、実用情報を含む",
+      "appropriateDiversity": "質問応答ペア間の適切な多様性を確保し、重複や過度の類似性を避ける",
+      "difficultyGradient": "簡単から複雑への段階的進行で、異なる難易度グラデーションの質問を含む",
+      "practicalApplication": "実際の応用シナリオと組み合わせて、実用価値のある質問応答ペアを生成",
+      "maximumExtraction": "内容からあらゆる価値ある質問を抽出 - 重要ポイントを見逃さない"
+    },
+    "instructionGuide": {
+      "title": "指示チューニングデータ生成ガイド",
+      "instructionDesign": "指示設計原則",
+      "taskClear": "タスクの明確性：実行すべき具体的タスクを明確に記述し、曖昧性を避ける",
+      "actionable": "実行可能性：指示は実行可能で具体的であり、明確な操作ステップを持つ",
+      "scenarioBased": "シナリオベース：実際の応用シナリオに基づいて指示を設計し、実際の使用ニーズに近づける",
+      "diversified": "多様化：異なるタイプと複雑さレベルのタスク指示を含み、複数の応用シナリオをカバー",
+      "scalable": "スケーラブル：指示形式は複雑タスクの分解と組み合わせをサポートすべき",
+      "inputOutputDesign": "入力出力設計",
+      "inputRelevance": "入力関連性：入力内容は指示と高度に関連し、必要な文脈情報を提供",
+      "outputQuality": "出力品質：期待に応える高品質な出力例を提供し、プロフェッショナル基準を反映",
+      "logicalConsistency": "論理一貫性：指示-入力-出力トリプレットが論理的に一貫し、完全なタスクループを形成することを確認",
+      "practicalValue": "実用価値：出力は実際の応用価値を持ち、実際の問題を解決すべき",
+      "taskTypeCoverage": "タスクタイプカバレッジ - 最大抽出",
+      "extractionSummary": "情報抽出と要約タスク：複雑な文書からキー情報を抽出",
+      "conversionFormatting": "内容変換と形式化タスク：異なる形式間での内容変換",
+      "analysisJudgment": "分析と判断タスク：与えられた情報に基づく専門分析",
+      "creationGeneration": "作成と生成タスク：要件に基づく新しい内容の生成",
+      "qaGuidance": "質問応答と指導タスク：専門的な回答と指導提案の提供",
+      "volumeIncrease": "文書セグメントあたり6-10個の指示チューニング例を生成（量増加）"
+    },
+    "classificationGuide": {
+      "title": "テキスト分類データ生成ガイド",
+      "textSelection": "テキストセグメント選択",
+      "representative": "代表性：異なるカテゴリを代表する典型的なテキストセグメントを選択",
+      "appropriateLength": "適切な長さ：分類タスクに適したテキスト長（100-300文字推奨）",
+      "completeInfo": "完全情報：テキストセグメントが十分な分類特徴情報を含むことを確認",
+      "clearBoundaries": "明確な境界：曖昧または分類困難な境界ケースを避ける",
+      "labelDesign": "ラベル設計原則",
+      "categoryClarity": "カテゴリの明確性：各ラベルは明確な定義と境界を持つ",
+      "mutualExclusive": "相互排他性：カテゴリ間の相互排他性を確保し、重複を避ける",
+      "balanced": "バランス：各カテゴリのデータバランスの維持を試みる",
+      "practical": "実用性：ラベルは実際の応用ニーズに適合すべき",
+      "qualityAssurance": "品質保証 - 最大抽出",
+      "samplesPerChunk": "文書セグメントあたり6-10個の分類サンプルを抽出（2-4個から増加）",
+      "labelAccuracy": "ラベルの正確性と一貫性を確保",
+      "positiveNegative": "典型的なポジティブとネガティブの例を含む",
+      "avoidBias": "偏見と差別的内容を避ける",
+      "comprehensiveCoverage": "内容からすべての可能な分類シナリオをカバー"
+    },
+    "dialogueGuide": {
+      "title": "対話データ生成ガイド",
+      "dialogueDesign": "対話設計原則",
+      "naturalFluent": "自然で流暢：対話は自然言語コミュニケーション習慣に適合すべき",
+      "contextCoherent": "文脈の一貫性：マルチターン対話は論理的一貫性を維持",
+      "roleConsistent": "役割の一貫性：対話参加者の役割特性の一貫性を維持",
+      "informationRich": "情報豊富：対話を通じて価値ある情報を伝達",
+      "multiTurnStrategy": "マルチターン対話戦略",
+      "progressiveDisclosure": "段階的開示：トピック探索を段階的に深める",
+      "intentUnderstanding": "意図理解：ユーザーニーズを正確に理解し応答",
+      "contextMemory": "文脈記憶：対話履歴の連続性を維持",
+      "naturalTransition": "自然な遷移：トピック遷移は自然で合理的であるべき",
+      "qualityRequirements": "対話品質要件 - 強化ボリューム",
+      "sequencesPerChunk": "文書セグメントあたり4-6個の対話シーケンスを生成（2-3個から増加）",
+      "interactionRounds": "各対話は6-12ラウンドのインタラクションを含む（3-8ラウンドから増加）",
+      "scenariosCoverage": "異なるユーザー問い合わせシナリオをカバー",
+      "professionalAttitude": "専門知識とサービス態度を反映",
+      "comprehensiveDialogue": "すべての文書内容の包括的対話カバレッジを作成"
+    },
+    "domainGuide": {
+      "title": "ドメイン適応データ生成ガイド",
+      "domainFeatures": "ドメイン特徴表現",
+      "professionalTerms": "専門用語：ドメイン関連の専門用語と概念を正確に使用",
+      "knowledgeDepth": "知識深度：ドメイン固有の知識深度と幅を反映",
+      "applicationScenarios": "応用シナリオ：具体的なドメイン応用シナリオと実践ケースと組み合わせ",
+      "professionalStandards": "専門基準：業界規範と専門基準に適合",
+      "knowledgeStructuring": "知識構造化",
+      "conceptAssociation": "概念関連：ドメイン概念間の関連関係を確立",
+      "hierarchicalOrganization": "階層組織：知識の難易度と重要性レベルによる組織化",
+      "theoryPractice": "理論実践統合：理論知識と実際応用の組み合わせ",
+      "richCases": "豊富なケース：典型的なドメイン応用ケースとベストプラクティスを提供",
+      "adaptationStrategy": "適応戦略 - 最大専門化",
+      "samplesPerChunk": "文書セグメントあたり6-10個のドメイン特化サンプルを生成（3-5個から増加）",
+      "domainKnowledge": "ドメイン固有の知識ポイントとコアスキルをハイライト",
+      "proficiencyLevels": "異なる熟練度レベルの学習材料を含む",
+      "latestTrends": "ドメイン発展の最新トレンドと最先端動向を反映",
+      "comprehensiveDomain": "利用可能なすべての内容から包括的ドメインカバレッジを作成"
+    },
+    "reasoningGuide": {
+      "title": "推論データ生成ガイド",
+      "reasoningChain": "推論チェーン構築",
+      "clearSteps": "明確なステップ：各推論ステップは明確で具体的であり、追跡しやすい",
+      "logicalRigorous": "論理的厳密性：推論プロセスの論理一貫性と厳密性を確保",
+      "verifiable": "検証可能性：各ステップは独立して正確性を検証可能",
+      "completeness": "完全性：前提から結論への完全な推論チェーン、ステップをスキップしない",
+      "thinkingProcess": "思考プロセス表示",
+      "explicitReasoning": "明示的推論：思考プロセスと決定根拠を明確に表示",
+      "keyAssumptions": "重要な仮定：推論における重要な仮定と条件を説明",
+      "alternativeApproaches": "代替アプローチ：他の可能な推論パスと解決策を考慮",
+      "uncertainty": "不確実性：推論における不確実性と制限を適切に表現",
+      "reasoningTypes": "推論タイプカバレッジ - 包括的分析",
+      "deductiveReasoning": "演繹推論：一般から特定への論理的導出",
+      "inductiveReasoning": "帰納推論：特定から一般への規則要約",
+      "analogicalReasoning": "類推推論：類似性に基づく推論と類推分析",
+      "causalReasoning": "因果推論：原因と結果の関係チェーンの分析",
+      "mathematicalReasoning": "数学推論：数学論理に基づく計算と証明プロセス",
+      "examplesPerSegment": "詳細なステップバイステップ分析で、文書セグメントあたり5-8個の推論例を生成"
+    },
+    "distillationGuide": {
+      "title": "知識蒸留データ生成ガイド",
+      "knowledgeExtraction": "知識抽出原則",
+      "coreConceptst": "コア概念：文書からコア知識ポイントと重要概念を抽出",
+      "simplifiedExpression": "簡略化表現：理解しやすさを保ちながら、より簡潔な方法で複雑概念を表現",
+      "fidelity": "忠実度：簡略化が元の意味を失わず、知識の正確性を維持することを確保",
+      "understandability": "理解しやすさ：知識の理解しやすさと記憶しやすさを改善",
+      "hierarchicalOrganization": "階層組織",
+      "knowledgeHierarchy": "知識階層：重要性と複雑さレベルによる組織化",
+      "dependencies": "依存関係：知識ポイント間の依存関係と論理順序を明確化",
+      "learningPath": "学習パス：合理的な学習順序と進行ルートを設計",
+      "difficultyGradient": "難易度グラデーション：簡単から複雑への段階的配置",
+      "efficiencyOptimization": "効率最適化 - 最大知識抽出",
+      "keyInformation": "重要情報：最も重要な情報とコアポイントをハイライト",
+      "redundancyElimination": "冗長性除去：不要な反復内容と冗長情報を除去",
+      "structured": "構造化：理解と記憶を容易にする構造化方法で知識を組織化",
+      "easyRetrieval": "検索容易性：迅速な検索と応用を便利にし、使用効率を向上",
+      "comprehensiveExamples": "包括的カバレッジで文書セグメントあたり6-9個の知識蒸留例を生成"
+    }
+  },
+  "step3": {
+    "modelSelection": {
+      "title": "AIモデルを選択",
+      "refresh": "更新",
+      "loading": "モデル設定を読み込み中...",
+      "noModels": "利用可能なモデル設定がありません",
+      "noModelsHint": "まずシステム設定でLLMモデルを設定してください",
+      "default": "デフォルト",
+      "vision": "ビジョン",
+      "usage": "使用回数",
+      "tokens": "総トークン数",
+      "lastUsed": "最終使用",
+      "active": "アクティブ",
+      "disabled": "無効"
+    },
+    "modelParams": {
+      "title": "モデルパラメータ",
+      "temperature": "温度 (Temperature)",
+      "temperatureDesc": "生成内容の創造性を制御、値が高いほど創造的",
+      "maxTokens": "最大トークン数",
+      "maxTokensDesc": "1回の処理での最大トークン数",
+      "batchSize": "バッチサイズ",
+      "batchSizeDesc": "同時に処理する文書数、処理速度に影響",
+      "currentModel": "現在のモデル",
+      "selectModel": "モデルを選択してください"
+    },
+    "chunkSettings": {
+      "title": "文書チャンク設定",
+      "chunkSize": "チャンクサイズ（文字数）",
+      "chunkSizeDesc": "各文書チャンクの文字数",
+      "chunkOverlap": "重複サイズ（文字数）",
+      "chunkOverlapDesc": "隣接チャンク間の重複文字数",
+      "preserveStructure": "文書構造を保持",
+      "preserveStructureDesc": "見出し、段落などの構造をできるだけ完全に保持",
+      "splitByHeaders": "見出しで分割",
+      "splitByHeadersDesc": "Markdownヘッダーで文書を優先的に分割",
+      "chunkPreview": "チャンク予測",
+      "fileCount": "ファイル数",
+      "chunkSizeLabel": "チャンクサイズ",
+      "overlapSize": "重複サイズ",
+      "estimatedChunks": "予測チャンク数"
+    },
+    "promptConfig": {
+      "title": "処理プロンプト設定",
+      "autoGenerated": "自動生成済み",
+      "needStep2Config": "Step2設定を完了する必要があります",
+      "regenerate": "再生成",
+      "configOverview": "現在の設定概要（プロンプトは以下の設定に基づいて自動更新されます）：",
+      "dataset": "データセット",
+      "format": "形式",
+      "files": "ファイル",
+      "chunks": "チャンク",
+      "placeholder": "プロンプトは設定に基づいて自動生成されます。この基础上でパーソナライズされた修正を行うことができます...",
+      "placeholderWaiting": "まずStep2でデータセットタイプ、出力形式、ファイル選択の設定を完了してください。システムが自動的に専門的なプロンプトを生成します...",
+      "smartGenHint": "スマートプロンプト生成：システムはStep2での設定（データセットタイプ、出力形式、ファイル選択）および現在のモデルパラメータとチャンク設定に基づいて専門的なプロンプトを自動生成しました。関連設定を変更すると、プロンプトが自動更新されます。生成されたベースでパーソナライズされた調整を行うことができます。",
+      "promptLength": "プロンプト長",
+      "estimatedTokens": "予測トークン数",
+      "complexity": "複雑度評価",
+      "simple": "シンプル",
+      "medium": "中程度",
+      "complex": "複雑",
+      "structurePreview": "プロンプト構造プレビュー",
+      "lines": "行",
+      "autoInclude": "自動生成されたプロンプトに含まれるもの",
+      "projectBackground": "プロジェクト背景と目標",
+      "techSpecs": "技術仕様要件",
+      "formatSpecs": "形式仕様説明",
+      "qualityStandards": "品質基準定義",
+      "processingStrategy": "処理戦略ガイダンス",
+      "typeSpecific": "タイプ固有の指示",
+      "waitingConfig": "設定完了を待機中",
+      "configIncomplete": "まずStep2で以下の設定を完了してください。システムが自動的に専門的な処理プロンプトを生成します：",
+      "selectDatasetType": "データセットタイプを選択",
+      "setOutputFormat": "出力形式を設定",
+      "selectFiles": "処理するファイルを選択"
+    }
+  },
+  "step4": {
+    "configCheck": {
+      "complete": "設定チェック完了",
+      "incomplete": "設定チェック",
+      "allReady": "必要な設定がすべて完了し、データセット処理を開始できます",
+      "issuesFound": "以下の設定項目を完了する必要があります：",
+      "missingDatasetName": "データセット名が設定されていません",
+      "missingModel": "AIモデルが選択されていません",
+      "missingPrompt": "処理プロンプトが空です",
+      "missingFiles": "ファイルが選択されていません"
+    },
+    "dataSourceOverview": {
+      "title": "データソース概要",
+      "filesCount": "{{count}}ファイル",
+      "totalFiles": "総ファイル数",
+      "totalSize": "総サイズ",
+      "fileTypes": "ファイルタイプ",
+      "avgSize": "平均サイズ",
+      "selectedFiles": "選択されたファイル（{{count}}ファイル）"
+    },
+    "datasetConfigOverview": {
+      "title": "データセット設定",
+      "datasetType": "データセットタイプ",
+      "outputFormat": "出力形式",
+      "datasetName": "データセット名",
+      "notSet": "未設定",
+      "datasetDescription": "データセット説明",
+      "noDescription": "説明なし"
+    },
+    "modelConfigOverview": {
+      "title": "AIモデル設定",
+      "temperature": "温度",
+      "maxTokens": "最大トークン数",
+      "batchSize": "バッチサイズ",
+      "creativity": "創造性",
+      "conservative": "保守的",
+      "balanced": "バランス",
+      "innovative": "革新的",
+      "modelNotSelected": "AIモデルが選択されていません。Step3に戻って設定してください"
+    },
+    "chunkSettingsOverview": {
+      "title": "文書チャンク設定",
+      "hidePreview": "プレビューを非表示",
+      "showPreview": "チャンクをプレビュー",
+      "chunkSize": "チャンクサイズ",
+      "overlapSize": "重複サイズ",
+      "estimatedChunks": "予測チャンク数",
+      "efficiency": "チャンク効率",
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "preserveStructure": "文書構造を保持",
+      "splitByHeaders": "見出しで分割",
+      "enabled": "有効",
+      "disabled": "無効",
+      "realChunkPreview": "実際の文書チャンクプレビュー",
+      "basedOnActualFiles": "選択されたファイルの実際の内容に基づく",
+      "loadingContent": "文書内容を読み込み中...",
+      "chunk": "チャンク",
+      "source": "ソース",
+      "position": "位置",
+      "size": "サイズ",
+      "characters": "文字",
+      "overlap": "重複",
+      "previewLength": "プレビュー長",
+      "contentTruncated": "* 内容は表示のため切り詰められました",
+      "showingChunks": "* 選択されたファイルの実際の内容から最初の{{count}}チャンクを表示",
+      "noChunksToPreview": "プレビューできるチャンクがありません"
+    },
+    "promptConfigOverview": {
+      "title": "プロンプト設定",
+      "promptLength": "プロンプト長",
+      "estimatedTokens": "予測トークン数",
+      "complexity": "複雑度",
+      "simple": "シンプル",
+      "medium": "中程度",
+      "complex": "複雑",
+      "promptPreview": "プロンプトプレビュー",
+      "promptNotConfigured": "プロンプトが設定されていません。Step3に戻って設定してください"
+    },
+    "processingEstimation": {
+      "title": "処理予測",
+      "estimatedTime": "予測時間",
+      "minutes": "分",
+      "estimatedEntries": "予測エントリ数",
+      "tokenConsumption": "トークン消費",
+      "outputSize": "出力サイズ",
+      "processOverview": "処理フロー概要",
+      "documentParsing": "文書解析とチャンク化",
+      "aiProcessing": "AIモデル処理",
+      "formatOutput": "形式出力",
+      "datasetGeneration": "データセット生成"
+    },
+    "generateDataset": {
+      "title": "データセット生成開始",
+      "description": "すべての設定が正しいことを確認してから、スマートデータセットの生成を開始してください",
+      "backToModify": "戻って修正",
+      "startGenerate": "データセット生成開始",
+      "generating": "生成中...",
+      "configIncomplete": "設定が不完全",
+      "generationFailed": "データセット生成に失敗しました",
+      "retry": "生成を再試行"
+    }
+  }
+}
