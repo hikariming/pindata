@@ -63,7 +63,7 @@ services:
 
   # PinData API 服务
   pindata-api:
-    image: rqlove/pindata-api:v0.0.1
+    image: rqlove/pindata-api:v0.0.3
     build:
       context: ../backend
       dockerfile: Dockerfile
@@ -143,7 +143,7 @@ services:
 
   # PinData Celery Worker 服务
   pindata-celery:
-    image: rqlove/pindata-api:v0.0.1
+    image: rqlove/pindata-api:v0.0.3
     build:
       context: ../backend
       dockerfile: Dockerfile  
@@ -222,7 +222,7 @@ services:
 
   # PinData Frontend 服务
   pindata-frontend:
-    image: rqlove/pindata-frontend:v0.0.1
+    image: rqlove/pindata-frontend:v0.0.3
     build:
       context: ../frontend
       dockerfile: Dockerfile
