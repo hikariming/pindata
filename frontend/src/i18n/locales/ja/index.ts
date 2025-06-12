@@ -13,7 +13,7 @@ import actions from './actions.json';
 import auth from './auth.json';
 
 export default {
-  ...common,
+  common,
   navigation,
   overview,
   settings,
