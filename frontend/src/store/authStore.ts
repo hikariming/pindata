@@ -61,7 +61,9 @@ export const useAuthStore = create<AuthState>()(
           // 存储令牌
           authService.storeTokens(
             response.tokens.access_token, 
-            response.tokens.refresh_token
+            response.tokens.refresh_token,
+            response.tokens.expires_at,
+            response.tokens.session_id
           );
           authService.storeUser(response.user);
           authService.setAuthToken(response.tokens.access_token);
@@ -90,7 +92,9 @@ export const useAuthStore = create<AuthState>()(
             // 首个用户自动登录，存储令牌和用户信息
             authService.storeTokens(
               response.tokens.access_token, 
-              response.tokens.refresh_token
+              response.tokens.refresh_token,
+              response.tokens.expires_at,
+              response.tokens.session_id
             );
             authService.storeUser(response.user);
             authService.setAuthToken(response.tokens.access_token);

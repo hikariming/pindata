@@ -67,15 +67,36 @@ export const UserAdministration: React.FC = () => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [usersResponse, rolesResponse, orgsResponse] = await Promise.all([
-        authService.getUsers(),
-        authService.getRoles(),
-        authService.getOrganizations()
-      ]);
       
-      setUsers(usersResponse.users);
-      setRoles(rolesResponse);
-      setOrganizations(orgsResponse);
+      // Load each resource independently to prevent one failure from blocking others
+      
+      // Load users
+      try {
+        const usersResponse = await authService.getUsers();
+        setUsers(usersResponse.users || []);
+      } catch (userError) {
+        console.error('Failed to load users:', userError);
+        setUsers([]);
+      }
+      
+      // Load roles
+      try {
+        const rolesResponse = await authService.getRoles();
+        setRoles(rolesResponse || []);
+      } catch (roleError) {
+        console.error('Failed to load roles:', roleError);
+        setRoles([]);
+      }
+      
+      // Load organizations (non-critical)
+      try {
+        const orgsResponse = await authService.getOrganizations();
+        setOrganizations(orgsResponse || []);
+      } catch (orgError) {
+        console.warn('Failed to load organizations (this is non-critical):', orgError);
+        setOrganizations([]);
+      }
+      
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {

@@ -89,8 +89,8 @@ class AuthService {
   /**
    * 用户注册
    */
-  async register(data: RegisterRequest): Promise<User> {
-    const response = await apiClient.post<User>('/api/v1/auth/register', data);
+  async register(data: RegisterRequest): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>('/api/v1/auth/register', data);
     return response;
   }
 
@@ -246,7 +246,7 @@ class AuthService {
   /**
    * 获取用户会话（管理员功能）
    */
-  async getUserSessions(userId: string): Promise<UserSession[]> {
+  async getUserSessionsAdmin(userId: string): Promise<UserSession[]> {
     const response = await apiClient.get<UserSession[]>(`/api/v1/users/${userId}/sessions`);
     return response;
   }
@@ -254,7 +254,7 @@ class AuthService {
   /**
    * 撤销用户会话（管理员功能）
    */
-  async revokeUserSession(userId: string, sessionId: string): Promise<void> {
+  async revokeUserSessionAdmin(userId: string, sessionId: string): Promise<void> {
     await apiClient.delete(`/api/v1/users/${userId}/sessions/${sessionId}`);
   }
 
@@ -363,10 +363,16 @@ class AuthService {
   /**
    * 存储令牌到本地存储
    */
-  storeTokens(accessToken: string, refreshToken: string): void {
+  storeTokens(accessToken: string, refreshToken: string, expiresAt?: string, sessionId?: string): void {
     try {
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
+      if (expiresAt) {
+        localStorage.setItem('token_expires_at', expiresAt);
+      }
+      if (sessionId) {
+        localStorage.setItem('session_id', sessionId);
+      }
     } catch (error) {
       console.warn('Failed to store tokens:', error);
     }
@@ -379,6 +385,8 @@ class AuthService {
     try {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('token_expires_at');
+      localStorage.removeItem('session_id');
       localStorage.removeItem('user');
     } catch (error) {
       console.warn('Failed to clear tokens:', error);

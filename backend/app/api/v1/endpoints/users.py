@@ -251,3 +251,45 @@ def get_user_permissions(user_id):
         
     except Exception as e:
         return error_response(f"获取用户权限失败: {str(e)}"), 500
+
+
+@users_bp.route('/users/<user_id>/sessions', methods=['GET'])
+@login_required
+@permission_required('user.manage')
+def get_user_sessions(user_id):
+    """获取用户会话列表（管理员功能）"""
+    try:
+        from app.models import UserSession
+        
+        sessions = UserSession.query.filter_by(user_id=user_id).all()
+        
+        sessions_data = []
+        for session in sessions:
+            session_data = session.to_dict()
+            # 管理员查看其他用户会话时，is_current 总是 False
+            session_data['is_current'] = False
+            sessions_data.append(session_data)
+        
+        return success_response(sessions_data)
+        
+    except Exception as e:
+        return error_response(f"获取用户会话失败: {str(e)}"), 500
+
+
+@users_bp.route('/users/<user_id>/sessions/<session_id>', methods=['DELETE'])
+@login_required
+@permission_required('user.manage')
+def revoke_user_session(user_id, session_id):
+    """撤销用户会话（管理员功能）"""
+    try:
+        from app.services.auth_service import AuthService
+        
+        success = AuthService.revoke_session(session_id, user_id)
+        
+        if success:
+            return success_response(message="会话已撤销")
+        else:
+            return error_response("会话不存在"), 404
+        
+    except Exception as e:
+        return error_response(f"撤销用户会话失败: {str(e)}"), 500

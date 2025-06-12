@@ -14,6 +14,8 @@ from app.api.v1.endpoints.storage import storage_bp
 from app.api.v1.endpoints.health import health_bp
 from app.api.v1.endpoints.auth import auth_bp
 from app.api.v1.endpoints.users import users_bp
+from app.api.v1.endpoints.organizations import organizations_bp
+from app.api.v1.endpoints.roles import roles_bp
 from config.config import config
 
 # 配置日志
@@ -58,6 +60,8 @@ def create_app(config_name='development'):
     app.register_blueprint(health_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(auth_bp, url_prefix=f"{app.config.get('API_PREFIX', '/api/v1')}/auth")
     app.register_blueprint(users_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(organizations_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(roles_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
     # 初始化数据库（包括自动创建数据库和表）
     try:
