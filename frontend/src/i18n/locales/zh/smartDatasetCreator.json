@@ -1,6 +1,128 @@
 {
   "title": "智能数据集创建器",
   "description": "使用AI技术从原始数据自动生成高质量的训练数据集，支持多种数据集类型和格式。",
+  "constants": {
+    "datasetTypes": {
+      "qaPairs": {
+        "name": "问答对",
+        "description": "从文档内容生成问答对，适用于QA系统训练",
+        "useCase": "智能客服、知识问答、教育辅助",
+        "example": "用户问题与详细答案"
+      },
+      "instructionTuning": {
+        "name": "指令微调",
+        "description": "生成指令-输入-输出三元组，用于指令遵循模型训练",
+        "useCase": "智能办公、文档处理、个性化助手",
+        "example": "任务指令与输入输出示例"
+      },
+      "textClassification": {
+        "name": "文本分类",
+        "description": "提取文档片段并生成分类标签，用于情感分析、内容审核等",
+        "useCase": "情感分析、内容审核、新闻分类、意图识别",
+        "example": "文本样本与分类标签"
+      },
+      "dialogue": {
+        "name": "对话微调",
+        "description": "生成多轮对话数据，提升对话连贯性和上下文理解",
+        "useCase": "智能客服、聊天机器人、语音助手",
+        "example": "多轮对话流程"
+      },
+      "domainAdaptation": {
+        "name": "领域适应",
+        "description": "领域特定知识微调，提升模型在专业领域的性能",
+        "useCase": "医疗诊断、法律咨询、金融分析",
+        "example": "专业领域知识与任务"
+      },
+      "reasoning": {
+        "name": "推理微调",
+        "description": "包含思维链的推理数据，训练模型逻辑推理能力",
+        "useCase": "数学问题解决、代码生成、逻辑推理、复杂分析",
+        "example": "逐步推理过程"
+      },
+      "knowledgeDistillation": {
+        "name": "知识蒸馏",
+        "description": "从大模型提取知识训练小模型，平衡性能与成本",
+        "useCase": "模型压缩、边缘部署、成本优化",
+        "example": "教师-学生学习示例"
+      }
+    },
+    "formatDetails": {
+      "alpaca": {
+        "name": "Alpaca格式",
+        "description": "斯坦福大学发布的经典指令微调格式，结构简单，适用于单轮任务",
+        "structure": "instruction + input + output",
+        "advantages": ["结构简单清晰", "任务指向明确", "社区支持广泛"],
+        "disadvantages": ["多轮对话需手动连接", "缺乏工具调用支持"],
+        "bestFor": ["指令微调", "问答系统", "文本生成"],
+        "example": "{\"instruction\": \"任务描述\", \"input\": \"输入数据\", \"output\": \"期望输出\"}"
+      },
+      "shareGPT": {
+        "name": "ShareGPT格式",
+        "description": "支持多轮对话和工具调用的格式，更贴近真实交互场景",
+        "structure": "conversations + tools + roles",
+        "advantages": ["支持多轮对话", "工具调用能力", "角色管理"],
+        "disadvantages": ["格式较复杂", "需遵循角色位置规则"],
+        "bestFor": ["对话系统", "工具调用", "多模态交互"],
+        "example": "{\"conversations\": [{\"from\": \"human\", \"value\": \"问题\"}, {\"from\": \"gpt\", \"value\": \"回答\"}]}"
+      },
+      "openAI": {
+        "name": "OpenAI格式",
+        "description": "OpenAI API兼容格式，ShareGPT的简化版",
+        "structure": "messages + roles",
+        "advantages": ["API兼容", "使用简单", "支持广泛"],
+        "disadvantages": ["功能相对简单", "可扩展性有限"],
+        "bestFor": ["API集成", "简单对话", "快速原型"],
+        "example": "{\"messages\": [{\"role\": \"system\", \"content\": \"系统提示\"}, {\"role\": \"user\", \"content\": \"用户消息\"}]}"
+      },
+      "alpacaCOT": {
+        "name": "Alpaca-COT格式",
+        "description": "包含思维链的Alpaca格式，适用于推理任务训练",
+        "structure": "instruction + input + chain_of_thought + output",
+        "advantages": ["支持推理过程", "逻辑清晰", "教学效果好"],
+        "disadvantages": ["数据构造复杂", "需要专业标注"],
+        "bestFor": ["数学推理", "逻辑分析", "步骤分解"],
+        "example": "{\"instruction\": \"解题\", \"input\": \"问题\", \"reasoning\": \"逐步分析\", \"output\": \"答案\"}"
+      },
+      "csv": {
+        "name": "CSV格式",
+        "description": "简单的表格格式，适用于分类和标注任务",
+        "structure": "text, label",
+        "advantages": ["简单直观", "易于编辑", "工具支持多"],
+        "disadvantages": ["功能有限", "不支持复杂结构"],
+        "bestFor": ["文本分类", "标签标注", "简单任务"],
+        "example": "\"text\",\"label\"\\n\"样本文本\",\"类别\""
+      }
+    },
+    "aiModels": {
+      "gpt4": "GPT-4",
+      "gpt35Turbo": "GPT-3.5 Turbo",
+      "claude3": "Claude-3",
+      "geminiPro": "Gemini Pro",
+      "localLlm": "本地模型"
+    },
+    "steps": {
+      "selectData": {
+        "name": "选择数据",
+        "description": "从原始数据中选择文件"
+      },
+      "configDataset": {
+        "name": "配置数据集",
+        "description": "选择数据集类型和格式"
+      },
+      "configModel": {
+        "name": "配置模型",
+        "description": "配置AI模型和处理参数"
+      },
+      "previewConfirm": {
+        "name": "预览确认",
+        "description": "预览生成设置并确认"
+      },
+      "generateDataset": {
+        "name": "生成数据集",
+        "description": "AI处理并生成数据集"
+      }
+    }
+  },
   "stepIndicator": {
     "progress": "步骤 {{current}} / {{total}}",
     "completed": "已完成"
@@ -28,6 +150,22 @@
     "progress": "{{progress}}% 完成",
     "completed": "数据集生成完成！",
     "redirecting": "正在跳转到数据集管理页面..."
+  },
+  "step1": {
+    "title": "选择MD数据文件",
+    "loading": "加载数据集合中...",
+    "selectedCount": "已选择 {{selected}} / {{total}} 个MD文件",
+    "refresh": "刷新",
+    "noMdFiles": "此集合中没有已转换的MD文件",
+    "preview": "预览",
+    "selectedFiles": {
+      "title": "已选择的文件",
+      "count": "{{count}} 个文件"
+    },
+    "noCollections": {
+      "title": "没有可用的数据集合",
+      "description": "请先在原始数据管理中创建数据集合并上传文件"
+    }
   },
   "prompt": {
     "expertTitle": "专业的AI数据标注专家",

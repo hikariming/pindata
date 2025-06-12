@@ -4,7 +4,7 @@
 DOCKERHUB_USERNAME="rqlove"
 BACKEND_IMAGE_NAME="pindata-api"
 FRONTEND_IMAGE_NAME="pindata-frontend"
-VERSION="v0.0.3"  # 你可以修改版本号
+VERSION="v0.0.4"  # 你可以修改版本号
 
 echo "=== 开始构建和推送Docker镜像 ==="
 echo "Docker Hub用户名: $DOCKERHUB_USERNAME"
