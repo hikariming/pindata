@@ -59,7 +59,7 @@
   "processing": "Processing",
   "noDescription": "No description",
   "mdFiles": "MD files",
-  "totalFiles": "Total {{count}} files",
+  "totalFilesWithCount": "Total {{count}} files",
   "unknownDate": "Unknown date",
   "fileStatus": {
     "pending": "Pending", 

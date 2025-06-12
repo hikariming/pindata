@@ -59,7 +59,7 @@
   "processing": "处理中",
   "noDescription": "暂无描述",
   "mdFiles": "个MD文件",
-  "totalFiles": "总共 {{count}} 个文件",
+  "totalFilesWithCount": "总共 {{count}} 个文件",
   "unknownDate": "未知日期",
   "fileStatus": {
     "pending": "等待处理",
