@@ -114,4 +114,10 @@ config = {
     'testing': TestingConfig,
     'production': ProductionConfig,
     'default': DevelopmentConfig
-} 
+}
+
+def get_config(env_name: str = None):
+    """获取配置对象"""
+    if env_name is None:
+        env_name = os.getenv('FLASK_ENV', 'development')
+    return config.get(env_name, config['default']) 

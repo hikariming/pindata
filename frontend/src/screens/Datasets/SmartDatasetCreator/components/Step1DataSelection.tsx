@@ -124,7 +124,7 @@ export const Step1DataSelection: React.FC = () => {
                         </span>
                         <span className="flex items-center gap-1">
                           <HashIcon className="w-3 h-3" />
-                          {t('rawData.totalFiles', { count: collection.library.file_count })}
+                          {t('rawData.totalFilesWithCount', { count: collection.library.file_count })}
                         </span>
                       </div>
                     </div>

@@ -12,9 +12,12 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  UserIcon,
+  LogOutIcon,
 } from 'lucide-react';
 import { Button } from './button';
 import { LanguageSwitcher } from './language-switcher';
+import { useAuthStore } from '../../store/authStore';
 
 interface SidenavProps {
   onCollapsedChange?: (isCollapsed: boolean) => void;
@@ -40,6 +43,7 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout, isLoading } = useAuthStore();
 
   useEffect(() => {
     onCollapsedChange?.(isCollapsed);
@@ -47,6 +51,17 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
 
   const handleToggleCollapse = () => {
     setIsCollapsed(prev => !prev);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/auth/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // 即使登出失败也要跳转到登录页
+      navigate('/auth/login');
+    }
   };
 
   const toggleItemExpansion = (itemPage: string) => {
@@ -207,19 +222,68 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
       </div>
 
       <div className="p-4 border-t border-[#d1dbe8]">
-        <div className={`transition-all duration-300 ${
+        {/* 用户信息 */}
+        <div className={`mb-3 transition-all duration-300 ${
           isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
         }`}>
+          {user && (
+            <div className="bg-[#f0f4f8] rounded-lg p-3 mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#1977e5] rounded-full flex items-center justify-center">
+                  <UserIcon size={16} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#0c141c] truncate">
+                    {user.full_name || user.username}
+                  </p>
+                  <p className="text-xs text-[#4f7096] truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full mt-2 justify-start gap-2 text-[#4f7096] hover:bg-[#e8edf2] h-8"
+                onClick={handleLogout}
+                disabled={isLoading}
+              >
+                <LogOutIcon size={14} />
+                <span className="text-xs">
+                  {isLoading ? t('auth.logout.loggingOut', '登出中...') : t('auth.logout.button', '登出')}
+                </span>
+              </Button>
+            </div>
+          )}
           <LanguageSwitcher />
         </div>
+
+        {/* 展开/收起按钮 */}
         <Button
           variant="ghost"
-          className="w-full mt-2 justify-center hover:bg-[#e8edf2] transition-colors duration-200"
+          className="w-full justify-center hover:bg-[#e8edf2] transition-colors duration-200"
           onClick={handleToggleCollapse}
           title={isCollapsed ? t('navigation.expand') : t('navigation.collapse')}
         >
           {isCollapsed ? <ChevronRightIcon size={20} /> : <ChevronLeftIcon size={20} />}
         </Button>
+
+        {/* 收起状态下的用户头像和登出按钮 */}
+        {isCollapsed && user && (
+          <div className="mt-3 space-y-2">
+            <div className="w-8 h-8 bg-[#1977e5] rounded-full flex items-center justify-center mx-auto">
+              <UserIcon size={16} className="text-white" />
+            </div>
+            <Button
+              variant="ghost"
+              className="w-full p-2 hover:bg-[#e8edf2] transition-colors duration-200"
+              onClick={handleLogout}
+              disabled={isLoading}
+              title={t('auth.logout.button', '登出')}
+            >
+              <LogOutIcon size={16} className="text-[#4f7096]" />
+            </Button>
+          </div>
+        )}
       </div>
     </nav>
   );

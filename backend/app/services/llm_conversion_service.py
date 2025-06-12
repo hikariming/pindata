@@ -10,7 +10,10 @@ import io
 from langchain.chat_models.base import BaseChatModel
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_anthropic import ChatAnthropic
+try:
+    from langchain_anthropic import ChatAnthropic
+except ImportError:
+    ChatAnthropic = None
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.schema.messages import BaseMessage
 
@@ -65,6 +68,8 @@ class LLMConversionService:
                 **llm_config.provider_config if llm_config.provider_config else {}
             )
         elif llm_config.provider == ProviderType.CLAUDE:
+            if ChatAnthropic is None:
+                raise ImportError("langchain_anthropic is not installed. Please install it to use Claude models.")
             client = ChatAnthropic(
                 model=llm_config.model_name,
                 anthropic_api_key=llm_config.api_key,

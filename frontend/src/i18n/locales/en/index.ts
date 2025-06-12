@@ -10,9 +10,10 @@ import dataPreview from './dataPreview.json';
 import libraryDetails from './libraryDetails.json';
 import time from './time.json';
 import actions from './actions.json';
+import auth from './auth.json';
 
 export default {
-  ...common,
+  common,
   navigation,
   overview,
   settings,
@@ -23,5 +24,6 @@ export default {
   dataPreview,
   libraryDetails,
   time,
-  actions
+  actions,
+  auth
 };

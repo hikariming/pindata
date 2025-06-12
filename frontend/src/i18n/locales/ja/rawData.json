@@ -59,7 +59,7 @@
   "processing": "処理中",
   "noDescription": "説明なし",
   "mdFiles": "個のMDファイル",
-  "totalFiles": "合計{{count}}個のファイル",
+  "totalFilesWithCount": "合計{{count}}個のファイル",
   "unknownDate": "日付不明",
   "fileStatus": {
     "pending": "保留中",
