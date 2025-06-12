@@ -28,6 +28,13 @@ INSERT INTO permissions (id, name, code, resource, action, description, category
 (UUID(), '查看任务', 'task.read', 'task', 'read', '查看任务的权限', 'task', 'system', NOW()),
 (UUID(), '管理任务', 'task.manage', 'task', 'manage', '任务管理权限', 'task', 'system', NOW()),
 
+-- 数据治理权限
+(UUID(), '创建数据治理工程', 'governance.create', 'governance', 'create', '创建新数据治理工程的权限', 'governance', 'system', NOW()),
+(UUID(), '查看数据治理工程', 'governance.read', 'governance', 'read', '查看数据治理工程的权限', 'governance', 'system', NOW()),
+(UUID(), '编辑数据治理工程', 'governance.update', 'governance', 'update', '编辑数据治理工程的权限', 'governance', 'system', NOW()),
+(UUID(), '删除数据治理工程', 'governance.delete', 'governance', 'delete', '删除数据治理工程的权限', 'governance', 'system', NOW()),
+(UUID(), '管理数据治理工程', 'governance.manage', 'governance', 'manage', '数据治理工程管理权限（包含所有操作）', 'governance', 'system', NOW()),
+
 -- LLM配置权限
 (UUID(), 'LLM配置管理', 'llm_config.manage', 'llm_config', 'manage', 'LLM配置管理权限', 'llm', 'system', NOW()),
 
@@ -63,7 +70,7 @@ INSERT INTO role_permissions (id, role_id, permission_id, granted_at)
 SELECT UUID(), r.id, p.id, NOW()
 FROM roles r, permissions p
 WHERE r.code = 'admin' 
-AND p.code IN ('user.manage', 'organization.manage', 'dataset.manage', 'library.manage', 'task.manage')
+AND p.code IN ('user.manage', 'organization.manage', 'dataset.manage', 'library.manage', 'task.manage', 'governance.manage')
 ON DUPLICATE KEY UPDATE granted_at=VALUES(granted_at);
 
 -- 数据管理员角色权限
@@ -71,7 +78,7 @@ INSERT INTO role_permissions (id, role_id, permission_id, granted_at)
 SELECT UUID(), r.id, p.id, NOW()
 FROM roles r, permissions p
 WHERE r.code = 'data_admin' 
-AND p.code IN ('dataset.manage', 'library.manage', 'task.manage', 'llm_config.manage')
+AND p.code IN ('dataset.manage', 'library.manage', 'task.manage', 'governance.manage', 'llm_config.manage')
 ON DUPLICATE KEY UPDATE granted_at=VALUES(granted_at);
 
 -- 普通用户角色权限
@@ -79,7 +86,7 @@ INSERT INTO role_permissions (id, role_id, permission_id, granted_at)
 SELECT UUID(), r.id, p.id, NOW()
 FROM roles r, permissions p
 WHERE r.code = 'user' 
-AND p.code IN ('dataset.create', 'dataset.read', 'dataset.update', 'library.create', 'library.read', 'library.update', 'task.create', 'task.read')
+AND p.code IN ('dataset.create', 'dataset.read', 'dataset.update', 'library.create', 'library.read', 'library.update', 'task.create', 'task.read', 'governance.create', 'governance.read', 'governance.update')
 ON DUPLICATE KEY UPDATE granted_at=VALUES(granted_at);
 
 -- 访客角色权限
@@ -87,7 +94,7 @@ INSERT INTO role_permissions (id, role_id, permission_id, granted_at)
 SELECT UUID(), r.id, p.id, NOW()
 FROM roles r, permissions p
 WHERE r.code = 'viewer' 
-AND p.code IN ('dataset.read', 'library.read', 'task.read')
+AND p.code IN ('dataset.read', 'library.read', 'task.read', 'governance.read')
 ON DUPLICATE KEY UPDATE granted_at=VALUES(granted_at);
 
 -- 5. 创建默认管理员用户（如果不存在）

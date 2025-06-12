@@ -11,6 +11,7 @@ import libraryDetails from './libraryDetails.json';
 import time from './time.json';
 import actions from './actions.json';
 import auth from './auth.json';
+import dataGovernance from './dataGovernance.json';
 
 export default {
   common,
@@ -25,5 +26,6 @@ export default {
   libraryDetails,
   time,
   actions,
-  auth
+  auth,
+  dataGovernance
 };

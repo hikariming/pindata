@@ -249,6 +249,11 @@ def up(conn):
         ('Task Create', 'task.create', 'Create new tasks', 'task'),
         ('Task Read', 'task.read', 'View task information', 'task'),
         ('Task Management', 'task.manage', 'Full task management', 'task'),
+        ('Governance Create', 'governance.create', 'Create new governance projects', 'governance'),
+        ('Governance Read', 'governance.read', 'View governance projects', 'governance'),
+        ('Governance Update', 'governance.update', 'Update governance projects', 'governance'),
+        ('Governance Delete', 'governance.delete', 'Delete governance projects', 'governance'),
+        ('Governance Management', 'governance.manage', 'Full governance management', 'governance'),
         ('LLM Config Management', 'llm_config.manage', 'Manage LLM configurations', 'system'),
         ('System Log Read', 'system_log.read', 'View system logs', 'system')
     ]
@@ -296,7 +301,7 @@ def up(conn):
     # 管理员权限
     admin_permissions = [
         'user.manage', 'organization.manage', 'dataset.manage', 
-        'library.manage', 'task.manage', 'system_log.read'
+        'library.manage', 'task.manage', 'governance.manage', 'system_log.read'
     ]
     
     for perm in admin_permissions:
@@ -314,7 +319,7 @@ def up(conn):
     
     # 数据管理员权限
     data_admin_permissions = [
-        'dataset.manage', 'library.manage', 'task.manage', 'llm_config.manage'
+        'dataset.manage', 'library.manage', 'task.manage', 'governance.manage', 'llm_config.manage'
     ]
     
     for perm in data_admin_permissions:
@@ -334,7 +339,8 @@ def up(conn):
     user_permissions = [
         'dataset.create', 'dataset.read', 'dataset.update',
         'library.create', 'library.read', 'library.update',
-        'task.create', 'task.read'
+        'task.create', 'task.read',
+        'governance.create', 'governance.read', 'governance.update'
     ]
     
     for perm in user_permissions:
@@ -351,7 +357,7 @@ def up(conn):
         """), {'perm': perm})
     
     # 查看者权限
-    viewer_permissions = ['dataset.read', 'library.read', 'task.read']
+    viewer_permissions = ['dataset.read', 'library.read', 'task.read', 'governance.read']
     
     for perm in viewer_permissions:
         conn.execute(text("""

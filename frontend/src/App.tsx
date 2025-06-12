@@ -13,6 +13,7 @@ import { DatasetDetailScreen } from "./screens/Datasets/DatasetDetail";
 import { CreateDataset } from "./screens/Datasets/CreateDataset";
 import { SmartDatasetCreator } from "./screens/Datasets/SmartDatasetCreator";
 import { DatasetTasks } from "./screens/Datasets/DatasetTasks";
+import { DataGovernanceProjects, ProjectDetail } from "./screens/DataGovernance";
 import { Login, Register } from "./screens/Auth";
 import { AuthProvider, ProtectedRoute } from "./components/auth";
 
@@ -57,6 +58,14 @@ export const App = (): JSX.Element => {
           <Route path="datasets/create-smart" element={<SmartDatasetCreator />} />
           <Route path="datasets/:id" element={<DatasetDetailScreen />} />
           <Route path="datasets/:id/tasks" element={<DatasetTasks />} />
+          
+          {/* 数据治理工程路由 */}
+          <Route path="governance">
+            <Route index element={<DataGovernanceProjects />} />
+            <Route path="projects" element={<DataGovernanceProjects />} />
+            <Route path="projects/:id" element={<ProjectDetail />} />
+            <Route path=":id" element={<ProjectDetail />} />
+          </Route>
           
           {/* 404 页面 */}
           <Route path="*" element={<div className="p-6"><h1>{t('common.pageNotFound')}</h1></div>} />

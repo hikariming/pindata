@@ -31,6 +31,9 @@ class Config:
     DATABASE_INIT_RETRY_COUNT = int(os.getenv('DATABASE_INIT_RETRY_COUNT', '3'))
     DATABASE_INIT_RETRY_DELAY = int(os.getenv('DATABASE_INIT_RETRY_DELAY', '5'))
     
+    # 数据库迁移配置
+    AUTO_MIGRATE = os.getenv('AUTO_MIGRATE', 'true').lower() == 'true'
+    
     # Redis配置
     REDIS_URL = os.getenv('REDIS_URL')
     

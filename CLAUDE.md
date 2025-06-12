@@ -39,7 +39,8 @@ python migrations/init_db.py
 python run.py  # Starts on port 8897
 
 # Start Celery worker (required for async tasks)
-./start_celery.sh
+./start_celery.sh                    # For process-based workers
+./start_celery_threads.sh           # For thread-based workers (better for macOS)
 # OR manually:
 celery -A celery_worker.celery worker --loglevel=info --concurrency=4
 
@@ -48,6 +49,10 @@ black .          # Format code
 flake8 .         # Lint code
 pytest           # Run tests
 pytest --cov=app tests/  # Run tests with coverage
+
+# Manual API testing
+python test/test_api.py             # Test basic API endpoints
+python test/test_libraries_api.py   # Test library-specific endpoints
 ```
 
 ### Frontend Development
@@ -66,6 +71,9 @@ npm run build
 ### Docker Development
 
 ```bash
+# Docker Compose files location: docker/
+cd docker
+
 # Start all services (recommended for development)
 docker-compose up -d
 
@@ -74,6 +82,10 @@ docker-compose logs -f [service_name]
 
 # Stop services
 docker-compose down
+
+# Alternative: Use root start script for local development
+# This starts backend, frontend, and celery workers outside Docker
+./start.sh
 ```
 
 ## Testing
@@ -126,14 +138,30 @@ Key variables defined in `backend/config.example.env`:
 
 ## Important Implementation Notes
 
-- Backend runs on port 8897 (not standard 5000)
-- Frontend expects API at port 8897 when running locally
-- Celery worker must be running for file processing and dataset generation
-- Plugin system supports runtime loading of custom processors
-- All file operations go through MinIO object storage, not local filesystem
-- Dataset generation uses LLM integration (OpenAI, Google, Anthropic via LangChain)
+- **Port Configuration**: Backend runs on port 8897 (not standard 5000), Frontend on port 5173 (dev) / 3000 (production)
+- **Celery Dependency**: Celery worker must be running for file processing and dataset generation
+- **macOS Compatibility**: Use `start_celery_threads.sh` on macOS for better stability
+- **Storage Architecture**: All file operations go through MinIO object storage, not local filesystem
+- **Plugin System**: Supports runtime loading of custom processors from `plugins/` directory
+- **LLM Integration**: Dataset generation uses LangChain with multi-provider support (OpenAI, Google, Anthropic)
+- **Database**: Uses PostgreSQL with SQLAlchemy ORM and migration system
+- **Authentication**: JWT-based auth with user management and role-based permissions
 
 ## Internationalization
 
-- Frontend supports i18n with English and Chinese locales
-- Locale files: `frontend/src/i18n/locales/`
+- Frontend supports i18n with English, Chinese, and Japanese locales
+- Locale files: `frontend/src/i18n/locales/` (en/, zh/, ja/)
+- Uses react-i18next for translation management
+
+## Deployment
+
+### Production Deployment
+- Frontend builds static files served by nginx
+- Backend API and Celery workers run in separate containers
+- Uses MinIO for object storage, PostgreSQL for metadata, Redis for task queuing
+- All services orchestrated via Docker Compose in `docker/` directory
+
+### Development vs Production Environment Variables
+- Development: Uses localhost endpoints for services
+- Production: Uses Docker service names for internal communication
+- Key differences in `backend/config.example.env` are commented for Docker deployment

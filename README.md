@@ -6,7 +6,7 @@
 
 [![English](https://img.shields.io/badge/Lang-English-blue)](README.md) | [![中文](https://img.shields.io/badge/Lang-中文-red)](README_CN.md)
 
-*An intelligent dataset management platform for LLM training data*
+*Enterprise Data Management Platform for the AI Era*
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8+-green.svg)
@@ -28,34 +28,41 @@
 
 ![PinData Poster](./poster.png)
 
-PinData is a **modern, open-source dataset management platform** designed specifically for large language model (LLM) training workflows. It simplifies the process of converting raw documents into structured training datasets, supporting document-to-markdown conversion and intelligent dataset generation.
+PinData is a **modern enterprise data management platform** for the AI era. It combines data engineering and dataset management capabilities to unify processing and analysis of both structured and unstructured enterprise data, transforming raw data into structured knowledge assets and high-quality training datasets that provide a solid data foundation for enterprise AI applications.
 
 ### 🎯 Why PinData?
 
-- **📚 Multi-Format Support**: Process DOCX, PPTX, PDF files with intelligent text extraction to Markdown
-- **🤖 Smart Dataset Generation**: Convert processed content into training-ready formats using LLM integration
-- **📊 Git-Style Versioning**: Complete dataset lineage tracking with version comparison and rollback
-- **🔗 Multi-Platform Integration**: Support for HuggingFace, ModelScope, and other data platforms
-- **🚀 Production Ready**: Built with Docker, Celery, and modern web technologies for scalability
+- **🔧 Data Engineering Capabilities**: Unified processing of structured and unstructured data with complete data pipelines
+- **🧠 Knowledge Asset Creation**: Transform enterprise raw data into structured knowledge repositories, enhancing data value
+- **📚 Multi-Format Compatibility**: Intelligent processing of DOCX, PPTX, PDF and various enterprise document formats
+- **🤖 AI-Driven Analysis**: Integrated large language models for intelligent data extraction and structured transformation
+- **📊 Versioned Management**: Git-style data lineage tracking ensuring data governance and compliance
+- **🔗 Ecosystem Integration**: Seamless integration with mainstream data platforms and AI training frameworks
+- **🚀 Enterprise Architecture**: Built on modern technology stack supporting large-scale deployment and scaling
 
 ---
 
 ## 🎯 Use Cases
 
-### 🏢 Enterprise AI Teams
-- **Document Knowledge Base**: Convert company documentation, manuals, and reports into training datasets
-- **Compliance & Quality**: Ensure data quality with built-in cleaning and validation pipelines
-- **Version Control**: Track dataset evolution and maintain data provenance for audit requirements
+### 🏢 Large Enterprise Data Management
+- **Knowledge Asset Inventory**: Unify and structure scattered enterprise documents, reports, and manuals
+- **Data Governance & Compliance**: Establish complete data lineage tracking to meet regulatory and audit requirements
+- **Cross-Department Collaboration**: Unified data management platform breaking down data silos and promoting knowledge sharing
 
-### 🎓 Academic Research
-- **Literature Analysis**: Process research papers and academic documents for literature review datasets
-- **Multi-Language Corpus**: Build specialized datasets for domain-specific language models
-- **Reproducible Research**: Share and replicate dataset preparation workflows
+### 🤖 Enterprise AI Transformation
+- **Intelligent Knowledge Base**: Transform enterprise knowledge into structured data suitable for AI model learning
+- **Business Data Mining**: Extract key information and insights from unstructured business documents
+- **Customized AI Training**: Build high-quality training datasets for enterprise-specific scenarios
 
-### 🚀 AI Startups
-- **Rapid Prototyping**: Quickly transform raw content into training-ready formats
-- **Custom Fine-Tuning**: Create specialized datasets for domain-specific model training
-- **Cost-Effective Scaling**: Self-hosted solution with no per-document processing fees
+### 🎓 Academic & Research Institutions
+- **Literature Management**: Large-scale processing and analysis of academic literature, building research databases
+- **Interdisciplinary Research**: Unified management of multi-domain, multi-format research materials
+- **Knowledge Graph Construction**: Transform research outcomes into structured knowledge networks (planned)
+
+### 🏥 Professional Service Organizations
+- **Case Library Management**: Transform historical cases and reports into analyzable structured data
+- **Professional Knowledge Transfer**: Systematically store and transfer expert experience and knowledge
+- **Business Intelligence Analysis**: Extract trends and patterns from business documents to support decision-making
 
 ---
 
@@ -63,30 +70,38 @@ PinData is a **modern, open-source dataset management platform** designed specif
 
 ```mermaid
 graph TD
-    A[📄 Raw Documents] --> B[📝 Document Parser]
-    B --> C[📋 Markdown Files]
-    C --> D[🤖 LLM Distiller]
-    D --> E[📊 Training Datasets]
+    A[📄 Unstructured Data] --> B[🔧 Data Engineering Layer]
+    A1[📊 Structured Data] --> B
+    B --> C[📝 Unified Parser]
+    C --> D[🧹 Data Cleaner]
+    D --> E[🔍 Smart Extractor]
+    E --> F[🧠 Knowledge Structuring]
+    F --> G[📊 Dataset Generation]
+    F --> H[💾 Knowledge Base]
     
-    F[🎛️ Web Interface] --> G[🚀 Flask API]
-    G --> H[🗄️ PostgreSQL]
-    G --> I[📦 MinIO Storage]
-    G --> J[⏰ Celery Tasks]
+    I[🎛️ Enterprise Interface] --> J[🚀 API Gateway]
+    J --> K[🗄️ Metadata DB]
+    J --> L[📦 Object Storage]
+    J --> M[⏰ Task Scheduler]
+    J --> N[🤖 AI Service Layer]
     
     style A fill:#e1f5fe
-    style E fill:#e8f5e8
-    style F fill:#fff3e0
+    style A1 fill:#e1f5fe
+    style G fill:#e8f5e8
+    style H fill:#f3e5f5
+    style I fill:#fff3e0
 ```
 
 ### Core Components
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Frontend** | React 18 + TypeScript | Modern, responsive user interface |
-| **API Layer** | Flask + SQLAlchemy | RESTful API with ORM |
-| **Task Queue** | Celery + Redis | Async processing for long-running tasks |
-| **Storage** | MinIO + PostgreSQL | Object storage + metadata management |
-| **Document Processing** | MarkItDown + LangChain | Document parsing and LLM integration |
+| **Data Engineering Layer** | Plugin-based processor architecture | Unified processing of structured and unstructured data |
+| **Intelligent Parsing Engine** | MarkItDown + Custom parsers | Multi-format document parsing and content extraction |
+| **Knowledge Structuring Service** | LangChain + Multi-LLM support | AI-driven content analysis and knowledge extraction |
+| **Enterprise Interface** | React 18 + TypeScript | Management console for enterprise users |
+| **Task Scheduling Engine** | Celery + Redis | Scheduling and management of data processing tasks |
+| **Hybrid Storage System** | MinIO + PostgreSQL | File object storage + relational metadata management |
 
 ---
 
@@ -111,38 +126,47 @@ docker-compose up -d
 open http://localhost:3000
 ```
 
-### Your First Dataset in 3 Steps
+### Build Your Enterprise Knowledge Assets in 3 Steps
 
-1. **📁 Upload Documents**: Drag and drop your DOCX, PPTX, or PDF files to create a library
-2. **📝 Convert to Markdown**: Process documents into clean, structured Markdown files
-3. **🎯 Generate Dataset**: Use LLM-powered distillation to create training-ready datasets
+1. **📁 Import Data**: Upload various enterprise documents and data files with unified management for multiple formats
+2. **🔧 Intelligent Processing**: Automatically parse, clean, and structure your data through data engineering pipelines
+3. **🧠 Knowledge Transformation**: Use AI technology to transform data into structured knowledge bases and usable datasets
 
 ---
 
 ## 💡 Key Features
 
-### 📄 Document to Markdown Conversion
-- **Multi-Format Support**: Process DOCX, PPTX, PDF files using MarkItDown
-- **Clean Text Extraction**: Intelligent parsing with structure preservation
-- **Batch Processing**: Handle multiple documents efficiently with async tasks
+### 🔧 Unified Data Engineering Pipeline
+- **Multi-Source Data Integration**: Unified processing of structured and unstructured data
+- **Intelligent Data Cleaning**: Automatically identify and handle data quality issues
+- **Flexible Data Transformation**: Configurable data processing and transformation rules
+- **Batch Parallel Processing**: Efficiently process large-scale datasets
 
-### 🤖 LLM-Powered Dataset Generation
-- **Smart Distillation**: Convert markdown content into training datasets using LLM APIs
-- **Multiple Providers**: Support for OpenAI, Google Gemini, Anthropic Claude
-- **Custom Formats**: Generate datasets in various formats (Alpaca, plain text, JSON)
+### 🧠 AI-Driven Knowledge Extraction
+- **Intelligent Content Analysis**: Use large language models for deep understanding and analysis of data content
+- **Automatic Knowledge Extraction**: Automatically extract structured knowledge from unstructured data
+- **Multi-LLM Support**: Support for OpenAI, Google Gemini, Anthropic Claude and other mainstream models
+- **Customizable Extraction Rules**: Customize knowledge extraction strategies according to business needs
 
-### 📊 Dataset Management & Versioning
-- **Version Control**: Git-style dataset versioning with complete lineage tracking
-- **Multi-Platform Support**: Integration with HuggingFace Datasets, ModelScope
-- **Library Organization**: Manage document collections and derived datasets
+### 📊 Enterprise-Grade Data Management
+- **Versioned Management**: Git-style data lineage tracking and version control
+- **Permissions & Security**: Fine-grained data access control and security management
+- **Data Governance**: Complete data lifecycle management and compliance support
+- **Multi-Platform Integration**: Seamless integration with mainstream data platforms and AI training frameworks
 
-### 🔌 Extensible Architecture (In Development)
+### 🔌 Extensible Plugin Architecture (Planned)
 ```python
-# Future: Create custom distillers
-class MyCustomDistiller(BaseDistiller):
-    def distill(self, content, config):
-        # Your custom processing logic
+# Create custom data processors
+class CustomDataProcessor(BaseProcessor):
+    def process(self, data, config):
+        # Your custom data processing logic
         return processed_data
+        
+# Create custom knowledge extractors  
+class CustomKnowledgeExtractor(BaseExtractor):
+    def extract(self, content, schema):
+        # Your custom knowledge extraction logic
+        return extracted_knowledge
 ```
 
 ---
@@ -173,35 +197,43 @@ cd backend
 ### Current Development Focus
 
 The project is actively developing core features:
-- Document parsing and markdown conversion
-- LLM integration for dataset generation  
-- Dataset versioning and management
-- Multi-platform data source integration
+- Unified data engineering pipeline and multi-source data integration
+- AI-driven intelligent data analysis and knowledge extraction
+- Enterprise-grade data governance and permission management
+- Extensible plugin system and custom processors
+- Multi-platform data source integration and API interfaces
 
 ---
 
 ## 📊 Roadmap
 
-### 🎯 Current Version (1.0)
-- ✅ Document parsing (DOCX, PPTX, PDF) to Markdown
-- ✅ LLM-powered dataset generation
-- ✅ Dataset versioning and management
-- ✅ Web-based interface
-- ✅ Multi-platform data integration (HuggingFace, ModelScope)
+### 🎯 Current Version (0.0.4) - Basic Data Engineering Platform
+- ✅ Multi-format unified data integration and parsing
+- ✅ AI-driven intelligent data analysis and knowledge extraction
+- ✅ Data versioning and lineage tracking
+- ✅ Enterprise-grade management interface
+- ✅ Plugin-based data processing architecture
 
-### 🚧 Next Release (1.1)
-- 🔄 Enhanced PDF processing with OCR support
-- 📤 Advanced dataset export/import capabilities
-- 🔌 Plugin system for custom processors
-- 📈 Data quality analytics dashboard
-- 🔍 Advanced search and filtering
+### 🚧 Next Release (1.0) - Enterprise Enhancement
+- 🔄 Advanced data governance and compliance management
+- 📊 Enterprise data asset inventory and analytics dashboard
+- 👥 Multi-user collaboration and permission management system
+- 🔌 Rich data source connectors (databases, APIs, file systems)
+- 📈 Data quality monitoring and anomaly detection
 
-### 🌟 Future Vision
-- 🖼️ Multi-modal data support (images, audio)
-- 🤖 AI-assisted data cleaning and enhancement
-- ☁️ Cloud-native deployment options
-- 👥 Team collaboration features
-- 🔗 Enhanced ML platform integrations
+### 🏢 Enterprise Version (2.0) - Comprehensive Data Management
+- 🗃️ Enterprise-grade data warehouse integration
+- 🤖 Automated data pipelines and workflows
+- 📋 Data catalog and metadata management
+- 🔍 Intelligent data discovery and recommendations
+- 📊 Advanced business intelligence and reporting features
+
+### 🌟 Future Vision - AI-Native Data Platform
+- 🖼️ Multi-modal data processing (images, audio, video)
+- 🧠 Self-learning data processing and optimization
+- ☁️ Hybrid cloud and multi-cloud deployment support
+- 🌐 Real-time data streaming and analysis
+- 🤖 AI Agent-driven automated data management
 
 ---
 
