@@ -1,7 +1,7 @@
 from flask import jsonify, request, send_file
 from flasgger import swag_from
 from app.api.v1 import api_v1
-from app.models import RawData, FileType, ProcessingStatus
+from app.models import RawData, FileType, ProcessingStatus, DataSourceConfig
 from app.db import db
 import os
 import io
@@ -418,4 +418,201 @@ def detect_file_type(file_ext, mime_type):
     elif file_ext in video_types:
         return video_types[file_ext], 'video'
     else:
-        return FileType.OTHER, 'other' 
+        return FileType.OTHER, 'other'
+
+@api_v1.route('/raw-data/create-database-source', methods=['POST'])
+@swag_from({
+    'tags': ['原始数据'],
+    'summary': '创建数据库表数据源',
+    'parameters': [{
+        'name': 'body',
+        'in': 'body',
+        'required': True,
+        'schema': {
+            'type': 'object',
+            'properties': {
+                'data_source_config_id': {'type': 'string', 'description': '数据源配置ID'},
+                'project_id': {'type': 'string', 'description': '项目ID'},
+                'name': {'type': 'string', 'description': '数据源名称'},
+                'description': {'type': 'string', 'description': '描述'}
+            },
+            'required': ['data_source_config_id', 'name']
+        }
+    }],
+    'responses': {
+        201: {'description': '数据库数据源创建成功'},
+        400: {'description': '创建失败'}
+    }
+})
+def create_database_data_source():
+    """创建数据库表数据源"""
+    data = request.get_json()
+    
+    data_source_config_id = data.get('data_source_config_id')
+    if not data_source_config_id:
+        return jsonify({'error': '数据源配置ID不能为空'}), 400
+    
+    # 验证数据源配置是否存在
+    config = DataSourceConfig.query.get(data_source_config_id)
+    if not config:
+        return jsonify({'error': '数据源配置不存在'}), 400
+    
+    if not config.is_database_source:
+        return jsonify({'error': '该配置不是数据库数据源'}), 400
+    
+    try:
+        # 创建原始数据记录
+        raw_data = RawData(
+            filename=data.get('name', f"{config.table_name}_data"),
+            original_filename=data.get('name', f"{config.table_name}_data"),
+            file_type=FileType.DATABASE_TABLE,
+            file_category='database',
+            file_size=0,  # 将在同步时更新
+            minio_object_name=f"database/{config.id}/{config.table_name}",
+            data_source_config_id=data_source_config_id,
+            data_source_id=data.get('project_id'),
+            processing_status=ProcessingStatus.PENDING,
+            
+            # 数据库特定信息
+            data_source_metadata={
+                'database_type': config.database_type.value if config.database_type else None,
+                'host': config.host,
+                'database_name': config.database_name,
+                'table_name': config.table_name,
+                'schema_name': config.schema_name,
+                'connection_string': config.connection_string
+            }
+        )
+        
+        db.session.add(raw_data)
+        db.session.commit()
+        
+        return jsonify({
+            'message': '数据库数据源创建成功',
+            'data': raw_data.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'创建失败: {str(e)}'}), 500
+
+@api_v1.route('/raw-data/create-api-source', methods=['POST'])
+@swag_from({
+    'tags': ['原始数据'],
+    'summary': '创建API数据源',
+    'parameters': [{
+        'name': 'body',
+        'in': 'body',
+        'required': True,
+        'schema': {
+            'type': 'object',
+            'properties': {
+                'data_source_config_id': {'type': 'string', 'description': '数据源配置ID'},
+                'project_id': {'type': 'string', 'description': '项目ID'},
+                'name': {'type': 'string', 'description': '数据源名称'},
+                'description': {'type': 'string', 'description': '描述'}
+            },
+            'required': ['data_source_config_id', 'name']
+        }
+    }],
+    'responses': {
+        201: {'description': 'API数据源创建成功'},
+        400: {'description': '创建失败'}
+    }
+})
+def create_api_data_source():
+    """创建API数据源"""
+    data = request.get_json()
+    
+    data_source_config_id = data.get('data_source_config_id')
+    if not data_source_config_id:
+        return jsonify({'error': '数据源配置ID不能为空'}), 400
+    
+    # 验证数据源配置是否存在
+    config = DataSourceConfig.query.get(data_source_config_id)
+    if not config:
+        return jsonify({'error': '数据源配置不存在'}), 400
+    
+    if not config.is_api_source:
+        return jsonify({'error': '该配置不是API数据源'}), 400
+    
+    try:
+        # 创建原始数据记录
+        raw_data = RawData(
+            filename=data.get('name', f"api_data_{config.id}"),
+            original_filename=data.get('name', f"api_data_{config.id}"),
+            file_type=FileType.API_SOURCE,
+            file_category='api',
+            file_size=0,  # 将在同步时更新
+            minio_object_name=f"api/{config.id}/data",
+            data_source_config_id=data_source_config_id,
+            data_source_id=data.get('project_id'),
+            processing_status=ProcessingStatus.PENDING,
+            
+            # API特定信息
+            data_source_metadata={
+                'api_url': config.api_url,
+                'api_method': config.api_method,
+                'auth_type': config.auth_type.value if config.auth_type else None,
+                'response_path': config.response_path,
+                'data_format': config.data_format
+            }
+        )
+        
+        db.session.add(raw_data)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'API数据源创建成功',
+            'data': raw_data.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'创建失败: {str(e)}'}), 500
+
+@api_v1.route('/raw-data/<int:data_id>/sync', methods=['POST'])
+@swag_from({
+    'tags': ['原始数据'],
+    'summary': '同步数据库/API数据源',
+    'parameters': [{
+        'name': 'data_id',
+        'in': 'path',
+        'type': 'integer',
+        'required': True
+    }],
+    'responses': {
+        200: {'description': '同步任务已启动'},
+        400: {'description': '同步失败'},
+        404: {'description': '数据不存在'}
+    }
+})
+def sync_data_source_data(data_id):
+    """同步数据库/API数据源数据"""
+    data = RawData.query.get_or_404(data_id)
+    
+    if data.file_type not in [FileType.DATABASE_TABLE, FileType.API_SOURCE]:
+        return jsonify({'error': '该数据源不支持同步'}), 400
+    
+    if not data.data_source_config_id:
+        return jsonify({'error': '数据源配置不存在'}), 400
+    
+    try:
+        # 更新状态为同步中
+        data.processing_status = ProcessingStatus.PROCESSING
+        data.processing_progress = 0
+        db.session.commit()
+        
+        # 这里应该启动异步任务来同步数据
+        # 例如使用Celery任务队列
+        # sync_raw_data_task.delay(data_id)
+        
+        return jsonify({
+            'message': '数据同步任务已启动',
+            'data_id': data_id,
+            'status': 'processing'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'同步失败: {str(e)}'}), 500

@@ -26,20 +26,24 @@ export function useLibraries(initialParams?: LibraryQueryParams) {
 
   const fetchLibraries = useCallback(async (params?: LibraryQueryParams) => {
     setState({ loading: true, error: null });
+    console.log('useLibraries - fetchLibraries called with params:', { initialParams, params });
     try {
       const result = await LibraryService.getLibraries({ ...initialParams, ...params });
+      console.log('useLibraries - API result:', result);
       setLibraries(result.libraries);
       setPagination(result.pagination);
     } catch (error) {
+      console.error('useLibraries - API error:', error);
       const errorMessage = error instanceof ApiError ? error.message : '获取文件库列表失败';
       setState({ loading: false, error: errorMessage });
       return;
     }
     setState({ loading: false, error: null });
+    console.log('useLibraries - fetchLibraries completed successfully');
   }, [initialParams]);
 
-  const refresh = useCallback(() => {
-    fetchLibraries(initialParams);
+  const refresh = useCallback(async () => {
+    await fetchLibraries(initialParams);
   }, [fetchLibraries, initialParams]);
 
   useEffect(() => {

@@ -55,7 +55,7 @@ class ProjectDataSource(db.Model):
     
     # 关系
     project = relationship("DataGovernanceProject", back_populates="data_sources")
-    raw_data_items = relationship("RawData", foreign_keys="RawData.data_source_id", cascade="all, delete-orphan")
+    raw_data_items = relationship("RawData", foreign_keys="RawData.data_source_id", cascade="all, delete-orphan", overlaps="data_source")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

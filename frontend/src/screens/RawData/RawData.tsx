@@ -30,18 +30,26 @@ import {
   AlertCircleIcon,
   Settings2Icon,
   Loader2Icon,
-  RefreshCwIcon
+  RefreshCwIcon,
+  DatabaseIcon,
+  CloudIcon,
+  ChevronDownIcon,
+  FilterIcon,
+  ImageIcon,
+  VideoIcon
 } from 'lucide-react';
 import { CreateLibrary } from './CreateLibrary';
 import { LibraryDetails } from './LibraryDetails';
+import { CreateDataSource } from './CreateDataSource';
 
 // 导入API相关
 import { useLibraries, useLibraryActions } from '../../hooks/useLibraries';
 import { LibraryService } from '../../services/library.service';
 import { Library, LibraryFile } from '../../types/library';
 import { dataTypeLabels } from '../../lib/config';
+import { DataSourceType } from '../../types/dataSource';
 
-type View = 'list' | 'create' | 'details';
+type View = 'list' | 'create' | 'details' | 'create-database' | 'create-api';
 
 // 将字符串大小转换为字节数
 const parseSizeToBytes = (sizeStr: string): number => {
@@ -85,6 +93,7 @@ export const RawData = (): JSX.Element => {
   const navigate = useNavigate();
   const [view, setView] = useState<View>('list');
   const [selectedLibrary, setSelectedLibrary] = useState<Library | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   // 使用API Hooks
   const { 
@@ -94,6 +103,15 @@ export const RawData = (): JSX.Element => {
     error: librariesError, 
     refresh: refreshLibraries 
   } = useLibraries();
+
+  // Debug logging
+  console.log('RawData render:', { 
+    libraries, 
+    librariesLength: libraries?.length, 
+    librariesLoading, 
+    librariesError,
+    view 
+  });
   
   const { 
     loading: actionLoading, 
@@ -269,8 +287,8 @@ export const RawData = (): JSX.Element => {
     if (window.confirm(`确定要删除文件库 "${library.name}" 吗？此操作不可撤销。`)) {
       const success = await deleteLibrary(library.id);
       if (success) {
-        refreshLibraries();
-        fetchAllLibraryFiles(); // 删除成功后刷新文件统计信息
+        await refreshLibraries();
+        await fetchAllLibraryFiles(); // 删除成功后刷新文件统计信息
       }
     }
   };
@@ -292,18 +310,47 @@ export const RawData = (): JSX.Element => {
     return dataTypeLabels[dataType] || dataType;
   };
 
-  const handleRefresh = () => {
-    refreshLibraries();
-    fetchAllLibraryFiles(); // 同时刷新文件统计信息
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'document':
+        return <FileTextIcon className="w-5 h-5 text-blue-500" />;
+      case 'image':
+        return <ImageIcon className="w-5 h-5 text-green-500" />;
+      case 'video':
+        return <VideoIcon className="w-5 h-5 text-purple-500" />;
+      case 'database':
+        return <DatabaseIcon className="w-5 h-5 text-orange-500" />;
+      case 'api':
+        return <CloudIcon className="w-5 h-5 text-cyan-500" />;
+      default:
+        return <FolderIcon className="w-5 h-5 text-gray-500" />;
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      document: '文档',
+      image: '图片',
+      video: '视频',
+      database: '数据库',
+      api: 'API',
+      all: '全部类型'
+    };
+    return labels[category] || category;
+  };
+
+  const handleRefresh = async () => {
+    await refreshLibraries();
+    await fetchAllLibraryFiles(); // 同时刷新文件统计信息
   };
 
   if (view === 'create') {
     return <CreateLibrary 
       onBack={() => setView('list')} 
-      onSuccess={() => {
-        setView('list');
-        refreshLibraries();
-        fetchAllLibraryFiles(); // 创建成功后刷新文件统计信息
+      onSuccess={async () => {
+        // 刷新数据但不跳转页面，跳转由CreateLibrary组件处理
+        await refreshLibraries();
+        await fetchAllLibraryFiles(); // 创建成功后刷新文件统计信息
       }}
     />;
   }
@@ -318,6 +365,34 @@ export const RawData = (): JSX.Element => {
     );
   }
 
+  if (view === 'create-database') {
+    return (
+      <CreateDataSource
+        sourceType="database_table"
+        onClose={() => setView('list')}
+        onSuccess={async () => {
+          setView('list');
+          await refreshLibraries();
+          await fetchAllLibraryFiles();
+        }}
+      />
+    );
+  }
+
+  if (view === 'create-api') {
+    return (
+      <CreateDataSource
+        sourceType="api_source"
+        onClose={() => setView('list')}
+        onSuccess={async () => {
+          setView('list');
+          await refreshLibraries();
+          await fetchAllLibraryFiles();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="w-full max-w-[1400px] p-6">
       {/* 页面标题和操作按钮 */}
@@ -325,15 +400,51 @@ export const RawData = (): JSX.Element => {
         <h1 className="text-[28px] font-bold leading-8 text-[#0c141c] mb-2">{t('rawData.libraryManagement')}</h1>
         <p className="text-[#4f7096] mb-4">{t('rawData.description')}</p>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            className="h-9 px-4 bg-[#1977e5] hover:bg-[#1977e5]/90"
-            onClick={() => setView('create')}
-            disabled={actionLoading}
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            {t('rawData.createLibrary.create')}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                className="h-9 px-4 bg-[#1977e5] hover:bg-[#1977e5]/90"
+                disabled={actionLoading}
+              >
+                <PlusIcon className="w-4 h-4 mr-2" />
+                添加数据源
+                <ChevronDownIcon className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[200px]">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setView('create')}
+              >
+                <FolderIcon className="mr-2 h-4 w-4" />
+                <div>
+                  <div className="font-medium">文件库</div>
+                  <div className="text-xs text-gray-500">上传文档、图片、视频文件</div>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setView('create-database')}
+              >
+                <DatabaseIcon className="mr-2 h-4 w-4" />
+                <div>
+                  <div className="font-medium">数据库表</div>
+                  <div className="text-xs text-gray-500">连接数据库表作为数据源</div>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setView('create-api')}
+              >
+                <CloudIcon className="mr-2 h-4 w-4" />
+                <div>
+                  <div className="font-medium">API数据源</div>
+                  <div className="text-xs text-gray-500">从API接口获取数据</div>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"
@@ -348,6 +459,33 @@ export const RawData = (): JSX.Element => {
             )}
             {t('rawData.refreshData')}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-4 border-[#d1dbe8] text-[#4f7096] hover:bg-[#e8edf2]"
+              >
+                <FilterIcon className="w-4 h-4 mr-2" />
+                {getCategoryLabel(categoryFilter)}
+                <ChevronDownIcon className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[160px]">
+              {['all', 'document', 'image', 'video', 'database', 'api'].map(category => (
+                <DropdownMenuItem
+                  key={category}
+                  className="cursor-pointer"
+                  onClick={() => setCategoryFilter(category)}
+                >
+                  <div className="flex items-center gap-2">
+                    {getCategoryIcon(category)}
+                    {getCategoryLabel(category)}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"
@@ -429,6 +567,30 @@ export const RawData = (): JSX.Element => {
             </div>
           </div>
         </Card>
+        
+        {/* 文件分类统计 */}
+        <Card className="border-[#d1dbe8] bg-white p-4 col-span-full">
+          <div className="mb-3">
+            <h3 className="text-sm font-medium text-[#0c141c] mb-2">数据源类型分布</h3>
+            <div className="grid grid-cols-5 gap-3">
+              {['document', 'image', 'video', 'database', 'api'].map(category => (
+                <div key={category} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
+                  {getCategoryIcon(category)}
+                  <div>
+                    <div className="text-xs text-gray-600">{getCategoryLabel(category)}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {libraries.filter(lib => 
+                        // 这里需要根据实际的库分类逻辑来过滤
+                        // 暂时显示为0，实际应该从后端API获取分类统计
+                        false
+                      ).length}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* 数据库列表 */}
@@ -441,13 +603,13 @@ export const RawData = (): JSX.Element => {
         </div>
         
         <Card className="border-[#d1dbe8] bg-white">
-          {librariesLoading ? (
+          {librariesLoading || filesLoading ? (
             <div className="p-8 text-center">
               <Loader2Icon className="w-8 h-8 animate-spin mx-auto mb-4 text-[#1977e5]" />
               <p className="text-[#4f7096]">{t('datasets.loading')}</p>
             </div>
           ) : (
-            <Table>
+            <Table key={`libraries-${libraries.length}-${JSON.stringify(calculatedStatistics)}`}>
               <TableHeader>
                 <TableRow className="border-[#d1dbe8] hover:bg-transparent">
                   <TableHead className="text-[#4f7096] font-medium">{t('rawData.libraryInfo')}</TableHead>
@@ -575,10 +737,13 @@ export const RawData = (): JSX.Element => {
                     </TableCell>
                   </TableRow>
                 )})}
-                {libraries.length === 0 && !librariesLoading && (
+                {libraries.length === 0 && !librariesLoading && !filesLoading && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-[#4f7096]">
-                      {t('rawData.noLibrariesMessage')}
+                      {librariesError ? 
+                        `${t('rawData.loadError')}: ${librariesError}` : 
+                        t('rawData.noLibrariesMessage')
+                      }
                     </TableCell>
                   </TableRow>
                 )}

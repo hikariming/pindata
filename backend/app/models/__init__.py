@@ -30,6 +30,7 @@ from .project_pipeline_stage import ProjectPipelineStage, StageType, StageStatus
 from .governed_data import GovernedData, DataType as GovernedDataType, GovernanceStatus
 from .knowledge_item import KnowledgeItem, KnowledgeType, KnowledgeStatus
 from .data_quality_assessment import DataQualityAssessment, QualityDimension, AssessmentMethod, AssessmentStatus
+from .data_source_config import DataSourceConfig, DataSourceType as ConfigDataSourceType, DatabaseType, APIAuthType, DataSourceStatus as ConfigDataSourceStatus
 
 __all__ = [
     'Dataset', 'DatasetVersion', 'DatasetTag', 'DatasetLike', 'DatasetDownload',
@@ -51,5 +52,6 @@ __all__ = [
     'ProjectPipelineStage', 'StageType', 'StageStatus',
     'GovernedData', 'GovernedDataType', 'GovernanceStatus',
     'KnowledgeItem', 'KnowledgeType', 'KnowledgeStatus',
-    'DataQualityAssessment', 'QualityDimension', 'AssessmentMethod', 'AssessmentStatus'
+    'DataQualityAssessment', 'QualityDimension', 'AssessmentMethod', 'AssessmentStatus',
+    'DataSourceConfig', 'ConfigDataSourceType', 'DatabaseType', 'APIAuthType', 'ConfigDataSourceStatus'
 ] 

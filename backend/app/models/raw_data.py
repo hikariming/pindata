@@ -62,6 +62,9 @@ class RawData(db.Model):
     # 数据源关联
     data_source_id = Column(String(36), ForeignKey('project_data_sources.id'))
     
+    # 扩展数据源配置关联（用于数据库表和API数据源）
+    data_source_config_id = Column(String(36), ForeignKey('data_source_configs.id'))
+    
     # 文件基础信息
     checksum = Column(String(64))  # 文件校验和
     mime_type = Column(String(100))  # MIME类型
@@ -99,6 +102,12 @@ class RawData(db.Model):
     video_codec = Column(String(50))  # 视频编码
     audio_codec = Column(String(50))  # 音频编码
     
+    # 数据库和API数据源特定字段
+    record_count = Column(Integer)  # 记录数量（数据库表/API响应）
+    schema_info = Column(JSON)  # 数据结构信息
+    api_response_time = Column(Integer)  # API响应时间（毫秒）
+    data_source_metadata = Column(JSON)  # 数据源特定元数据
+    
     # 质量和置信度
     content_quality_score = Column(Integer, default=0)  # 内容质量分数 0-100
     extraction_confidence = Column(Integer, default=0)  # 提取置信度 0-100
@@ -109,6 +118,7 @@ class RawData(db.Model):
     # 关系
     dataset = relationship('Dataset')
     data_source = relationship('ProjectDataSource', foreign_keys=[data_source_id])
+    data_source_config = relationship('DataSourceConfig', foreign_keys=[data_source_config_id])
     
     @property
     def file_category_display(self):
@@ -129,7 +139,8 @@ class RawData(db.Model):
         preview_types = {
             FileType.DOCUMENT_MD, FileType.DOCUMENT_TXT, FileType.DOCUMENT_PDF,
             FileType.IMAGE_JPG, FileType.IMAGE_PNG, FileType.IMAGE_GIF, 
-            FileType.IMAGE_BMP, FileType.IMAGE_SVG, FileType.IMAGE_WEBP
+            FileType.IMAGE_BMP, FileType.IMAGE_SVG, FileType.IMAGE_WEBP,
+            FileType.DATABASE_TABLE, FileType.API_SOURCE  # 数据库表和API数据源也支持预览
         }
         return self.file_type in preview_types
     
@@ -144,6 +155,10 @@ class RawData(db.Model):
             return 'image'
         elif 'video' in self.file_type.value:
             return 'video'
+        elif self.file_type == FileType.DATABASE_TABLE:
+            return 'table'
+        elif self.file_type == FileType.API_SOURCE:
+            return 'api'
         else:
             return 'none'
     
@@ -159,6 +174,7 @@ class RawData(db.Model):
             'minio_object_name': self.minio_object_name,
             'dataset_id': self.dataset_id,
             'data_source_id': self.data_source_id,
+            'data_source_config_id': self.data_source_config_id,
             'checksum': self.checksum,
             'mime_type': self.mime_type,
             'encoding': self.encoding,
@@ -182,6 +198,10 @@ class RawData(db.Model):
             'frame_rate': self.frame_rate,
             'video_codec': self.video_codec,
             'audio_codec': self.audio_codec,
+            'record_count': self.record_count,
+            'schema_info': self.schema_info,
+            'api_response_time': self.api_response_time,
+            'data_source_metadata': self.data_source_metadata,
             'content_quality_score': self.content_quality_score,
             'extraction_confidence': self.extraction_confidence,
             'is_supported_preview': self.is_supported_preview,

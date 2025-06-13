@@ -79,15 +79,23 @@ export class ApiClient {
       throw new Error('No access token in refresh response');
     } catch (error) {
       console.error('Token refresh failed:', error);
-      // 清除所有token，强制重新登录
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('token_expires_at');
-      localStorage.removeItem('session_id');
-      localStorage.removeItem('user');
-      this.removeAuthToken();
-      // 可以在这里触发重新登录流程
-      window.location.href = '/auth/login';
+      
+      // 只有在确认是 token 无效时才清除
+      if (error instanceof Error && error.message.includes('Token refresh failed')) {
+        // 清除所有token
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('token_expires_at');
+        localStorage.removeItem('session_id');
+        localStorage.removeItem('user');
+        this.removeAuthToken();
+        
+        // 使用更优雅的方式重定向到登录页
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/auth/')) {
+          window.location.href = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+        }
+      }
       return null;
     } finally {
       this.isRefreshing = false;
@@ -144,10 +152,9 @@ export class ApiClient {
 
     try {
       const jsonResponse = await response.json();
-      // 如果响应包含 data 字段，返回 data 的内容，否则返回整个响应
-      if (jsonResponse && typeof jsonResponse === 'object' && 'data' in jsonResponse) {
-        return jsonResponse.data;
-      }
+      console.log('api-client handleResponse - raw JSON:', jsonResponse);
+      // For endpoints that need both data and pagination, return the whole response
+      // This includes paginated endpoints like /api/v1/libraries
       return jsonResponse;
     } catch {
       throw new ApiError('响应数据格式错误', response.status);

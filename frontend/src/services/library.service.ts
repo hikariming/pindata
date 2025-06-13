@@ -29,11 +29,15 @@ export class LibraryService {
     libraries: Library[];
     pagination: PaginatedResponse<Library>['pagination'];
   }> {
-    const response = await apiClient.get<PaginatedResponse<Library>>('/api/v1/libraries', params);
-    return {
+    console.log('LibraryService.getLibraries called with params:', params);
+    const response = await apiClient.get<any>('/api/v1/libraries', params);
+    console.log('LibraryService.getLibraries raw response:', response);
+    const result = {
       libraries: response.data || [],
       pagination: response.pagination,
     };
+    console.log('LibraryService.getLibraries processed result:', result);
+    return result;
   }
 
   /**
