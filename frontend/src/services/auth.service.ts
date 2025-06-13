@@ -144,8 +144,8 @@ class AuthService {
    * 获取用户会话列表
    */
   async getUserSessions(): Promise<UserSession[]> {
-    const response = await apiClient.get<UserSession[]>('/api/v1/auth/sessions');
-    return response;
+    const response = await apiClient.get<{ data: UserSession[] }>('/api/v1/auth/sessions');
+    return response.data;
   }
 
   /**

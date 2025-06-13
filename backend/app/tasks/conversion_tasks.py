@@ -3,6 +3,7 @@ import tempfile
 import logging
 from datetime import datetime
 from celery import Task
+from flask import current_app
 from app.celery_app import celery
 from app.models import (
     ConversionJob, ConversionStatus, ConversionFileDetail,
@@ -202,7 +203,7 @@ def _convert_single_file(celery_task, file_detail: ConversionFileDetail, job: Co
     # 下载原始文件
     with tempfile.NamedTemporaryFile(suffix=f".{library_file.file_type}", delete=False) as tmp_file:
         storage_service.download_file(
-            'raw-data',  # 使用固定的bucket名称
+            current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data'),
             library_file.minio_object_name,
             tmp_file.name
         )

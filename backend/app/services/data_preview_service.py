@@ -67,7 +67,7 @@ class DataPreviewService:
                 bucket_name = file.minio_bucket
                 if not bucket_name:
                     # 如果文件记录中没有bucket名称，使用配置的默认bucket
-                    bucket_name = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
+                    bucket_name = current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data')
                 
                 storage_service.download_file(
                     bucket_name,
@@ -248,7 +248,7 @@ class DataPreviewService:
                     bucket_name = file.minio_bucket
                     if not bucket_name:
                         # 如果文件记录中没有bucket名称，使用配置的默认bucket
-                        bucket_name = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
+                        bucket_name = current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data')
                     
                     storage_service.download_file(
                         bucket_name,

@@ -71,7 +71,7 @@ class StorageService:
             file_size = len(file_content)
             
             # 使用配置的 bucket，确保与其他方法一致
-            bucket_name = current_app.config.get('MINIO_BUCKET_NAME', 'raw-data')
+            bucket_name = current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data')
             
             # 确保bucket存在
             if not self._bucket_exists(bucket_name):

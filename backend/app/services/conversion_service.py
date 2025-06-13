@@ -4,6 +4,7 @@ import logging
 import uuid
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
+from flask import current_app
 from app.models import (
     LibraryFile, ProcessStatus, Task, TaskType, TaskStatus, 
     ConversionJob, ConversionStatus, ConversionFileDetail,
@@ -160,7 +161,7 @@ class ConversionService:
         # 下载原始文件
         with tempfile.NamedTemporaryFile(suffix=f".{library_file.file_type}", delete=False) as tmp_file:
             storage_service.download_file(
-                'raw-data',  # 使用固定的bucket名称
+                current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data'),
                 library_file.minio_object_name,
                 tmp_file.name
             )

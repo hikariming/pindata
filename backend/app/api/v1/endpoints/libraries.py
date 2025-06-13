@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_restful import Api, Resource
 from marshmallow import ValidationError
 from werkzeug.utils import secure_filename
@@ -264,7 +264,7 @@ class LibraryFilesResource(Resource):
                         file_type=file_extension,
                         file_size=file_size,
                         minio_object_name=object_name,
-                        minio_bucket='raw-data'  # 使用固定的bucket名称，而不是库名
+                        minio_bucket=current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data')
                     )
                     
                     uploaded_files.append(library_file.to_dict())

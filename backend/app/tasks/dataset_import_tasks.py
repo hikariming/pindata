@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Dict, Optional, Any, List
 from urllib.parse import urlparse
 from celery import Task
+from flask import current_app
 from huggingface_hub import hf_hub_download, snapshot_download, HfApi
 from modelscope.hub.snapshot_download import snapshot_download as ms_snapshot_download
 from modelscope.hub.api import HubApi
@@ -324,7 +325,7 @@ def _import_from_huggingface(celery_task, import_url: str, dataset: Dataset, tas
                 file_path=file_info['file_path'],
                 file_type=file_type,
                 file_size=file_info['file_size'],
-                minio_bucket='datasets',
+                minio_bucket=current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets'),
                 minio_object_name=file_info['minio_object_name']
             )
             db.session.add(enhanced_file)
@@ -559,7 +560,7 @@ def _import_from_modelscope(celery_task, import_url: str, dataset: Dataset, task
                 file_path=file_info['file_path'],
                 file_type=file_type,
                 file_size=file_info['file_size'],
-                minio_bucket='datasets',
+                minio_bucket=current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets'),
                 minio_object_name=file_info['minio_object_name']
             )
             db.session.add(enhanced_file)
@@ -832,7 +833,7 @@ def _upload_dataset_files_to_minio(local_path: str, dataset_id: int, source: str
                     file_path, 
                     object_name,
                     content_type=content_type,
-                    bucket_name='datasets'
+                    bucket_name=current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets')
                 )
                 
                 # 记录上传的文件信息
