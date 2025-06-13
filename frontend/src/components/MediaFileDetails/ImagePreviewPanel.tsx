@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Input } from '../ui/input';
 import { 
   ZoomInIcon, 
   ZoomOutIcon, 
@@ -12,8 +13,18 @@ import {
   EyeIcon,
   RectangleHorizontalIcon as RectangleIcon,
   MousePointerIcon,
-  XIcon
+  XIcon,
+  TagIcon,
+  SaveIcon
 } from 'lucide-react';
+
+interface Annotation {
+  id: string;
+  region: { x: number; y: number; width: number; height: number };
+  label: string;
+  type: 'manual' | 'ai';
+  timestamp: number;
+}
 
 interface ImagePreviewPanelProps {
   fileData: any;
@@ -36,6 +47,10 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   const [selectedRegion, setSelectedRegion] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   const [isDrawingRegion, setIsDrawingRegion] = useState(false);
   const [regionStart, setRegionStart] = useState<{x: number, y: number} | null>(null);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [showAnnotationDialog, setShowAnnotationDialog] = useState(false);
+  const [annotationLabel, setAnnotationLabel] = useState('');
+  const [imageNaturalSize, setImageNaturalSize] = useState<{width: number, height: number} | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -43,31 +58,62 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
 
   useEffect(() => {
     drawRegionOverlay();
-  }, [selectedRegion, scale, position, rotation]);
+  }, [selectedRegion, annotations, scale, position, rotation, imageNaturalSize]);
 
   const drawRegionOverlay = () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
-    if (!canvas || !image || !selectedRegion) return;
+    if (!canvas || !image || !imageNaturalSize) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 绘制选择区域
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+    // 计算图像在canvas中的实际显示尺寸和位置
+    const imageRect = image.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect(); 
+    const scaleX = canvas.width / imageNaturalSize.width;
+    const scaleY = canvas.height / imageNaturalSize.height;
     
-    const { x, y, width, height } = selectedRegion;
-    ctx.strokeRect(x * scale, y * scale, width * scale, height * scale);
+    // 绘制当前选择区域
+    if (selectedRegion) {
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      
+      const { x, y, width, height } = selectedRegion;
+      ctx.strokeRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY);
+      
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+      ctx.fillRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY);
+      
+      ctx.setLineDash([]);
+    }
     
-    // 绘制半透明覆盖层
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-    ctx.fillRect(x * scale, y * scale, width * scale, height * scale);
-    
-    ctx.setLineDash([]);
+    // 绘制已保存的标注
+    annotations.forEach((annotation, index) => {
+      const { x, y, width, height } = annotation.region;
+      
+      // 根据标注类型设置颜色
+      const color = annotation.type === 'ai' ? '#10b981' : '#f59e0b';
+      
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.strokeRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY);
+      
+      // 绘制标签背景
+      ctx.fillStyle = color;
+      const labelY = y * scaleY - 20;
+      const textWidth = ctx.measureText(annotation.label).width + 8;
+      ctx.fillRect(x * scaleX, labelY, textWidth, 16);
+      
+      // 绘制标签文字
+      ctx.fillStyle = 'white';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(annotation.label, x * scaleX + 4, labelY + 12);
+    });
   };
 
   const handleZoomIn = () => {
@@ -89,22 +135,70 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     setSelectedRegion(null);
   };
 
+  const getImageCoordinates = (clientX: number, clientY: number) => {
+    const image = imageRef.current;
+    if (!image || !imageNaturalSize) return null;
+    
+    const imageRect = image.getBoundingClientRect();
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    if (!containerRect) return null;
+    
+    // 计算鼠标相对于图像的位置
+    const relativeX = clientX - imageRect.left;
+    const relativeY = clientY - imageRect.top;
+    
+    // 转换为图像原始坐标
+    const scaleX = imageNaturalSize.width / imageRect.width;
+    const scaleY = imageNaturalSize.height / imageRect.height;
+    
+    const x = relativeX * scaleX;
+    const y = relativeY * scaleY;
+    
+    // 确保坐标在图像范围内
+    return {
+      x: Math.max(0, Math.min(imageNaturalSize.width, x)),
+      y: Math.max(0, Math.min(imageNaturalSize.height, y))
+    };
+  };
+
+  const handleSaveAnnotation = () => {
+    if (!selectedRegion || !annotationLabel.trim()) return;
+    
+    const newAnnotation: Annotation = {
+      id: Date.now().toString(),
+      region: selectedRegion,
+      label: annotationLabel.trim(),
+      type: 'manual',
+      timestamp: Date.now()
+    };
+    
+    setAnnotations(prev => [...prev, newAnnotation]);
+    setSelectedRegion(null);
+    setAnnotationLabel('');
+    setShowAnnotationDialog(false);
+  };
+
+  const handleDeleteAnnotation = (id: string) => {
+    setAnnotations(prev => prev.filter(ann => ann.id !== id));
+  };
+
+  const handleCancelAnnotation = () => {
+    setSelectedRegion(null);
+    setAnnotationLabel('');
+    setShowAnnotationDialog(false);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     
     if (showRegionSelector && !isDrawingRegion) {
-      // 开始绘制区域
-      const rect = imageRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const x = (e.clientX - rect.left - position.x) / scale;
-      const y = (e.clientY - rect.top - position.y) / scale;
+      const coords = getImageCoordinates(e.clientX, e.clientY);
+      if (!coords) return;
       
-      setRegionStart({ x, y });
+      setRegionStart(coords);
       setIsDrawingRegion(true);
-      setSelectedRegion({ x, y, width: 0, height: 0 });
+      setSelectedRegion({ x: coords.x, y: coords.y, width: 0, height: 0 });
     } else if (!showRegionSelector) {
-      // 拖拽图片
       setIsDragging(true);
       setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
     }
@@ -112,17 +206,14 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDrawingRegion && regionStart) {
-      const rect = imageRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const currentX = (e.clientX - rect.left - position.x) / scale;
-      const currentY = (e.clientY - rect.top - position.y) / scale;
+      const coords = getImageCoordinates(e.clientX, e.clientY);
+      if (!coords) return;
       
       setSelectedRegion({
-        x: Math.min(regionStart.x, currentX),
-        y: Math.min(regionStart.y, currentY),
-        width: Math.abs(currentX - regionStart.x),
-        height: Math.abs(currentY - regionStart.y)
+        x: Math.min(regionStart.x, coords.x),
+        y: Math.min(regionStart.y, coords.y),
+        width: Math.abs(coords.x - regionStart.x),
+        height: Math.abs(coords.y - regionStart.y)
       });
     } else if (isDragging && !showRegionSelector) {
       setPosition({
@@ -133,6 +224,10 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   };
 
   const handleMouseUp = () => {
+    if (isDrawingRegion && selectedRegion && selectedRegion.width > 5 && selectedRegion.height > 5) {
+      // 区域足够大，显示标注对话框
+      setShowAnnotationDialog(true);
+    }
     setIsDragging(false);
     setIsDrawingRegion(false);
     setRegionStart(null);
@@ -266,37 +361,44 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
         onWheel={handleWheel}
       >
         {previewUrl && (
-          <>
+          <div 
+            className="relative"
+            style={{
+              transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
+              transformOrigin: 'center center',
+              transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+            }}
+          >
             <img
               ref={imageRef}
               src={previewUrl}
               alt={fileData.filename}
-              style={imageStyle}
-              className="max-w-none select-none"
+              style={{
+                cursor: showRegionSelector ? 'crosshair' : (isDragging ? 'grabbing' : 'grab')
+              }}
+              className="max-w-none select-none block"
               draggable={false}
-              onLoad={() => {
-                // 设置画布尺寸
+              onLoad={(e) => {
+                const image = e.currentTarget;
                 const canvas = canvasRef.current;
-                const image = imageRef.current;
-                if (canvas && image) {
-                  canvas.width = image.naturalWidth;
-                  canvas.height = image.naturalHeight;
-                  canvas.style.width = `${image.offsetWidth}px`;
-                  canvas.style.height = `${image.offsetHeight}px`;
+                if (canvas) {
+                  const { naturalWidth, naturalHeight, offsetWidth, offsetHeight } = image;
+                  setImageNaturalSize({
+                    width: naturalWidth,
+                    height: naturalHeight
+                  });
+                  canvas.width = naturalWidth;
+                  canvas.height = naturalHeight;
+                  canvas.style.width = `${offsetWidth}px`;
+                  canvas.style.height = `${offsetHeight}px`;
                 }
               }}
             />
             <canvas
               ref={canvasRef}
-              className="absolute top-1/2 left-1/2 pointer-events-none"
-              style={{
-                transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
-                transformOrigin: 'center center',
-                marginLeft: '-50%',
-                marginTop: '-50%'
-              }}
+              className="absolute top-0 left-0 pointer-events-none"
             />
-          </>
+          </div>
         )}
         
         {!previewUrl && (
@@ -316,6 +418,87 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
             <p className="text-sm text-gray-600">
               {isDrawingRegion ? '拖拽以选择区域' : '点击并拖拽以选择分析区域'}
             </p>
+          </Card>
+        </div>
+      )}
+
+      {/* 标注对话框 */}
+      {showAnnotationDialog && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black bg-opacity-50">
+          <Card className="p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <TagIcon size={20} className="mr-2" />
+              添加标注
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">标签名称</label>
+                <Input
+                  placeholder="输入标注标签..."
+                  value={annotationLabel}
+                  onChange={(e) => setAnnotationLabel(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && annotationLabel.trim()) {
+                      handleSaveAnnotation();
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+              {selectedRegion && (
+                <div className="text-sm text-gray-600">
+                  区域大小: {Math.round(selectedRegion.width)} × {Math.round(selectedRegion.height)}
+                </div>
+              )}
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={handleCancelAnnotation}>
+                  取消
+                </Button>
+                <Button 
+                  onClick={handleSaveAnnotation}
+                  disabled={!annotationLabel.trim()}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  <SaveIcon size={16} className="mr-1" />
+                  保存
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* 标注列表 */}
+      {annotations.length > 0 && (
+        <div className="absolute top-20 left-4 z-10 max-w-xs">
+          <Card className="p-3">
+            <h4 className="font-medium mb-2 flex items-center">
+              <TagIcon size={16} className="mr-1" />
+              标注列表 ({annotations.length})
+            </h4>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {annotations.map((annotation) => (
+                <div 
+                  key={annotation.id} 
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{annotation.label}</div>
+                    <div className="text-gray-500">
+                      {Math.round(annotation.region.width)}×{Math.round(annotation.region.height)}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteAnnotation(annotation.id)}
+                    className="p-1 h-6 w-6"
+                  >
+                    <XIcon size={12} />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </Card>
         </div>
       )}
