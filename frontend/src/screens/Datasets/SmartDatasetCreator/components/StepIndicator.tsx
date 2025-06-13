@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircleIcon } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
 import { getSteps } from '../constants';
@@ -21,7 +21,7 @@ export const StepIndicator: React.FC = () => {
                   : 'border-[#d1dbe8] text-[#4f7096] hover:border-[#1977e5]'
               }`}>
                 {currentStep > step.id ? (
-                  <CheckCircleIcon className="w-6 h-6" />
+                  <CheckCircle className="w-6 h-6" />
                 ) : (
                   <span className="text-sm font-bold">{step.id}</span>
                 )}

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { ArrowLeftIcon, DownloadIcon, TrashIcon, FileIcon, CheckCircleIcon, ClockIcon, SettingsIcon, RefreshCwIcon } from 'lucide-react';
+import { ArrowLeft, Download, Trash, File, CheckCircle, Clock, Settings, RefreshCw } from 'lucide-react';
 
 export const FileDetails = (): JSX.Element => {
   const { t } = useTranslation();
@@ -61,21 +61,21 @@ export const FileDetails = (): JSX.Element => {
             className="text-[#4f7096] hover:text-[#0c141c] hover:bg-[#e8edf2]"
             onClick={handleBack}
           >
-            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             {t('rawData.backToList')}
           </Button>
           <div className="flex items-center gap-3">
-            <FileIcon className="w-6 h-6 text-[#1977e5]" />
+            <File className="w-6 h-6 text-[#1977e5]" />
             <h2 className="text-[22px] font-bold leading-7 text-[#0c141c]">{file.name}</h2>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="border-[#d1dbe8]">
-            <DownloadIcon className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4 mr-2" />
             {t('rawData.fileDetails.download')}
           </Button>
           <Button variant="outline" className="border-[#d1dbe8] text-red-600 hover:text-red-700 hover:bg-red-50">
-            <TrashIcon className="w-4 h-4 mr-2" />
+            <Trash className="w-4 h-4 mr-2" />
             {t('rawData.fileDetails.delete')}
           </Button>
         </div>
@@ -130,14 +130,14 @@ export const FileDetails = (): JSX.Element => {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold">{t('rawData.fileDetails.parseSettings')}</h3>
               <Button className="bg-[#1977e5] hover:bg-[#1977e5]/90">
-                <RefreshCwIcon className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4 mr-2" />
                 {t('rawData.fileDetails.reParse')}
               </Button>
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-[#f7f9fc] rounded-lg">
                 <div className="flex items-center gap-3">
-                  <SettingsIcon className="w-5 h-5 text-[#4f7096]" />
+                  <Settings className="w-5 h-5 text-[#4f7096]" />
                   <span className="font-medium">{t('rawData.fileDetails.parserType')}</span>
                 </div>
                 <span className="text-[#4f7096]">Default Parser</span>
@@ -155,9 +155,9 @@ export const FileDetails = (): JSX.Element => {
                 <div key={step.number} className="flex items-start gap-3">
                   <div className="mt-1">
                     {step.completed ? (
-                      <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                      <CheckCircle className="w-5 h-5 text-green-600" />
                     ) : (
-                      <ClockIcon className="w-5 h-5 text-blue-600" />
+                      <Clock className="w-5 h-5 text-blue-600" />
                     )}
                   </div>
                   <div className="flex-1">

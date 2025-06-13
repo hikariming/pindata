@@ -5,32 +5,35 @@ import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { 
-  ArrowLeftIcon,
-  FileTextIcon,
-  DownloadIcon,
-  EditIcon,
-  TrashIcon,
-  RefreshCwIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-  ClockIcon,
-  EyeIcon,
-  CopyIcon,
-  FileIcon,
-  FileSpreadsheetIcon,
-  PresentationIcon,
-  ImageIcon,
-  ZapIcon,
-  BrainIcon,
-  FileSearchIcon,
-  Loader2Icon,
-  FileEditIcon
+  ArrowLeft,
+  FileText,
+  Download,
+  Edit,
+  Trash,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Eye,
+  Copy,
+  File,
+  FileSpreadsheet,
+  Presentation,
+  Image,
+  Video,
+  Zap,
+  Brain,
+  FileSearch,
+  Loader2,
+  FileEdit,
+  MessageSquare as AnnotationIcon
 } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { fileService, libraryService } from '../../services';
 import { LibraryFile } from '../../types/library';
 import { useFileConversion } from '../../hooks/useFileConversion';
 import { ConvertToMarkdownDialog, ConversionConfig } from '../RawData/LibraryDetails/components/ConvertToMarkdownDialog';
+import { MediaFileDetailsContainer } from '../../components/MediaFileDetails';
 
 export const FilePreview = (): JSX.Element => {
   const { t } = useTranslation();
@@ -153,26 +156,43 @@ export const FilePreview = (): JSX.Element => {
     }
   };
 
-  const getFileIcon = (type: string) => {
+  const getFile = (type: string) => {
     switch (type.toLowerCase()) {
       case 'pdf':
-        return <FileTextIcon className="w-8 h-8 text-red-500" />;
+        return <FileText className="w-8 h-8 text-red-500" />;
       case 'docx':
       case 'doc':
-        return <FileTextIcon className="w-8 h-8 text-blue-500" />;
+        return <FileText className="w-8 h-8 text-blue-500" />;
       case 'xlsx':
       case 'xls':
-        return <FileSpreadsheetIcon className="w-8 h-8 text-green-500" />;
+        return <FileSpreadsheet className="w-8 h-8 text-green-500" />;
       case 'pptx':
       case 'ppt':
-        return <PresentationIcon className="w-8 h-8 text-orange-500" />;
+        return <Presentation className="w-8 h-8 text-orange-500" />;
       case 'png':
       case 'jpg':
       case 'jpeg':
-        return <ImageIcon className="w-8 h-8 text-purple-500" />;
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+      case 'svg':
+        return <Image className="w-8 h-8 text-purple-500" />;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'wmv':
+      case 'flv':
+      case 'webm':
+        return <Video className="w-8 h-8 text-indigo-500" />;
       default:
-        return <FileIcon className="w-8 h-8 text-gray-500" />;
+        return <File className="w-8 h-8 text-gray-500" />;
     }
+  };
+
+  // 检查是否为多媒体文件
+  const isMediaFile = (type: string) => {
+    const mediaTypes = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+    return mediaTypes.includes(type.toLowerCase());
   };
 
   const getStatusColor = (status: string) => {
@@ -298,7 +318,7 @@ export const FilePreview = (): JSX.Element => {
     return (
       <div className="w-full max-w-[1400px] p-6">
         <div className="flex items-center justify-center h-64">
-          <Loader2Icon className="w-8 h-8 animate-spin text-[#1977e5]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#1977e5]" />
         </div>
       </div>
     );
@@ -317,6 +337,35 @@ export const FilePreview = (): JSX.Element => {
     );
   }
 
+  // 如果是多媒体文件，使用专门的多媒体详情组件
+  if (isMediaFile(file.file_type)) {
+    return (
+      <div className="w-full h-screen flex flex-col">
+        {/* 简化的顶部导航 */}
+        <div className="flex items-center p-4 bg-white border-b">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(`/rawdata`)}
+            className="text-[#4f7096] hover:text-[#0c141c] hover:bg-[#e8edf2]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('rawData.filePreview.backToLibrary')}
+          </Button>
+          <div className="mx-2 text-[#4f7096]">/</div>
+          <span className="text-[#0c141c] font-medium">{file.original_filename || file.filename}</span>
+        </div>
+        
+        {/* 多媒体文件详情组件 */}
+        <div className="flex-1 overflow-hidden">
+          <MediaFileDetailsContainer 
+            libraryId={libraryId} 
+            fileId={fileId} 
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-[1400px] p-6">
       {/* 顶部导航 */}
@@ -326,7 +375,7 @@ export const FilePreview = (): JSX.Element => {
           onClick={() => navigate(`/rawdata`)}
           className="text-[#4f7096] hover:text-[#0c141c] hover:bg-[#e8edf2]"
         >
-          <ArrowLeftIcon className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           {t('rawData.filePreview.backToLibrary')}
         </Button>
         <div className="mx-2 text-[#4f7096]">/</div>
@@ -337,7 +386,7 @@ export const FilePreview = (): JSX.Element => {
       <Card className="border-[#d1dbe8] bg-white p-6 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start">
-            {getFileIcon(file.file_type)}
+            {getFile(file.file_type)}
             <div className="ml-4 flex-1">
               <div className="flex items-center mb-2">
                 {isEditing ? (
@@ -363,7 +412,7 @@ export const FilePreview = (): JSX.Element => {
                       onClick={() => setIsEditing(true)}
                       className="text-[#4f7096] hover:text-[#0c141c]"
                     >
-                      <EditIcon className="w-4 h-4" />
+                      <Edit className="w-4 h-4" />
                     </Button>
                   </div>
                 )}
@@ -390,7 +439,7 @@ export const FilePreview = (): JSX.Element => {
                 className="bg-[#1977e5] hover:bg-[#1977e5]/90"
                 onClick={handleDownloadMarkdown}
               >
-                <DownloadIcon className="w-4 h-4 mr-2" />
+                <Download className="w-4 h-4 mr-2" />
                 {t('rawData.filePreview.downloadMD')}
               </Button>
             )}
@@ -401,11 +450,11 @@ export const FilePreview = (): JSX.Element => {
               onClick={handleConvertToMD}
               disabled={convertLoading}
             >
-              <FileEditIcon className="w-4 h-4 mr-2" />
+              <FileEdit className="w-4 h-4 mr-2" />
               {convertLoading ? t('rawData.filePreview.converting') : t('rawData.filePreview.convertToMD')}
             </Button>
             <Button variant="outline" className="border-[#d1dbe8]" onClick={handleDownloadOriginal}>
-              <DownloadIcon className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-2" />
               {t('rawData.filePreview.downloadOriginal')}
             </Button>
             <Button 
@@ -413,7 +462,7 @@ export const FilePreview = (): JSX.Element => {
               onClick={handleDelete}
               className="border-[#d1dbe8] text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              <TrashIcon className="w-4 h-4 mr-2" />
+              <Trash className="w-4 h-4 mr-2" />
               {t('rawData.filePreview.delete')}
             </Button>
           </div>
@@ -422,7 +471,7 @@ export const FilePreview = (): JSX.Element => {
         {file.process_status === 'failed' && file.conversion_error && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center text-red-700">
-              <AlertCircleIcon className="w-5 h-5 mr-2" />
+              <AlertCircle className="w-5 h-5 mr-2" />
               <span className="font-medium">{t('rawData.filePreview.processingError.title')}</span>
             </div>
             <div className="text-sm text-red-600 mt-1">{file.conversion_error}</div>
@@ -449,7 +498,7 @@ export const FilePreview = (): JSX.Element => {
             {/* 文件统计 */}
             <Card className="border-[#d1dbe8] bg-white p-6">
               <h3 className="font-semibold text-[#0c141c] mb-4 flex items-center">
-                <FileSearchIcon className="w-5 h-5 mr-2" />
+                <FileSearch className="w-5 h-5 mr-2" />
                 {t('rawData.filePreview.overview.fileStats')}
               </h3>
               <div className="space-y-3">
@@ -485,7 +534,7 @@ export const FilePreview = (): JSX.Element => {
             {/* 处理信息 */}
             <Card className="border-[#d1dbe8] bg-white p-6">
               <h3 className="font-semibold text-[#0c141c] mb-4 flex items-center">
-                <ZapIcon className="w-5 h-5 mr-2" />
+                <Zap className="w-5 h-5 mr-2" />
                 {t('rawData.filePreview.overview.processingInfo')}
               </h3>
               <div className="space-y-3">
@@ -529,7 +578,7 @@ export const FilePreview = (): JSX.Element => {
             {/* 训练数据价值 */}
             <Card className="border-[#d1dbe8] bg-white p-6">
               <h3 className="font-semibold text-[#0c141c] mb-4 flex items-center">
-                <BrainIcon className="w-5 h-5 mr-2" />
+                <Brain className="w-5 h-5 mr-2" />
                 {t('rawData.filePreview.overview.trainingValue')}
               </h3>
               <div className="space-y-3">
@@ -568,7 +617,7 @@ export const FilePreview = (): JSX.Element => {
                   onClick={() => file.minio_object_name && loadOriginalContent(file.minio_object_name)}
                   disabled={loadingOriginal}
                 >
-                  <RefreshCwIcon className={`w-4 h-4 mr-2 ${loadingOriginal ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loadingOriginal ? 'animate-spin' : ''}`} />
                   {t('rawData.filePreview.refresh')}
                 </Button>
                 <Button 
@@ -577,7 +626,7 @@ export const FilePreview = (): JSX.Element => {
                   onClick={() => copyToClipboard(originalContent)}
                   disabled={!originalContent || previewMethod !== 'text'}
                 >
-                  <CopyIcon className="w-4 h-4 mr-2" />
+                  <Copy className="w-4 h-4 mr-2" />
                   {t('rawData.filePreview.copyText')}
                 </Button>
               </div>
@@ -585,7 +634,7 @@ export const FilePreview = (): JSX.Element => {
             <div className="bg-[#f7f9fc] border border-[#e8edf2] rounded-lg p-4 max-h-96 overflow-auto">
               {loadingOriginal ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2Icon className="w-6 h-6 animate-spin text-[#1977e5]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#1977e5]" />
                 </div>
               ) : previewMethod === 'text' ? (
                 <pre className="whitespace-pre-wrap text-sm text-[#0c141c] font-mono">
@@ -603,20 +652,20 @@ export const FilePreview = (): JSX.Element => {
                 />
               ) : previewMethod === 'unsupported' ? (
                 <div className="text-center py-10">
-                  <FileIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <File className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 px-4">{originalContent || t('rawData.filePreview.content.unsupportedFileType')}</p>
                   <Button 
                     variant="outline" 
                     className="mt-6"
                     onClick={handleDownloadOriginal}
                   >
-                    <DownloadIcon className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4 mr-2" />
                     {t('rawData.filePreview.downloadOriginal')}
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-10">
-                  <FileSearchIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <FileSearch className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">
                     {originalContent || (file?.minio_object_name ? t('rawData.filePreview.content.loadPreview') : t('rawData.filePreview.content.incompleteFileInfo'))}
                   </p>
@@ -638,7 +687,7 @@ export const FilePreview = (): JSX.Element => {
                     onClick={() => loadMarkdownContent(file.converted_object_name!)}
                     disabled={loadingMarkdown}
                   >
-                    <RefreshCwIcon className={`w-4 h-4 mr-2 ${loadingMarkdown ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarkdown ? 'animate-spin' : ''}`} />
                     {t('rawData.filePreview.refresh')}
                   </Button>
                   <Button 
@@ -647,7 +696,7 @@ export const FilePreview = (): JSX.Element => {
                     onClick={() => copyToClipboard(markdownContent)}
                     disabled={!markdownContent}
                   >
-                    <CopyIcon className="w-4 h-4 mr-2" />
+                    <Copy className="w-4 h-4 mr-2" />
                     {t('rawData.filePreview.copy')}
                   </Button>
                   <Button 
@@ -655,7 +704,7 @@ export const FilePreview = (): JSX.Element => {
                     className="bg-[#1977e5] hover:bg-[#1977e5]/90"
                     onClick={handleDownloadMarkdown}
                   >
-                    <DownloadIcon className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4 mr-2" />
                     {t('rawData.filePreview.download')}
                   </Button>
                 </div>
@@ -663,7 +712,7 @@ export const FilePreview = (): JSX.Element => {
               <div className="bg-[#f7f9fc] border border-[#e8edf2] rounded-lg p-4 max-h-96 overflow-auto">
                 {loadingMarkdown ? (
                   <div className="flex items-center justify-center h-32">
-                    <Loader2Icon className="w-6 h-6 animate-spin text-[#1977e5]" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[#1977e5]" />
                   </div>
                 ) : (
                   <pre className="whitespace-pre-wrap text-sm text-[#0c141c] font-mono">
@@ -675,7 +724,7 @@ export const FilePreview = (): JSX.Element => {
           ) : (
             <Card className="border-[#d1dbe8] bg-white p-6">
               <div className="text-center py-8">
-                <ClockIcon className="w-12 h-12 text-[#4f7096] mx-auto mb-4" />
+                <Clock className="w-12 h-12 text-[#4f7096] mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-[#0c141c] mb-2">{t('rawData.filePreview.markdown.unavailable')}</h3>
                 <p className="text-[#4f7096]">
                   {file.process_status === 'pending' && t('rawData.filePreview.markdown.notStarted')}
@@ -766,9 +815,9 @@ export const FilePreview = (): JSX.Element => {
         } border`}>
           <div className="flex items-center">
             {notification.type === 'success' ? (
-              <CheckCircleIcon className="w-5 h-5 mr-2" />
+              <CheckCircle className="w-5 h-5 mr-2" />
             ) : (
-              <AlertCircleIcon className="w-5 h-5 mr-2" />
+              <AlertCircle className="w-5 h-5 mr-2" />
             )}
             {notification.message}
           </div>

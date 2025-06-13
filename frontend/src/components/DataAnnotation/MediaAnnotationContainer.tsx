@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MediaAnnotation } from './MediaAnnotation';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { Loader2Icon, SparklesIcon } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { annotationService, AnnotationData, AIAnnotationRequest } from '../../services/annotation.service';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
@@ -92,7 +92,7 @@ export const MediaAnnotationContainer: React.FC<MediaAnnotationContainerProps> =
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2Icon className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -124,9 +124,9 @@ export const MediaAnnotationContainer: React.FC<MediaAnnotationContainerProps> =
           disabled={isAILoading}
         >
           {isAILoading ? (
-            <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
-            <SparklesIcon className="w-4 h-4 mr-2" />
+            <Sparkles className="w-4 h-4 mr-2" />
           )}
           {t('annotation.aiAssist')}
         </Button>
@@ -172,9 +172,9 @@ export const MediaAnnotationContainer: React.FC<MediaAnnotationContainerProps> =
                 disabled={!aiPrompt.trim() || isAILoading}
               >
                 {isAILoading ? (
-                  <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <SparklesIcon className="w-4 h-4 mr-2" />
+                  <Sparkles className="w-4 h-4 mr-2" />
                 )}
                 {t('annotation.generate')}
               </Button>
