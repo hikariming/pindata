@@ -16,13 +16,31 @@ logger = logging.getLogger(__name__)
 
 # 允许的文件类型和对应的 MIME 类型
 ALLOWED_EXTENSIONS = {
+    # 文档类型
     'pdf': 'application/pdf',
     'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'doc': 'application/msword',
     'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'ppt': 'application/vnd.ms-powerpoint',
     'txt': 'text/plain',
-    'md': 'text/markdown'
+    'md': 'text/markdown',
+    
+    # 图片类型
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'bmp': 'image/bmp',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    
+    # 视频类型
+    'mp4': 'video/mp4',
+    'avi': 'video/x-msvideo',
+    'mov': 'video/quicktime',
+    'wmv': 'video/x-ms-wmv',
+    'flv': 'video/x-flv',
+    'webm': 'video/webm'
 }
 
 def allowed_file(filename):
