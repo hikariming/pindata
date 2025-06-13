@@ -54,7 +54,16 @@ langchain-community
 pillow>=9.0.0
 pdf2image
 pytesseract
+google-generativeai
+anthropic>=0.8.0
+openai>=1.0.0
+whisper>=1.0.0
 
 # 数据集导入
 huggingface_hub>=0.19.0
-modelscope>=1.9.0 
+modelscope>=1.9.0
+
+# 图像处理
+opencv-python>=4.8.0
+opencv-python-headless>=4.8.0  # 用于服务器环境
+scikit-image>=0.21.0 

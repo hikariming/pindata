@@ -60,10 +60,12 @@ import {
   MoreHorizontalIcon,
   GitBranch,
   RefreshCw,
-  ChevronDownIcon
+  ChevronDownIcon,
+  MessageSquareIcon
 } from 'lucide-react';
 import { enhancedDatasetService } from '../../services/enhanced-dataset.service';
 import { DatasetPreview as DatasetPreviewType, EnhancedDatasetVersion } from '../../types/enhanced-dataset';
+import { MediaAnnotationContainer } from '../DataAnnotation/MediaAnnotationContainer';
 
 interface DataPreviewProps {
   data: DatasetPreviewType;
@@ -91,6 +93,11 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
   const [isVersionChanging, setIsVersionChanging] = useState(false);
   const [versionChangeError, setVersionChangeError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFileForAnnotation, setSelectedFileForAnnotation] = useState<{
+    id: string;
+    type: 'image' | 'video';
+    url: string;
+  } | null>(null);
 
   // 获取可用版本列表
   useEffect(() => {
@@ -441,6 +448,46 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
     }
   };
 
+  const renderFileActions = (filePreview: any) => {
+    const { file } = filePreview;
+    const isMediaFile = file.file_type.toLowerCase() === 'image' || file.file_type.toLowerCase() === 'video';
+
+    return (
+      <div className="flex gap-2">
+        {isMediaFile && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedFileForAnnotation({
+              id: file.id,
+              type: file.file_type.toLowerCase() as 'image' | 'video',
+              url: file.url
+            })}
+          >
+            <MessageSquareIcon className="w-4 h-4 mr-2" />
+            {t('dataPreview.annotate')}
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.open(file.url, '_blank')}
+        >
+          <EyeIcon className="w-4 h-4 mr-2" />
+          {t('dataPreview.preview')}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDownloadFile(file.minio_object_name, file.filename)}
+        >
+          <DownloadIcon className="w-4 h-4 mr-2" />
+          {t('dataPreview.download')}
+        </Button>
+      </div>
+    );
+  };
+
   if (!data.preview || !data.preview.files || data.preview.files.length === 0) {
     return (
       <Card className="p-6">
@@ -774,33 +821,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDownloadFile(
-                    filePreview.file.minio_object_name,
-                    filePreview.file.filename
-                  )}
-                >
-                  <DownloadIcon className="w-4 h-4 mr-2" />
-                  {t('dataPreview.downloadFile')}
-                </Button>
-                {data.version && !data.version.is_deprecated && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      enhancedDatasetService.deleteFileFromVersion(
-                        data.version!.id,
-                        filePreview.file.id
-                      ).then(() => onDataChange?.());
-                    }}
-                  >
-                    <Trash2Icon className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
+              {renderFileActions(filePreview)}
             </div>
 
             {/* 只有支持的文件类型才显示预览内容 */}
@@ -833,6 +854,27 @@ export const DataPreview: React.FC<DataPreviewProps> = ({
           </div>
         </Card>
       )}
+
+      {/* 标注对话框 */}
+      <Dialog open={!!selectedFileForAnnotation} onOpenChange={() => setSelectedFileForAnnotation(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedFileForAnnotation?.type === 'image' 
+                ? t('annotation.imageAnnotation')
+                : t('annotation.videoAnnotation')}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedFileForAnnotation && (
+            <MediaAnnotationContainer
+              fileId={selectedFileForAnnotation.id}
+              fileType={selectedFileForAnnotation.type}
+              fileUrl={selectedFileForAnnotation.url}
+              onClose={() => setSelectedFileForAnnotation(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 

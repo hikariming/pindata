@@ -194,7 +194,8 @@ class ConversionService:
                 storage_service.upload_file_from_path(
                     md_file.name,
                     markdown_object_name,
-                    content_type='text/markdown; charset=utf-8'
+                    content_type='text/markdown; charset=utf-8',
+                    bucket_name=current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets')
                 )
                 
                 # 获取文件大小

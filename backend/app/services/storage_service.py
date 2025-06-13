@@ -260,7 +260,7 @@ class StorageService:
             
             # 确定要使用的bucket
             if bucket_name is None:
-                bucket_name = current_app.config['MINIO_BUCKET_NAME']
+                bucket_name = current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets')
             
             # 确保bucket存在
             if not client.bucket_exists(bucket_name):

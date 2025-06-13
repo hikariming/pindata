@@ -27,7 +27,7 @@ from .data_governance_project import DataGovernanceProject, ProjectStatus
 from .project_data_source import ProjectDataSource, DataSourceType, DataSourceStatus
 from .project_team_member import ProjectTeamMember, ProjectRole, MemberStatus
 from .project_pipeline_stage import ProjectPipelineStage, StageType, StageStatus
-from .governed_data import GovernedData, DataType as GovernedDataType, GovernanceStatus
+from .governed_data import GovernedData, DataType as GovernedDataType, GovernanceStatus, AnnotationType, AnnotationSource
 from .knowledge_item import KnowledgeItem, KnowledgeType, KnowledgeStatus
 from .data_quality_assessment import DataQualityAssessment, QualityDimension, AssessmentMethod, AssessmentStatus
 from .data_source_config import DataSourceConfig, DataSourceType as ConfigDataSourceType, DatabaseType, APIAuthType, DataSourceStatus as ConfigDataSourceStatus
@@ -50,7 +50,7 @@ __all__ = [
     'ProjectDataSource', 'DataSourceType', 'DataSourceStatus',
     'ProjectTeamMember', 'ProjectRole', 'MemberStatus',
     'ProjectPipelineStage', 'StageType', 'StageStatus',
-    'GovernedData', 'GovernedDataType', 'GovernanceStatus',
+    'GovernedData', 'GovernedDataType', 'GovernanceStatus', 'AnnotationType', 'AnnotationSource',
     'KnowledgeItem', 'KnowledgeType', 'KnowledgeStatus',
     'DataQualityAssessment', 'QualityDimension', 'AssessmentMethod', 'AssessmentStatus',
     'DataSourceConfig', 'ConfigDataSourceType', 'DatabaseType', 'APIAuthType', 'ConfigDataSourceStatus'

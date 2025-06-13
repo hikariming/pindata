@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
+import { Toaster } from 'react-hot-toast';
 import { Layout } from "./components/Layout";
 import { ActivitySection } from "./screens/StitchDesign/sections/ActivitySection";
 import { RawData } from "./screens/RawData";
@@ -22,6 +23,7 @@ export const App = (): JSX.Element => {
   
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <Routes>
         {/* 认证相关路由 */}
         <Route path="/auth/login" element={

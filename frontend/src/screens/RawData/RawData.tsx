@@ -424,23 +424,23 @@ export const RawData = (): JSX.Element => {
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setView('create-database')}
+                className="cursor-not-allowed opacity-50"
+                disabled
               >
                 <DatabaseIcon className="mr-2 h-4 w-4" />
                 <div>
                   <div className="font-medium">数据库表</div>
-                  <div className="text-xs text-gray-500">连接数据库表作为数据源</div>
+                  <div className="text-xs text-gray-500">敬请期待</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setView('create-api')}
+                className="cursor-not-allowed opacity-50"
+                disabled
               >
                 <CloudIcon className="mr-2 h-4 w-4" />
                 <div>
                   <div className="font-medium">API数据源</div>
-                  <div className="text-xs text-gray-500">从API接口获取数据</div>
+                  <div className="text-xs text-gray-500">敬请期待</div>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

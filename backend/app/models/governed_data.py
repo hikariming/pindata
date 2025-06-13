@@ -24,6 +24,29 @@ class GovernanceStatus(enum.Enum):
     VALIDATED = "validated"       # 已验证
 
 
+class AnnotationType(enum.Enum):
+    """标注类型枚举"""
+    IMAGE_QA = "image_qa"                    # 图片问答
+    IMAGE_CAPTION = "image_caption"          # 图片描述
+    IMAGE_CLASSIFICATION = "image_classification"  # 图片分类
+    IMAGE_OBJECT_DETECTION = "image_object_detection"  # 目标检测
+    VIDEO_TRANSCRIPT = "video_transcript"     # 视频字幕
+    VIDEO_QA = "video_qa"                    # 视频问答
+    VIDEO_SUMMARY = "video_summary"          # 视频摘要
+    VIDEO_SCENE_DETECTION = "video_scene_detection"  # 场景检测
+    AUDIO_TRANSCRIPT = "audio_transcript"    # 音频转录
+    TEXT_EXTRACTION = "text_extraction"      # 文本提取
+    CUSTOM = "custom"                        # 自定义标注
+
+
+class AnnotationSource(enum.Enum):
+    """标注来源枚举"""
+    AI_GENERATED = "ai_generated"            # AI生成
+    HUMAN_ANNOTATED = "human_annotated"      # 人工标注
+    AI_ASSISTED = "ai_assisted"              # AI辅助的人工标注
+    IMPORTED = "imported"                    # 导入的标注
+
+
 class GovernedData(db.Model):
     """治理后数据模型"""
     __tablename__ = 'governed_data'
@@ -59,6 +82,18 @@ class GovernedData(db.Model):
     tags = Column(JSON)  # 标签列表
     category = Column(String(100))  # 数据类别
     business_domain = Column(String(100))  # 业务域
+    
+    # 多媒体标注相关字段
+    annotation_data = Column(JSON)  # 标注数据主体
+    annotation_type = Column(Enum(AnnotationType))  # 标注类型
+    annotation_source = Column(Enum(AnnotationSource))  # 标注来源
+    ai_annotations = Column(JSON)  # AI生成的标注
+    human_annotations = Column(JSON)  # 人工标注
+    annotation_confidence = Column(Float, default=0.0)  # 标注置信度
+    annotation_metadata = Column(JSON)  # 标注元数据（如模型版本、时间戳等）
+    review_status = Column(String(50), default='pending')  # 审核状态: pending, approved, rejected
+    reviewer_id = Column(String(36))  # 审核人ID
+    review_comments = Column(Text)  # 审核意见
     
     # 时间戳
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -98,7 +133,71 @@ class GovernedData(db.Model):
             'tags': self.tags,
             'category': self.category,
             'business_domain': self.business_domain,
+            # 多媒体标注字段
+            'annotation_data': self.annotation_data,
+            'annotation_type': self.annotation_type.value if self.annotation_type else None,
+            'annotation_source': self.annotation_source.value if self.annotation_source else None,
+            'ai_annotations': self.ai_annotations,
+            'human_annotations': self.human_annotations,
+            'annotation_confidence': self.annotation_confidence,
+            'annotation_metadata': self.annotation_metadata,
+            'review_status': self.review_status,
+            'reviewer_id': self.reviewer_id,
+            'review_comments': self.review_comments,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'processed_at': self.processed_at.isoformat() if self.processed_at else None,
-        } 
+        }
+    
+    @property
+    def has_annotations(self):
+        """检查是否有标注数据"""
+        return bool(self.annotation_data or self.ai_annotations or self.human_annotations)
+    
+    @property
+    def is_multimedia(self):
+        """检查是否为多媒体数据"""
+        if not self.raw_data:
+            return False
+        return self.raw_data.file_category in ['image', 'video', 'audio']
+    
+    @property
+    def annotation_summary(self):
+        """获取标注摘要"""
+        summary = {
+            'has_ai_annotations': bool(self.ai_annotations),
+            'has_human_annotations': bool(self.human_annotations),
+            'annotation_count': 0,
+            'review_required': self.review_status == 'pending',
+            'confidence_level': 'high' if self.annotation_confidence >= 0.8 else 'medium' if self.annotation_confidence >= 0.6 else 'low'
+        }
+        
+        # 计算标注数量
+        if self.annotation_data:
+            if isinstance(self.annotation_data, list):
+                summary['annotation_count'] = len(self.annotation_data)
+            elif isinstance(self.annotation_data, dict):
+                summary['annotation_count'] = len(self.annotation_data.get('annotations', []))
+        
+        return summary
+    
+    def merge_annotations(self, ai_annotations=None, human_annotations=None):
+        """合并AI和人工标注"""
+        merged = {}
+        
+        # 先添加AI标注
+        if ai_annotations or self.ai_annotations:
+            merged['ai'] = ai_annotations or self.ai_annotations
+            
+        # 再添加人工标注，人工标注优先级更高
+        if human_annotations or self.human_annotations:
+            merged['human'] = human_annotations or self.human_annotations
+            
+        # 合并到annotation_data
+        if merged:
+            self.annotation_data = merged
+            self.annotation_source = AnnotationSource.AI_ASSISTED if (merged.get('ai') and merged.get('human')) else (
+                AnnotationSource.HUMAN_ANNOTATED if merged.get('human') else AnnotationSource.AI_GENERATED
+            )
+        
+        return self.annotation_data 
