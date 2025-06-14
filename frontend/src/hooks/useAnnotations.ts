@@ -1,19 +1,8 @@
 import { useState, useEffect } from 'react';
-import { annotationService } from '../services/annotation.service';
-
-interface Annotation {
-  id: string;
-  type: 'qa' | 'caption' | 'transcript';
-  content: any;
-  source: 'human' | 'ai';
-  confidence?: number;
-  timestamp: string;
-  region?: any;
-  timeRange?: { start: number; end: number };
-}
+import { annotationService, UnifiedAnnotation } from '../services/annotation.service';
 
 export const useAnnotations = (fileId: string, fileType?: string) => {
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [annotations, setAnnotations] = useState<UnifiedAnnotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +23,7 @@ export const useAnnotations = (fileId: string, fileType?: string) => {
     }
   };
 
-  const createAnnotation = async (annotation: Omit<Annotation, 'id' | 'timestamp'>) => {
+  const createAnnotation = async (annotation: Omit<UnifiedAnnotation, 'id' | 'timestamp'>) => {
     try {
       const response = await annotationService.createAnnotation(fileId, annotation);
       setAnnotations(prev => [...prev, response.data]);
@@ -45,7 +34,7 @@ export const useAnnotations = (fileId: string, fileType?: string) => {
     }
   };
 
-  const updateAnnotation = async (annotationId: string, updates: Partial<Annotation>) => {
+  const updateAnnotation = async (annotationId: string, updates: Partial<UnifiedAnnotation>) => {
     try {
       const response = await annotationService.updateAnnotation(annotationId, updates);
       setAnnotations(prev => 

@@ -79,11 +79,24 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentAnnotations, setCurrentAnnotations] = useState<any[]>([]);
 
+  // 统一处理加载状态
+  const isAnnotationsLoading = fileData?.file_category === 'image' 
+    ? imageAnnotationsLoading || annotationsLoading 
+    : annotationsLoading;
+
   useEffect(() => {
     if (fileData && (fileData.file_category === 'image' || fileData.file_category === 'video')) {
       loadPreviewUrl();
     }
   }, [fileData]);
+
+  // 确保currentAnnotations与最新的imageAnnotations同步
+  useEffect(() => {
+    if (fileData?.file_category === 'image' && imageAnnotations) {
+      setCurrentAnnotations(imageAnnotations);
+      console.log('更新currentAnnotations:', imageAnnotations);
+    }
+  }, [fileData, imageAnnotations]);
 
   const loadPreviewUrl = async () => {
     if (!fileData) return;
@@ -211,6 +224,136 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
     );
   };
 
+  // 映射图片标注的source字段
+  const mapImageAnnotationSource = (source: string): 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED' => {
+    const sourceStr = source?.toString().toLowerCase();
+    if (sourceStr === 'human' || sourceStr === 'human_annotated') return 'HUMAN_ANNOTATED';
+    if (sourceStr === 'ai' || sourceStr === 'ai_generated') return 'AI_GENERATED';
+    if (sourceStr === 'detection') return 'detection';
+    return 'HUMAN_ANNOTATED';
+  };
+
+  // 统一处理标注数据，将不同来源的标注合并为统一格式
+  const unifiedAnnotations = React.useMemo(() => {
+    console.log('合并标注数据:', {
+      fileCategory: fileData?.file_category,
+      imageAnnotations: imageAnnotations?.length || 0,
+      regularAnnotations: annotations?.length || 0,
+      imageAnnotationsData: imageAnnotations,
+      regularAnnotationsData: annotations
+    });
+
+    if (fileData?.file_category === 'image') {
+      // 图片文件：优先使用图片标注，同时包含普通标注
+      const imageAnns = (imageAnnotations || []).map(ann => {
+        console.log('转换图片标注:', ann);
+        return {
+          id: ann.id,
+          type: (ann.type?.toLowerCase() || 'detection') as 'qa' | 'caption' | 'transcript' | 'detection' | 'OBJECT_DETECTION',
+          content: ann.content || {},
+          source: mapImageAnnotationSource(ann.source),
+          confidence: ann.confidence || 0,
+          timestamp: ann.created_at || ann.updated_at || new Date().toISOString(),
+          region: ann.region,
+          category: ann.category,
+          created_at: ann.created_at,
+          updated_at: ann.updated_at,
+          review_status: ann.review_status,
+          tags: ann.tags || []
+        };
+      });
+      
+      const regularAnns = (annotations || []).map(ann => ({
+        id: ann.id,
+        type: ann.type,
+        content: ann.content,
+        source: ann.source,
+        confidence: ann.confidence,
+        timestamp: ann.timestamp,
+        region: ann.region,
+        timeRange: ann.timeRange,
+        category: ann.category,
+        created_at: ann.created_at,
+        updated_at: ann.updated_at,
+        review_status: ann.review_status,
+        tags: ann.tags
+      }));
+      
+      const combined = [...imageAnns, ...regularAnns];
+      console.log('合并后的标注:', combined);
+      return combined;
+    } else {
+      // 视频文件：只使用普通标注
+      const videoAnns = (annotations || []).map(ann => ({
+        id: ann.id,
+        type: ann.type,
+        content: ann.content,
+        source: ann.source,
+        confidence: ann.confidence,
+        timestamp: ann.timestamp,
+        region: ann.region,
+        timeRange: ann.timeRange,
+        category: ann.category,
+        created_at: ann.created_at,
+        updated_at: ann.updated_at,
+        review_status: ann.review_status,
+        tags: ann.tags
+      }));
+      console.log('视频标注:', videoAnns);
+      return videoAnns;
+    }
+  }, [fileData, imageAnnotations, annotations, mapImageAnnotationSource]);
+
+  // 统一处理标注创建
+  const handleCreateAnnotation = async (annotation: any) => {
+    if (fileData?.file_category === 'image') {
+      // 为图片文件，转换为ImageAnnotation格式
+      return await createImageAnnotation({
+        file_id: actualFileId!,
+        type: annotation.type.toUpperCase(),
+        source: annotation.source.toUpperCase(),
+        content: annotation.content,
+        region: annotation.region,
+        confidence: annotation.confidence || 1.0,
+        category: annotation.category,
+        tags: annotation.tags || []
+      });
+    } else {
+      // 为视频文件，使用原有格式
+      return await createAnnotation(annotation);
+    }
+  };
+
+  // 统一处理标注更新
+  const handleUpdateAnnotation = async (id: string, updates: any) => {
+    if (fileData?.file_category === 'image') {
+      return await updateImageAnnotation(id, updates);
+    } else {
+      return await updateAnnotation(id, updates);
+    }
+  };
+
+  // 统一处理标注删除
+  const handleDeleteAnnotation = async (id: string) => {
+    if (fileData?.file_category === 'image') {
+      return await deleteImageAnnotation(id);
+    } else {
+      return await deleteAnnotation(id);
+    }
+  };
+
+  // 添加调试信息 - 移到所有定义之后
+  React.useEffect(() => {
+    console.log('MediaFileDetailsContainer 状态:', {
+      activeTab,
+      fileData: fileData?.filename,
+      imageAnnotations: imageAnnotations?.length || 0,
+      annotations: annotations?.length || 0,
+      currentAnnotations: currentAnnotations?.length || 0,
+      unifiedAnnotations: unifiedAnnotations?.length || 0
+    });
+  }, [activeTab, fileData, imageAnnotations, annotations, currentAnnotations, unifiedAnnotations]);
+
   if (fileLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -278,12 +421,12 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
               )}
               
               {/* 质量分数 */}
-              {fileData.content_quality_score > 0 && (
+              {(fileData.content_quality_score && fileData.content_quality_score > 0) && (
                 <div className="flex items-center space-x-2">
                   <Badge variant="secondary">
                     质量分数: {fileData.content_quality_score}/100
                   </Badge>
-                  {fileData.extraction_confidence > 0 && (
+                  {(fileData.extraction_confidence && fileData.extraction_confidence > 0) && (
                     <Badge variant="secondary">
                       提取置信度: {fileData.extraction_confidence}%
                     </Badge>
@@ -373,11 +516,11 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
             <TabsContent value="annotations" className="h-full m-0 p-0">
               <MediaAnnotationPanel
                 fileData={fileData}
-                annotations={fileData?.file_type?.startsWith('image/') ? currentAnnotations : annotations}
-                loading={fileData?.file_type?.startsWith('image/') ? imageAnnotationsLoading : annotationsLoading}
-                onCreateAnnotation={fileData?.file_type?.startsWith('image/') ? createImageAnnotation : createAnnotation}
-                onUpdateAnnotation={fileData?.file_type?.startsWith('image/') ? updateImageAnnotation : updateAnnotation}
-                onDeleteAnnotation={fileData?.file_type?.startsWith('image/') ? deleteImageAnnotation : deleteAnnotation}
+                annotations={unifiedAnnotations}
+                loading={isAnnotationsLoading}
+                onCreateAnnotation={handleCreateAnnotation}
+                onUpdateAnnotation={handleUpdateAnnotation}
+                onDeleteAnnotation={handleDeleteAnnotation}
                 onAIAnnotation={handleAIAnnotation}
                 isProcessing={isProcessing}
               />

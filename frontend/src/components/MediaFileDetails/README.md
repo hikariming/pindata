@@ -295,3 +295,240 @@ interface Annotation {
 6. **云端同步**: 将自定义类别同步到用户账户
 7. **标注历史**: 显示标注的修改历史
 8. **性能优化**: 大量标注时的渲染优化
+
+# MediaAnnotationPanel 组件使用说明
+
+## 概述
+
+`MediaAnnotationPanel` 组件是一个完整的媒体标注面板，已经完全对接了后端API，支持图片和视频文件的标注功能。
+
+## 功能特性
+
+### 1. 标注类型支持
+- **问答标注(QA)**: 支持问题和答案的配对标注
+- **描述标注(Caption)**: 支持媒体内容的文字描述
+- **转录标注(Transcript)**: 支持音频/视频的文字转录
+- **检测标注(Detection)**: 支持对象检测和区域标注
+
+### 2. 数据来源
+- **人工标注**: 用户手动创建的标注
+- **AI生成**: AI辅助生成的标注
+- **检测结果**: 自动检测算法生成的标注
+
+### 3. 后端API对接
+组件已经完全对接后端API，支持：
+- 获取文件标注列表
+- 创建新标注
+- 更新现有标注
+- 删除标注
+- AI辅助标注生成
+
+## 使用方法
+
+### 基础使用
+
+```tsx
+import { MediaAnnotationPanel } from './components/MediaFileDetails/MediaAnnotationPanel';
+import { useAnnotations } from './hooks/useAnnotations';
+import { useImageAnnotations } from './hooks/useImageAnnotations';
+
+function FileDetailsPage({ fileId, fileData }) {
+  // 对于普通文件（视频等）
+  const {
+    annotations,
+    loading,
+    createAnnotation,
+    updateAnnotation,
+    deleteAnnotation,
+    requestAIAnnotation
+  } = useAnnotations(fileId, fileData?.file_type);
+
+  // 对于图片文件
+  const {
+    annotations: imageAnnotations,
+    loading: imageLoading,
+    createAnnotation: createImageAnnotation,
+    updateAnnotation: updateImageAnnotation,
+    deleteAnnotation: deleteImageAnnotation,
+    generateAIAnnotation
+  } = useImageAnnotations(fileId);
+
+  const handleAIAnnotation = async (type, options) => {
+    if (fileData?.file_category === 'image') {
+      await generateAIAnnotation(type, options);
+    } else {
+      await requestAIAnnotation(type, options);
+    }
+  };
+
+  return (
+    <MediaAnnotationPanel
+      fileData={fileData}
+      annotations={fileData?.file_category === 'image' ? imageAnnotations : annotations}
+      loading={fileData?.file_category === 'image' ? imageLoading : loading}
+      onCreateAnnotation={fileData?.file_category === 'image' ? createImageAnnotation : createAnnotation}
+      onUpdateAnnotation={fileData?.file_category === 'image' ? updateImageAnnotation : updateAnnotation}
+      onDeleteAnnotation={fileData?.file_category === 'image' ? deleteImageAnnotation : deleteAnnotation}
+      onAIAnnotation={handleAIAnnotation}
+      isProcessing={false}
+    />
+  );
+}
+```
+
+### 高级使用 - 统一数据处理
+
+推荐使用 `MediaFileDetailsContainer` 组件，它已经内置了统一的数据处理逻辑：
+
+```tsx
+import { MediaFileDetailsContainer } from './components/MediaFileDetails/MediaFileDetailsContainer';
+
+function FileDetailsPage() {
+  const { libraryId, fileId } = useParams();
+  
+  return (
+    <MediaFileDetailsContainer 
+      libraryId={libraryId} 
+      fileId={fileId} 
+    />
+  );
+}
+```
+
+## 数据结构
+
+### UnifiedAnnotation 接口
+
+```tsx
+interface UnifiedAnnotation {
+  id: string;
+  type: 'qa' | 'caption' | 'transcript' | 'detection' | 'OBJECT_DETECTION';
+  content: any;
+  source: 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED';
+  confidence?: number;
+  timestamp: string;
+  region?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  timeRange?: { start: number; end: number };
+  category?: string;
+  created_at?: string;
+  updated_at?: string;
+  review_status?: string;
+  tags?: string[];
+}
+```
+
+### 内容格式示例
+
+#### 问答标注
+```json
+{
+  "type": "qa",
+  "content": {
+    "question": "这张图片显示了什么？",
+    "answer": "这是一张自然风景照片，展现了山脉和湖泊。"
+  }
+}
+```
+
+#### 描述标注
+```json
+{
+  "type": "caption", 
+  "content": {
+    "caption": "美丽的山湖风景，蓝天白云倒映在平静的湖面上。"
+  }
+}
+```
+
+#### 检测标注
+```json
+{
+  "type": "detection",
+  "content": {
+    "label": "汽车",
+    "description": "红色轿车"
+  },
+  "region": {
+    "x": 100,
+    "y": 200,
+    "width": 150,
+    "height": 80
+  },
+  "confidence": 0.95
+}
+```
+
+## AI功能
+
+### 支持的AI标注类型
+
+1. **AI问答** (`type: 'qa'`)
+   - 自动生成相关问题和答案
+   - 支持自定义问题列表
+
+2. **AI描述** (`type: 'caption'`)
+   - 自动生成图片/视频描述
+   - 支持不同详细程度
+
+3. **AI转录** (`type: 'transcript'`)
+   - 音频/视频转文字
+   - 支持时间戳
+
+4. **对象检测** (`type: 'object_detection'`)
+   - 自动识别和标注对象
+   - 生成边界框和标签
+
+### AI标注调用示例
+
+```tsx
+// AI问答
+await onAIAnnotation('qa', {
+  questions: ['这是什么？', '主要颜色是什么？'],
+  model_provider: 'openai'
+});
+
+// AI描述  
+await onAIAnnotation('caption', {
+  detail_level: 'high',
+  model_provider: 'openai'
+});
+
+// 对象检测
+await onAIAnnotation('object_detection');
+```
+
+## 导出功能
+
+组件支持多种格式的标注导出：
+
+- **YOLO格式**: 用于YOLO模型训练
+- **COCO格式**: 用于COCO数据集格式
+- **Pascal VOC格式**: 用于Pascal VOC数据集
+- **JSON格式**: 通用JSON格式
+- **CSV格式**: 表格数据格式
+
+## 注意事项
+
+1. **权限控制**: 确保用户有相应的标注权限
+2. **数据验证**: 组件会自动验证标注数据格式
+3. **错误处理**: 内置错误处理和用户提示
+4. **性能优化**: 大量标注时会自动分页加载
+5. **实时更新**: 支持多用户协作的实时标注更新
+
+## 故障排除
+
+### 常见问题
+
+1. **标注不显示**: 检查API连接和文件ID是否正确
+2. **AI功能不工作**: 确认AI服务配置和模型可用性
+3. **保存失败**: 检查网络连接和用户权限
+4. **类型错误**: 确保使用最新的接口定义
+
+### 调试模式
+
+开发环境下会提供详细的错误日志和模拟数据，帮助调试。

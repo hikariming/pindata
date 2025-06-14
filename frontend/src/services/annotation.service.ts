@@ -23,18 +23,84 @@ export interface AIAnnotationResponse {
   confidence: number;
 }
 
+// 统一的标注接口
+export interface UnifiedAnnotation {
+  id: string;
+  type: 'qa' | 'caption' | 'transcript' | 'detection' | 'OBJECT_DETECTION';
+  content: any;
+  source: 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED';
+  confidence?: number;
+  timestamp: string;
+  region?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  timeRange?: { start: number; end: number };
+  category?: string;
+  created_at?: string;
+  updated_at?: string;
+  review_status?: string;
+  tags?: string[];
+}
+
 export class AnnotationService {
+  /**
+   * 数据适配器：将后端返回的标注数据转换为统一格式
+   */
+  static adaptAnnotationData(rawAnnotation: any): UnifiedAnnotation {
+    return {
+      id: rawAnnotation.id,
+      type: rawAnnotation.type?.toLowerCase() || 'qa',
+      content: rawAnnotation.content || rawAnnotation.annotation_data || {},
+      source: this.normalizeSource(rawAnnotation.source),
+      confidence: rawAnnotation.confidence || 0,
+      timestamp: rawAnnotation.created_at || rawAnnotation.updated_at || rawAnnotation.timestamp || new Date().toISOString(),
+      region: rawAnnotation.region || rawAnnotation.coordinates,
+      timeRange: rawAnnotation.timeRange,
+      category: rawAnnotation.category,
+      created_at: rawAnnotation.created_at,
+      updated_at: rawAnnotation.updated_at,
+      review_status: rawAnnotation.review_status,
+      tags: rawAnnotation.tags || []
+    };
+  }
+
+  /**
+   * 规范化source字段
+   */
+  static normalizeSource(source: string): 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED' {
+    const normalizedSource = source?.toLowerCase();
+    const sourceMapping: { [key: string]: 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED' } = {
+      'human': 'human',
+      'human_annotated': 'HUMAN_ANNOTATED',
+      'ai': 'ai',
+      'ai_generated': 'AI_GENERATED',
+      'detection': 'detection',
+      'ai_assisted': 'AI_GENERATED',
+      'imported': 'AI_GENERATED'
+    };
+    return sourceMapping[normalizedSource] || 'human';
+  }
+
   /**
    * 获取文件标注
    */
-  static async getAnnotations(fileId: string): Promise<{ data: any[] }> {
+  static async getAnnotations(fileId: string): Promise<{ data: UnifiedAnnotation[] }> {
     try {
       // 修正：使用image-annotations接口并传递file_id作为查询参数
       const response = await apiClient.get<ApiResponse<{
         annotations: any[];
         pagination: any;
       }>>(`/api/v1/image-annotations?file_id=${fileId}`);
-      return { data: response.data?.annotations || [] };
+      
+      // 使用数据适配器转换数据
+      const adaptedAnnotations = (response.data?.annotations || []).map(ann => 
+        this.adaptAnnotationData(ann)
+      );
+      
+      return { data: adaptedAnnotations };
     } catch (error) {
       console.warn('获取标注失败，返回空数组:', error);
       return { data: [] };

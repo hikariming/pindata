@@ -19,27 +19,17 @@ import {
   ClockIcon,
   UserIcon,
   BotIcon,
-  MousePointerIcon
+  MousePointerIcon,
+  RectangleHorizontalIcon as RectangleIcon
 } from 'lucide-react';
-
-interface Annotation {
-  id: string;
-  type: 'qa' | 'caption' | 'transcript' | 'detection' | 'OBJECT_DETECTION';
-  content: any;
-  source: 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED';
-  confidence?: number;
-  timestamp: string;
-  region?: any;
-  timeRange?: { start: number; end: number };
-  category?: string;
-}
+import { UnifiedAnnotation } from '../../services/annotation.service';
 
 interface MediaAnnotationPanelProps {
   fileData: any;
-  annotations: Annotation[];
+  annotations: UnifiedAnnotation[];
   loading: boolean;
-  onCreateAnnotation: (annotation: Omit<Annotation, 'id' | 'timestamp'>) => Promise<void>;
-  onUpdateAnnotation: (id: string, updates: Partial<Annotation>) => Promise<void>;
+  onCreateAnnotation: (annotation: Omit<UnifiedAnnotation, 'id' | 'timestamp'>) => Promise<void>;
+  onUpdateAnnotation: (id: string, updates: Partial<UnifiedAnnotation>) => Promise<void>;
   onDeleteAnnotation: (id: string) => Promise<void>;
   onAIAnnotation: (type: string, options?: any) => Promise<void>;
   isProcessing: boolean;
@@ -55,8 +45,25 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
   onAIAnnotation,
   isProcessing
 }) => {
-  const [activeTab, setActiveTab] = useState('qa');
+  // 添加调试信息
+  React.useEffect(() => {
+    console.log('MediaAnnotationPanel 接收到的数据:', {
+      fileData: fileData?.filename,
+      annotationsCount: annotations?.length || 0,
+      loading,
+      isProcessing,
+      annotations: annotations
+    });
+    
+    // 如果没有数据，添加一些测试数据来验证组件是否工作
+    if (!loading && annotations?.length === 0) {
+      console.log('没有标注数据，组件应该显示空状态');
+    }
+  }, [annotations, loading, isProcessing, fileData]);
+
+  const [activeTab, setActiveTab] = useState('detection'); // 默认切换到检测标签页
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [detectionFilter, setDetectionFilter] = useState<'all' | 'human' | 'ai'>('all');
   const [newAnnotation, setNewAnnotation] = useState({
     type: 'qa' as const,
     question: '',
@@ -65,12 +72,35 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
     transcript: ''
   });
 
-  const groupedAnnotations = {
-    qa: annotations.filter(a => a.type === 'qa'),
-    caption: annotations.filter(a => a.type === 'caption'),
-    transcript: annotations.filter(a => a.type === 'transcript'),
-    detection: annotations.filter(a => a.type === 'detection' || a.type === 'OBJECT_DETECTION')
-  };
+  const groupedAnnotations = React.useMemo(() => {
+    console.log('处理标注分组:', annotations);
+    
+    const qa = annotations.filter(a => a.type === 'qa');
+    const caption = annotations.filter(a => a.type === 'caption');
+    const transcript = annotations.filter(a => a.type === 'transcript');
+    const detection = annotations.filter(a => 
+      a.type === 'detection' || 
+      a.type === 'OBJECT_DETECTION' || 
+      a.type?.toLowerCase() === 'object_detection'
+    );
+    
+    console.log('分组结果:', { qa: qa.length, caption: caption.length, transcript: transcript.length, detection: detection.length });
+    
+    return {
+      qa,
+      caption,
+      transcript,
+      detection
+    };
+  }, [annotations]);
+
+  // 根据过滤器筛选检测标注
+  const filteredDetectionAnnotations = groupedAnnotations.detection.filter(annotation => {
+    if (detectionFilter === 'all') return true;
+    if (detectionFilter === 'human') return annotation.source === 'human' || annotation.source === 'HUMAN_ANNOTATED';
+    if (detectionFilter === 'ai') return annotation.source === 'ai' || annotation.source === 'AI_GENERATED';
+    return true;
+  });
 
   const handleCreateAnnotation = async () => {
     let content: any = {};
@@ -109,7 +139,7 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
 
       // 清空表单
       setNewAnnotation({
-        type: activeTab as const,
+        type: 'qa',
         question: '',
         answer: '',
         caption: '',
@@ -142,7 +172,7 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
     return `${formatTime(timeRange.start)} - ${formatTime(timeRange.end)}`;
   };
 
-  const AnnotationCard: React.FC<{ annotation: Annotation; showType?: boolean }> = ({ 
+  const AnnotationCard: React.FC<{ annotation: UnifiedAnnotation; showType?: boolean }> = ({ 
     annotation, 
     showType = false 
   }) => (
@@ -253,6 +283,51 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
                   位置: {Math.round(annotation.region.x)}, {Math.round(annotation.region.y)} 
                   (尺寸: {Math.round(annotation.region.width)}×{Math.round(annotation.region.height)})
                 </p>
+                
+                {/* 可视化边界框 */}
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                  <div className="text-xs text-gray-600 mb-2 flex items-center">
+                    <RectangleIcon size={12} className="mr-1" />
+                    标注框预览
+                  </div>
+                  <div 
+                    className="relative bg-white border-2 rounded mx-auto"
+                    style={{
+                      width: '120px',
+                      height: '80px',
+                      borderColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b'
+                    }}
+                  >
+                    <div 
+                      className="absolute border-2 rounded"
+                      style={{
+                        borderColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b',
+                        backgroundColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        left: `${Math.min(80, Math.max(5, (annotation.region.x / Math.max(annotation.region.x + annotation.region.width, 1000)) * 100))}%`,
+                        top: `${Math.min(60, Math.max(5, (annotation.region.y / Math.max(annotation.region.y + annotation.region.height, 1000)) * 70))}%`,
+                        width: `${Math.min(35, Math.max(10, (annotation.region.width / Math.max(annotation.region.x + annotation.region.width, 1000)) * 100))}%`,
+                        height: `${Math.min(25, Math.max(8, (annotation.region.height / Math.max(annotation.region.y + annotation.region.height, 1000)) * 70))}%`
+                      }}
+                    >
+                      <div 
+                        className="absolute -top-4 left-0 text-xs px-1 py-0 rounded text-white text-[10px] leading-3"
+                        style={{
+                          backgroundColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b'
+                        }}
+                      >
+                        {annotation.content?.label || annotation.category || '对象'}
+                      </div>
+                    </div>
+                    <div className="absolute bottom-1 right-1 text-[10px] text-gray-400">
+                      {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'AI' : '人工'}
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1 text-center">
+                    {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 
+                      '绿色框 = AI检测' : '橙色框 = 人工标注'}
+                  </div>
+                </div>
+                
                 <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
                   <div className="text-gray-600 mb-1">大模型训练格式:</div>
                   <div className="space-y-1">
@@ -303,10 +378,14 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
           </h3>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="bg-green-50 text-green-700">
-              人工: {annotations.filter(a => a.source === 'human').length}
+              人工: {annotations.filter(a => a.source === 'human' || a.source === 'HUMAN_ANNOTATED').length}
             </Badge>
             <Badge variant="outline" className="bg-blue-50 text-blue-700">
-              AI: {annotations.filter(a => a.source === 'ai').length}
+              AI: {annotations.filter(a => a.source === 'ai' || a.source === 'AI_GENERATED').length}
+            </Badge>
+            {/* 临时显示调试信息 */}
+            <Badge variant="outline" className="bg-gray-50 text-gray-700">
+              调试: 总计{annotations.length}条
             </Badge>
           </div>
         </div>
@@ -537,6 +616,48 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
                 </div>
               </Card>
 
+              {/* 过滤器 */}
+              {groupedAnnotations.detection.length > 0 && (
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-800">标注过滤</h4>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <span>总计: {groupedAnnotations.detection.length}</span>
+                      <span>•</span>
+                      <span>显示: {filteredDetectionAnnotations.length}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant={detectionFilter === 'all' ? 'default' : 'outline'}
+                      onClick={() => setDetectionFilter('all')}
+                      className="text-xs"
+                    >
+                      全部 ({groupedAnnotations.detection.length})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={detectionFilter === 'human' ? 'default' : 'outline'}
+                      onClick={() => setDetectionFilter('human')}
+                      className={`text-xs ${detectionFilter === 'human' ? 'bg-orange-500 hover:bg-orange-600' : 'border-orange-300 text-orange-600 hover:bg-orange-50'}`}
+                    >
+                      <UserIcon size={12} className="mr-1" />
+                      人工 ({groupedAnnotations.detection.filter(a => a.source === 'human' || a.source === 'HUMAN_ANNOTATED').length})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={detectionFilter === 'ai' ? 'default' : 'outline'}
+                      onClick={() => setDetectionFilter('ai')}
+                      className={`text-xs ${detectionFilter === 'ai' ? 'bg-green-500 hover:bg-green-600' : 'border-green-300 text-green-600 hover:bg-green-50'}`}
+                    >
+                      <BotIcon size={12} className="mr-1" />
+                      AI ({groupedAnnotations.detection.filter(a => a.source === 'ai' || a.source === 'AI_GENERATED').length})
+                    </Button>
+                  </div>
+                </Card>
+              )}
+
               {/* 检测标注列表 */}
               <div className="space-y-3">
                 {!loading && groupedAnnotations.detection.length === 0 && (
@@ -547,7 +668,15 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
                   </div>
                 )}
                 
-                {groupedAnnotations.detection.map(annotation => (
+                {!loading && filteredDetectionAnnotations.length === 0 && groupedAnnotations.detection.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <MousePointerIcon size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p>当前过滤条件下无标注</p>
+                    <p className="text-sm">尝试更改过滤条件</p>
+                  </div>
+                )}
+                
+                {filteredDetectionAnnotations.map(annotation => (
                   <AnnotationCard key={annotation.id} annotation={annotation} />
                 ))}
               </div>
