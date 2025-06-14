@@ -18,18 +18,20 @@ import {
   CheckIcon,
   ClockIcon,
   UserIcon,
-  BotIcon
+  BotIcon,
+  MousePointerIcon
 } from 'lucide-react';
 
 interface Annotation {
   id: string;
-  type: 'qa' | 'caption' | 'transcript';
+  type: 'qa' | 'caption' | 'transcript' | 'detection';
   content: any;
-  source: 'human' | 'ai';
+  source: 'human' | 'ai' | 'detection';
   confidence?: number;
   timestamp: string;
   region?: any;
   timeRange?: { start: number; end: number };
+  category?: string;
 }
 
 interface MediaAnnotationPanelProps {
@@ -66,7 +68,8 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
   const groupedAnnotations = {
     qa: annotations.filter(a => a.type === 'qa'),
     caption: annotations.filter(a => a.type === 'caption'),
-    transcript: annotations.filter(a => a.type === 'transcript')
+    transcript: annotations.filter(a => a.type === 'transcript'),
+    detection: annotations.filter(a => a.type === 'detection')
   };
 
   const handleCreateAnnotation = async () => {
@@ -92,11 +95,14 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
           text: newAnnotation.transcript
         };
         break;
+      case 'detection':
+        // 检测标注通常由AI生成，这里暂时不支持手动创建
+        return;
     }
 
     try {
       await onCreateAnnotation({
-        type: activeTab as 'qa' | 'caption' | 'transcript',
+        type: activeTab as 'qa' | 'caption' | 'transcript' | 'detection',
         content,
         source: 'human'
       });
@@ -151,7 +157,10 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
           )}
           <Badge 
             variant={annotation.source === 'ai' ? 'default' : 'outline'}
-            className={annotation.source === 'ai' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}
+            className={
+              annotation.source === 'ai' ? 'bg-blue-100 text-blue-800' : 
+              'bg-green-100 text-green-800'
+            }
           >
             {annotation.source === 'ai' ? (
               <><BotIcon size={12} className="mr-1" />AI</>
@@ -159,6 +168,11 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
               <><UserIcon size={12} className="mr-1" />人工</>
             )}
           </Badge>
+          {annotation.type === 'detection' && (
+            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              <MousePointerIcon size={12} className="mr-1" />检测
+            </Badge>
+          )}
           {annotation.confidence && (
             <Badge variant="secondary" className="text-xs">
               {Math.round(annotation.confidence * 100)}%
@@ -215,6 +229,39 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
               <p className="text-xs text-gray-500 mt-1">
                 时间: {formatTimeRange(annotation.timeRange)}
               </p>
+            )}
+          </div>
+        )}
+        
+        {annotation.type === 'detection' && (
+          <div>
+            <label className="text-sm font-medium text-gray-700">检测对象:</label>
+            <p className="text-sm mt-1 font-medium">{annotation.content.label || '未知对象'}</p>
+            {annotation.category && (
+              <p className="text-xs text-gray-500 mt-1">
+                类别: {annotation.category}
+              </p>
+            )}
+            {annotation.region && (
+              <>
+                <p className="text-xs text-gray-500 mt-1">
+                  位置: {Math.round(annotation.region.x)}, {Math.round(annotation.region.y)} 
+                  (尺寸: {Math.round(annotation.region.width)}×{Math.round(annotation.region.height)})
+                </p>
+                <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                  <div className="text-gray-600 mb-1">大模型训练格式:</div>
+                  <div className="space-y-1">
+                    <div>YOLO: {annotation.content.label} {((annotation.region.x + annotation.region.width/2)/1000).toFixed(6)} {((annotation.region.y + annotation.region.height/2)/1000).toFixed(6)} {(annotation.region.width/1000).toFixed(6)} {(annotation.region.height/1000).toFixed(6)}</div>
+                    <div>COCO: {JSON.stringify({
+                      id: Math.floor(Math.random()*10000), 
+                      category_id: 1, 
+                      bbox: [annotation.region.x, annotation.region.y, annotation.region.width, annotation.region.height], 
+                      area: annotation.region.width * annotation.region.height
+                    })}</div>
+                    <div>Pascal VOC: &lt;bndbox&gt;&lt;xmin&gt;{Math.round(annotation.region.x)}&lt;/xmin&gt;&lt;ymin&gt;{Math.round(annotation.region.y)}&lt;/ymin&gt;&lt;xmax&gt;{Math.round(annotation.region.x + annotation.region.width)}&lt;/xmax&gt;&lt;ymax&gt;{Math.round(annotation.region.y + annotation.region.height)}&lt;/ymax&gt;&lt;/bndbox&gt;</div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -304,6 +351,10 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
             <TabsTrigger value="transcript" className="flex items-center space-x-2">
               <MicIcon size={16} />
               <span>转录 ({groupedAnnotations.transcript.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="detection" className="flex items-center space-x-2">
+              <MousePointerIcon size={16} />
+              <span>检测 ({groupedAnnotations.detection.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -456,6 +507,35 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
                 )}
                 
                 {groupedAnnotations.transcript.map(annotation => (
+                  <AnnotationCard key={annotation.id} annotation={annotation} />
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* 检测标注 */}
+            <TabsContent value="detection" className="m-0 space-y-4">
+              <Card className="p-4 bg-purple-50">
+                <div className="text-center space-y-3">
+                  <MousePointerIcon size={48} className="mx-auto text-purple-500" />
+                  <h4 className="font-medium text-purple-800">AI对象检测</h4>
+                  <p className="text-sm text-purple-600">
+                    检测标注显示图片中识别到的对象及其位置信息，支持多种大模型训练格式导出。
+                    可在预览页面手动选择区域或使用"对象检测"功能自动检测。
+                  </p>
+                </div>
+              </Card>
+
+              {/* 检测标注列表 */}
+              <div className="space-y-3">
+                {!loading && groupedAnnotations.detection.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <MousePointerIcon size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p>暂无检测标注</p>
+                    <p className="text-sm">在预览页面使用AI对象检测功能</p>
+                  </div>
+                )}
+                
+                {groupedAnnotations.detection.map(annotation => (
                   <AnnotationCard key={annotation.id} annotation={annotation} />
                 ))}
               </div>

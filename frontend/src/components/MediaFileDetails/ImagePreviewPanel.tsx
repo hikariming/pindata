@@ -17,19 +17,33 @@ import {
   TagIcon,
   SaveIcon
 } from 'lucide-react';
+import { AIQuestionDialog } from './dialogs/AIQuestionDialog';
+import { ObjectDetectionDialog } from './dialogs/ObjectDetectionDialog';
 
 interface Annotation {
   id: string;
   region: { x: number; y: number; width: number; height: number };
   label: string;
-  type: 'manual' | 'ai';
+  type: 'manual' | 'ai' | 'detection';
+  source: 'human' | 'ai';
   timestamp: number;
+  confidence?: number;
+  category?: string;
+  description?: string;
 }
 
 interface ImagePreviewPanelProps {
   fileData: any;
   previewUrl: string;
   onAIAnnotation: (type: string, options?: any) => void;
+}
+
+interface ObjectDetectionOptions {
+  mode: 'auto' | 'specific' | 'custom';
+  categories?: string[];
+  customObjects?: string[];
+  confidence?: number;
+  region?: { x: number; y: number; width: number; height: number };
 }
 
 export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
@@ -50,7 +64,13 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [showAnnotationDialog, setShowAnnotationDialog] = useState(false);
   const [annotationLabel, setAnnotationLabel] = useState('');
+  const [annotationDescription, setAnnotationDescription] = useState('');
   const [imageNaturalSize, setImageNaturalSize] = useState<{width: number, height: number} | null>(null);
+  
+  // 对话框状态
+  const [showAIQuestionDialog, setShowAIQuestionDialog] = useState(false);
+  const [showObjectDetectionDialog, setShowObjectDetectionDialog] = useState(false);
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -95,8 +115,12 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     annotations.forEach((annotation, index) => {
       const { x, y, width, height } = annotation.region;
       
-      // 根据标注类型设置颜色
-      const color = annotation.type === 'ai' ? '#10b981' : '#f59e0b';
+      // 根据标注来源设置颜色
+      const colorMap = {
+        'ai': '#10b981',     // 绿色 - AI生成
+        'human': '#f59e0b',  // 橙色 - 人工标注
+      };
+      const color = colorMap[annotation.source] || '#6b7280';
       
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
@@ -168,13 +192,16 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
       id: Date.now().toString(),
       region: selectedRegion,
       label: annotationLabel.trim(),
-      type: 'manual',
-      timestamp: Date.now()
+      type: 'detection',
+      source: 'human',
+      timestamp: Date.now(),
+      description: annotationDescription.trim() || undefined
     };
     
     setAnnotations(prev => [...prev, newAnnotation]);
     setSelectedRegion(null);
     setAnnotationLabel('');
+    setAnnotationDescription('');
     setShowAnnotationDialog(false);
   };
 
@@ -185,6 +212,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   const handleCancelAnnotation = () => {
     setSelectedRegion(null);
     setAnnotationLabel('');
+    setAnnotationDescription('');
     setShowAnnotationDialog(false);
   };
 
@@ -243,18 +271,58 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleAIAnalysis = () => {
-    const options = selectedRegion ? { region: selectedRegion } : {};
-    onAIAnnotation('qa', options);
+  // AI问答处理
+  const handleAIQuestions = async (questions: string[]) => {
+    setIsAIProcessing(true);
+    setShowAIQuestionDialog(false);
+    
+    try {
+      const options = {
+        questions: questions,
+        region: selectedRegion
+      };
+      
+      await onAIAnnotation('qa', options);
+    } catch (error) {
+      console.error('AI问答失败:', error);
+    } finally {
+      setIsAIProcessing(false);
+    }
   };
 
-  const handleAICaption = () => {
-    const options = selectedRegion ? { region: selectedRegion } : {};
-    onAIAnnotation('caption', options);
-  };
-
-  const handleObjectDetection = () => {
-    onAIAnnotation('object_detection');
+  // 对象检测处理
+  const handleObjectDetection = async (options: ObjectDetectionOptions) => {
+    setIsAIProcessing(true);
+    setShowObjectDetectionDialog(false);
+    
+    try {
+      await onAIAnnotation('object_detection', options);
+      
+      // 模拟添加检测结果（实际应该从API返回）
+      if (options.mode === 'auto') {
+        // 模拟自动检测结果
+        const mockDetections = [
+          { x: 100, y: 100, width: 80, height: 120, label: '人物', confidence: 0.85 },
+          { x: 200, y: 150, width: 60, height: 60, label: '汽车', confidence: 0.92 },
+        ];
+        
+        const newAnnotations = mockDetections.map((detection, index) => ({
+          id: `detection_${Date.now()}_${index}`,
+          region: detection,
+          label: detection.label,
+          type: 'detection' as const,
+          source: 'ai' as const,
+          timestamp: Date.now(),
+          confidence: detection.confidence
+        }));
+        
+        setAnnotations(prev => [...prev, ...newAnnotations]);
+      }
+    } catch (error) {
+      console.error('对象检测失败:', error);
+    } finally {
+      setIsAIProcessing(false);
+    }
   };
 
   const imageStyle = {
@@ -271,8 +339,8 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   return (
     <div className={containerClass} ref={containerRef}>
       {/* 工具栏 */}
-      <div className={`absolute top-4 left-4 z-10 flex items-center space-x-2 ${isFullscreen ? 'text-white' : ''}`}>
-        <Card className="p-2 flex items-center space-x-2">
+      <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
+        <Card className="p-2 flex items-center space-x-2 bg-white">
           <Button size="sm" onClick={handleZoomIn} variant="ghost">
             <ZoomInIcon size={16} />
           </Button>
@@ -290,7 +358,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
           </Button>
         </Card>
         
-        <Card className="p-2 flex items-center space-x-2">
+        <Card className="p-2 flex items-center space-x-2 bg-white">
           <Button
             size="sm"
             onClick={() => setShowRegionSelector(!showRegionSelector)}
@@ -309,16 +377,22 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
 
       {/* AI分析工具栏 */}
       <div className="absolute top-4 right-4 z-10">
-        <Card className="p-2 flex items-center space-x-2">
-          <Button size="sm" onClick={handleAIAnalysis} className="bg-blue-500 hover:bg-blue-600">
+        <Card className="p-2 flex items-center space-x-2 bg-white">
+          <Button 
+            size="sm" 
+            onClick={() => setShowAIQuestionDialog(true)} 
+            className="bg-blue-500 hover:bg-blue-600"
+            disabled={isAIProcessing}
+          >
             <BrainIcon size={16} className="mr-1" />
-            AI问答
+            {isAIProcessing ? 'AI处理中...' : 'AI问答'}
           </Button>
-          <Button size="sm" onClick={handleAICaption} className="bg-green-500 hover:bg-green-600">
-            <EyeIcon size={16} className="mr-1" />
-            AI描述
-          </Button>
-          <Button size="sm" onClick={handleObjectDetection} className="bg-purple-500 hover:bg-purple-600">
+          <Button 
+            size="sm" 
+            onClick={() => setShowObjectDetectionDialog(true)} 
+            className="bg-purple-500 hover:bg-purple-600"
+            disabled={isAIProcessing}
+          >
             <MousePointerIcon size={16} className="mr-1" />
             对象检测
           </Button>
@@ -327,7 +401,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
 
       {/* 图片信息栏 */}
       <div className="absolute bottom-4 left-4 z-10">
-        <Card className="p-3">
+        <Card className="p-3 bg-white">
           <div className="flex items-center space-x-4 text-sm">
             <Badge variant="outline">
               {Math.round(scale * 100)}% 缩放
@@ -414,7 +488,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
       {/* 操作提示 */}
       {showRegionSelector && (
         <div className="absolute bottom-4 right-4 z-10">
-          <Card className="p-3">
+          <Card className="p-3 bg-white">
             <p className="text-sm text-gray-600">
               {isDrawingRegion ? '拖拽以选择区域' : '点击并拖拽以选择分析区域'}
             </p>
@@ -445,6 +519,17 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                   autoFocus
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  描述 <span className="text-gray-500">(可选)</span>
+                </label>
+                <Input
+                  placeholder="添加详细描述..."
+                  value={annotationDescription}
+                  onChange={(e) => setAnnotationDescription(e.target.value)}
+                />
+              </div>
               {selectedRegion && (
                 <div className="text-sm text-gray-600">
                   区域大小: {Math.round(selectedRegion.width)} × {Math.round(selectedRegion.height)}
@@ -471,7 +556,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
       {/* 标注列表 */}
       {annotations.length > 0 && (
         <div className="absolute top-20 left-4 z-10 max-w-xs">
-          <Card className="p-3">
+          <Card className="p-3 bg-white">
             <h4 className="font-medium mb-2 flex items-center">
               <TagIcon size={16} className="mr-1" />
               标注列表 ({annotations.length})
@@ -514,6 +599,25 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
           退出全屏
         </Button>
       )}
+
+      {/* AI问答对话框 */}
+      <AIQuestionDialog
+        open={showAIQuestionDialog}
+        onClose={() => setShowAIQuestionDialog(false)}
+        onSubmit={handleAIQuestions}
+        isProcessing={isAIProcessing}
+        fileType="image"
+        selectedRegion={selectedRegion}
+      />
+
+      {/* 对象检测对话框 */}
+      <ObjectDetectionDialog
+        open={showObjectDetectionDialog}
+        onClose={() => setShowObjectDetectionDialog(false)}
+        onSubmit={handleObjectDetection}
+        isProcessing={isAIProcessing}
+        selectedRegion={selectedRegion}
+      />
     </div>
   );
 };

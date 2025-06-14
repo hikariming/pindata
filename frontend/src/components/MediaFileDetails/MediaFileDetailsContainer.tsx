@@ -23,10 +23,12 @@ import { ImagePreviewPanel } from './ImagePreviewPanel';
 import { VideoPreviewPanel } from './VideoPreviewPanel';
 import { MediaAnnotationPanel } from './MediaAnnotationPanel';
 import { FileMetadataPanel } from './FileMetadataPanel';
+import { ImageAnnotationPanel } from './ImageAnnotationPanel';
 import { ProcessingHistoryPanel } from './ProcessingHistoryPanel';
 
 import { useFileDetails } from '../../hooks/useFileDetails';
 import { useAnnotations } from '../../hooks/useAnnotations';
+import { useImageAnnotations } from '../../hooks/useImageAnnotations';
 import { fileService } from '../../services/file.service';
 import { annotationService } from '../../services/annotation.service';
 
@@ -58,6 +60,19 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
     deleteAnnotation,
     requestAIAnnotation
   } = useAnnotations(actualFileId!, fileData?.file_type);
+
+  // 使用新的图片标注hook（如果是图片文件）
+  const {
+    annotations: imageAnnotations,
+    loading: imageAnnotationsLoading,
+    generateAIAnnotation,
+    createAnnotation: createImageAnnotation,
+    updateAnnotation: updateImageAnnotation,
+    deleteAnnotation: deleteImageAnnotation,
+    stats: annotationStats
+  } = useImageAnnotations(actualFileId!, {
+    autoRefresh: false
+  });
 
   const [activeTab, setActiveTab] = useState('preview');
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -318,16 +333,22 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
             </TabsContent>
 
             <TabsContent value="annotations" className="h-full m-0 p-0">
-              <MediaAnnotationPanel
-                fileData={fileData}
-                annotations={annotations}
-                loading={annotationsLoading}
-                onCreateAnnotation={createAnnotation}
-                onUpdateAnnotation={updateAnnotation}
-                onDeleteAnnotation={deleteAnnotation}
-                onAIAnnotation={handleAIAnnotation}
-                isProcessing={isProcessing}
-              />
+              {fileData?.file_type?.startsWith('image/') ? (
+                <ImageAnnotationPanel
+                  fileData={fileData}
+                />
+              ) : (
+                <MediaAnnotationPanel
+                  fileData={fileData}
+                  annotations={annotations}
+                  loading={annotationsLoading}
+                  onCreateAnnotation={createAnnotation}
+                  onUpdateAnnotation={updateAnnotation}
+                  onDeleteAnnotation={deleteAnnotation}
+                  onAIAnnotation={handleAIAnnotation}
+                  isProcessing={isProcessing}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="metadata" className="h-full m-0 p-0">
