@@ -241,16 +241,24 @@ def delete_image_annotation(annotation_id):
     annotation = ImageAnnotation.query.get_or_404(annotation_id)
     
     try:
-        # 记录删除历史
+        # 先保存要删除的标注数据
+        deleted_annotation_data = annotation.to_dict()
+        
+        # 删除标注
+        db.session.delete(annotation)
+        db.session.commit()
+        
+        # 记录删除历史（不关联已删除的annotation_id）
         history = AnnotationHistory(
-            annotation_id=annotation.id,
+            annotation_id=None,  # 不设置外键，因为目标已删除 
             action='delete',
-            changes={'deleted': annotation.to_dict()},
+            changes={
+                'deleted': deleted_annotation_data,
+                'original_annotation_id': annotation_id  # 保存原始ID用于追踪
+            },
             created_by=request.json.get('deleted_by', 'system') if request.json else 'system'
         )
         db.session.add(history)
-        
-        db.session.delete(annotation)
         db.session.commit()
         
         return jsonify({'message': '标注删除成功'})

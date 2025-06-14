@@ -17,11 +17,14 @@ import {
   TagIcon,
   SaveIcon,
   CheckIcon,
-  RefreshCwIcon
+  RefreshCwIcon,
+  TrashIcon,
+  AlertTriangleIcon
 } from 'lucide-react';
 import { AIQuestionDialog } from './dialogs/AIQuestionDialog';
 import { ObjectDetectionDialog } from './dialogs/ObjectDetectionDialog';
 import { useImageAnnotations } from '../../hooks/useImageAnnotations';
+import type { ImageAnnotation } from '../../types/annotation';
 
 interface Annotation {
   id: string;
@@ -75,6 +78,11 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   const [imageNaturalSize, setImageNaturalSize] = useState<{width: number, height: number} | null>(null);
   const [isLoadingAnnotations, setIsLoadingAnnotations] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('标注保存成功！');
+  const [highlightedAnnotationId, setHighlightedAnnotationId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingAnnotationId, setDeletingAnnotationId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // 对话框状态
   const [showAIQuestionDialog, setShowAIQuestionDialog] = useState(false);
@@ -86,30 +94,59 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     annotations: dbAnnotations,
     loading: annotationsLoading,
     createAnnotation,
+    deleteAnnotation,
     refreshAnnotations
   } = useImageAnnotations(fileData?.id || '');
+
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Handle wheel events for zoom to avoid passive listener issues
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
+  // 强制重绘函数
+  const forceRedraw = () => {
+    setTimeout(() => {
+      drawRegionOverlay();
+    }, 50);
+  };
+
   useEffect(() => {
     drawRegionOverlay();
-  }, [selectedRegion, annotations, scale, position, rotation, imageNaturalSize]);
+  }, [selectedRegion, annotations, scale, position, rotation, imageNaturalSize, highlightedAnnotationId]);
 
   // 加载数据库中的标注
   useEffect(() => {
     if (dbAnnotations && dbAnnotations.length > 0) {
-      const convertedAnnotations = dbAnnotations.map(dbAnnotation => ({
+      const convertedAnnotations = dbAnnotations
+      .filter(dbAnnotation => !!dbAnnotation.region)
+      .map(dbAnnotation => ({
         id: dbAnnotation.id,
-        region: dbAnnotation.region,
+        region: dbAnnotation.region!,
         label: dbAnnotation.content?.label || dbAnnotation.category || '未知对象',
         type: 'detection' as const,
-        source: dbAnnotation.source === 'HUMAN_ANNOTATED' ? 'human' as const : 'ai' as const,
+        source: (dbAnnotation.source === 'HUMAN' || (dbAnnotation.source as any) === 'HUMAN_ANNOTATED') ? 'human' as const : 'ai' as const,
         timestamp: new Date(dbAnnotation.created_at).getTime(),
         confidence: dbAnnotation.confidence,
         category: dbAnnotation.category,
-        description: dbAnnotation.content?.description
+        description: ((dbAnnotation as any).annotation_metadata?.description as string) || '',
       }));
       setAnnotations(convertedAnnotations);
       
@@ -117,6 +154,16 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
       if (onAnnotationsChange) {
         onAnnotationsChange(dbAnnotations);
       }
+      
+      // 标注数据加载完成后，确保重新绘制标注框
+      setTimeout(() => {
+        drawRegionOverlay();
+      }, 100);
+      
+      // 同时调用强制重绘
+      forceRedraw();
+    } else if (dbAnnotations) {
+      setAnnotations([]);
     }
   }, [dbAnnotations, onAnnotationsChange]);
 
@@ -127,10 +174,13 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     }
   }, [fileData?.id, refreshAnnotations]);
 
+
   const drawRegionOverlay = () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
-    if (!canvas || !image || !imageNaturalSize) return;
+    if (!canvas || !image || !imageNaturalSize) {
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -142,6 +192,10 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     const canvasRect = canvas.getBoundingClientRect(); 
     const scaleX = canvas.width / imageNaturalSize.width;
     const scaleY = canvas.height / imageNaturalSize.height;
+    
+    // 设置高质量渲染
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     
     // 绘制当前选择区域
     if (selectedRegion) {
@@ -161,29 +215,37 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     // 绘制已保存的标注
     annotations.forEach((annotation, index) => {
       const { x, y, width, height } = annotation.region;
+      const isHighlighted = highlightedAnnotationId === annotation.id;
       
       // 根据标注来源设置颜色
       const colorMap = {
         'ai': '#10b981',     // 绿色 - AI生成
         'human': '#f59e0b',  // 橙色 - 人工标注
       };
-      const color = colorMap[annotation.source] || '#6b7280';
+      const baseColor = colorMap[annotation.source] || '#6b7280';
+      const color = isHighlighted ? '#ef4444' : baseColor; // 高亮时使用红色
       
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([]);
-      ctx.strokeRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY);
+      ctx.lineWidth = isHighlighted ? 3 : 2; // 高亮时线条更粗
+      ctx.setLineDash(isHighlighted ? [10, 5] : []); // 高亮时使用虚线
+      
+      const rectX = x * scaleX;
+      const rectY = y * scaleY;
+      const rectWidth = width * scaleX;
+      const rectHeight = height * scaleY;
+      
+      ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
       
       // 绘制标签背景
       ctx.fillStyle = color;
-      const labelY = y * scaleY - 20;
+      const labelY = rectY - 20;
       const textWidth = ctx.measureText(annotation.label).width + 8;
-      ctx.fillRect(x * scaleX, labelY, textWidth, 16);
+      ctx.fillRect(rectX, labelY, textWidth, 16);
       
       // 绘制标签文字
       ctx.fillStyle = 'white';
-      ctx.font = '12px sans-serif';
-      ctx.fillText(annotation.label, x * scaleX + 4, labelY + 12);
+      ctx.font = isHighlighted ? 'bold 12px sans-serif' : '12px sans-serif';
+      ctx.fillText(annotation.label, rectX + 4, labelY + 12);
     });
   };
 
@@ -239,26 +301,27 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
       setIsLoadingAnnotations(true);
       
       // 保存到数据库
-      const annotationData = {
+      const annotationData: Omit<ImageAnnotation, 'id' | 'created_at' | 'updated_at'> = {
         file_id: fileData.id,
         type: 'OBJECT_DETECTION',
         source: 'HUMAN',
         content: {
           label: annotationLabel.trim(),
-          description: annotationDescription.trim() || undefined
         },
         region: selectedRegion,
         confidence: 1.0,
         category: annotationLabel.trim(),
-        annotation_metadata: {
+        metadata: {
+          description: annotationDescription.trim() || undefined,
           timestamp: Date.now(),
-          annotation_type: 'detection'
-        }
+          annotation_type: 'detection',
+        },
       };
       
-      const savedAnnotation = await createAnnotation(annotationData);
+      await createAnnotation(annotationData);
       
       // 显示成功提示
+      setSuccessMessage('标注保存成功！');
       setShowSuccessMessage(true);
       
       // 清空表单并关闭对话框
@@ -281,7 +344,37 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   };
 
   const handleDeleteAnnotation = (id: string) => {
-    setAnnotations(prev => prev.filter(ann => ann.id !== id));
+    setDeletingAnnotationId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteAnnotation = async () => {
+    if (!deletingAnnotationId) return;
+    
+    try {
+      setIsDeleting(true);
+      await deleteAnnotation(deletingAnnotationId);
+      
+      // 显示成功消息
+      setSuccessMessage('标注删除成功！');
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('删除标注失败:', error);
+      // 这里可以添加错误提示
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setDeletingAnnotationId(null);
+    }
+  };
+
+  const cancelDeleteAnnotation = () => {
+    setShowDeleteConfirm(false);
+    setDeletingAnnotationId(null);
   };
 
   const handleCancelAnnotation = () => {
@@ -334,12 +427,6 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     setIsDragging(false);
     setIsDrawingRegion(false);
     setRegionStart(null);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
   };
 
   const toggleFullscreen = () => {
@@ -425,7 +512,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
           <Button size="sm" onClick={handleRotate} variant="ghost">
             <RotateCwIcon size={16} />
           </Button>
-          <Button size="sm" onClick={handleReset} variant="ghost">
+                      <Button size="sm" onClick={handleReset} variant="ghost">
             重置
           </Button>
           <Button size="sm" onClick={toggleFullscreen} variant="ghost">
@@ -496,10 +583,20 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                 选中区域: {Math.round(selectedRegion.width)} × {Math.round(selectedRegion.height)}
               </Badge>
             )}
-            {annotations.length > 0 && (
+            {annotationsLoading ? (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                <RefreshCwIcon size={12} className="mr-1 animate-spin" />
+                加载标注中...
+              </Badge>
+            ) : annotations.length > 0 ? (
               <Badge variant="secondary" className="bg-green-100 text-green-800">
                 <TagIcon size={12} className="mr-1" />
                 已标注: {annotations.length}
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                <TagIcon size={12} className="mr-1" />
+                暂无标注
               </Badge>
             )}
           </div>
@@ -512,7 +609,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
           <Card className="p-4 bg-green-50 border-green-200">
             <div className="flex items-center space-x-2 text-green-800">
               <CheckIcon size={20} className="text-green-600" />
-              <span className="font-medium">标注保存成功！</span>
+              <span className="font-medium">{successMessage}</span>
             </div>
           </Card>
         </div>
@@ -525,7 +622,6 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
       >
         {previewUrl && (
           <div 
@@ -550,6 +646,7 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                 const canvas = canvasRef.current;
                 if (canvas) {
                   const { naturalWidth, naturalHeight, offsetWidth, offsetHeight } = image;
+                  
                   setImageNaturalSize({
                     width: naturalWidth,
                     height: naturalHeight
@@ -558,6 +655,12 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                   canvas.height = naturalHeight;
                   canvas.style.width = `${offsetWidth}px`;
                   canvas.style.height = `${offsetHeight}px`;
+                  
+                  // 图片加载完成后立即绘制标注框
+                  setTimeout(() => {
+                    drawRegionOverlay();
+                    forceRedraw();
+                  }, 200);
                 }
               }}
             />
@@ -673,7 +776,14 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
               {annotations.map((annotation) => (
                 <div 
                   key={annotation.id} 
-                  className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
+                  className={`flex items-center justify-between p-2 rounded text-xs cursor-pointer transition-colors ${
+                    highlightedAnnotationId === annotation.id 
+                      ? 'bg-red-100 border border-red-300' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setHighlightedAnnotationId(
+                    highlightedAnnotationId === annotation.id ? null : annotation.id
+                  )}
                 >
                   <div className="flex-1">
                     <div className="font-medium">{annotation.label}</div>
@@ -698,9 +808,9 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDeleteAnnotation(annotation.id)}
-                    className="p-1 h-6 w-6"
+                    className="p-1 h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 bg-white bg-opacity-80 border border-red-200"
                   >
-                    <XIcon size={12} />
+                    <TrashIcon size={12} />
                   </Button>
                 </div>
               ))}
@@ -739,6 +849,47 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
         isProcessing={isAIProcessing}
         selectedRegion={selectedRegion}
       />
+
+      {/* 删除确认对话框 */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
+          <Card className="p-6 w-96">
+            <div className="flex items-center mb-4">
+              <AlertTriangleIcon size={24} className="text-red-500 mr-3" />
+              <h3 className="text-lg font-semibold">确认删除</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              确定要删除这个标注吗？此操作无法撤销。
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={cancelDeleteAnnotation}
+                disabled={isDeleting}
+              >
+                取消
+              </Button>
+              <Button 
+                onClick={confirmDeleteAnnotation}
+                disabled={isDeleting}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCwIcon size={16} className="mr-2 animate-spin" />
+                    删除中...
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon size={16} className="mr-2" />
+                    确认删除
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

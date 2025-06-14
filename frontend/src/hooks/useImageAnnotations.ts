@@ -17,7 +17,9 @@ export const useImageAnnotations = (
   const [stats, setStats] = useState<any>(null);
 
   const fetchAnnotations = useCallback(async () => {
-    if (!fileId) return;
+    if (!fileId) {
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -184,7 +186,7 @@ export const useImageAnnotations = (
   const createQuickAnnotation = useCallback(async (
     type: ImageAnnotationType,
     content: any,
-    source: AnnotationSource = 'human'
+    source: AnnotationSource = 'HUMAN'
   ): Promise<ImageAnnotation> => {
     try {
       const annotation = await imageAnnotationService.createQuickAnnotation(
@@ -205,24 +207,24 @@ export const useImageAnnotations = (
   // 按类型分组的标注
   const groupedAnnotations = useCallback(() => {
     return {
-      qa: annotations.filter(a => a.type === 'qa'),
-      caption: annotations.filter(a => a.type === 'caption'),
-      classification: annotations.filter(a => a.type === 'classification'),
-      object_detection: annotations.filter(a => a.type === 'object_detection'),
-      segmentation: annotations.filter(a => a.type === 'segmentation'),
-      keypoint: annotations.filter(a => a.type === 'keypoint'),
-      ocr: annotations.filter(a => a.type === 'ocr'),
-      custom: annotations.filter(a => a.type === 'custom')
+      qa: annotations.filter(a => a.type === 'QA'),
+      caption: annotations.filter(a => a.type === 'CAPTION'),
+      classification: annotations.filter(a => a.type === 'CLASSIFICATION'),
+      object_detection: annotations.filter(a => a.type === 'OBJECT_DETECTION'),
+      segmentation: annotations.filter(a => a.type === 'SEGMENTATION'),
+      keypoint: annotations.filter(a => a.type === 'KEYPOINT'),
+      ocr: annotations.filter(a => a.type === 'OCR'),
+      custom: annotations.filter(a => a.type === 'CUSTOM')
     };
   }, [annotations]);
 
   // 按来源分组的标注
   const annotationsBySource = useCallback(() => {
     return {
-      human: annotations.filter(a => a.source === 'human'),
-      ai: annotations.filter(a => a.source === 'ai'),
-      detection: annotations.filter(a => a.source === 'detection'),
-      imported: annotations.filter(a => a.source === 'imported')
+      human: annotations.filter(a => a.source === 'HUMAN'),
+      ai: annotations.filter(a => a.source === 'AI'),
+      detection: annotations.filter(a => a.source === 'DETECTION'),
+      imported: annotations.filter(a => a.source === 'IMPORTED')
     };
   }, [annotations]);
 

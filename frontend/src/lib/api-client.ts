@@ -203,12 +203,13 @@ export class ApiClient {
   }
 
   // DELETE请求
-  async delete<T>(endpoint: string): Promise<T> {
+  async delete<T>(endpoint: string, data?: any): Promise<T> {
     const url = this.buildUrl(endpoint);
     
     const makeRequest = () => fetch(url, {
       method: 'DELETE',
       headers: this.defaultHeaders,
+      body: data ? JSON.stringify(data) : undefined,
     });
 
     const response = await makeRequest();

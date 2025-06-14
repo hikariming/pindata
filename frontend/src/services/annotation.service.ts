@@ -29,8 +29,12 @@ export class AnnotationService {
    */
   static async getAnnotations(fileId: string): Promise<{ data: any[] }> {
     try {
-      const response = await apiClient.get<ApiResponse<any[]>>(`/api/v1/annotations/${fileId}`);
-      return { data: response.data || [] };
+      // 修正：使用image-annotations接口并传递file_id作为查询参数
+      const response = await apiClient.get<ApiResponse<{
+        annotations: any[];
+        pagination: any;
+      }>>(`/api/v1/image-annotations?file_id=${fileId}`);
+      return { data: response.data?.annotations || [] };
     } catch (error) {
       console.warn('获取标注失败，返回空数组:', error);
       return { data: [] };
@@ -42,7 +46,12 @@ export class AnnotationService {
    */
   static async createAnnotation(fileId: string, annotation: any): Promise<{ data: any }> {
     try {
-      const response = await apiClient.post<ApiResponse<any>>(`/api/v1/annotations/${fileId}`, annotation);
+      // 修正：使用image-annotations接口，并将fileId作为请求体的一部分
+      const annotationData = {
+        file_id: fileId,
+        ...annotation
+      };
+      const response = await apiClient.post<ApiResponse<any>>(`/api/v1/image-annotations`, annotationData);
       return { data: response.data };
     } catch (error) {
       console.error('创建标注失败:', error);
@@ -55,7 +64,8 @@ export class AnnotationService {
    */
   static async updateAnnotation(annotationId: string, updates: any): Promise<{ data: any }> {
     try {
-      const response = await apiClient.put<ApiResponse<any>>(`/api/v1/annotations/${annotationId}`, updates);
+      // 修正：使用image-annotations接口
+      const response = await apiClient.put<ApiResponse<any>>(`/api/v1/image-annotations/${annotationId}`, updates);
       return { data: response.data };
     } catch (error) {
       console.error('更新标注失败:', error);
@@ -68,7 +78,8 @@ export class AnnotationService {
    */
   static async deleteAnnotation(annotationId: string): Promise<void> {
     try {
-      await apiClient.delete(`/api/v1/annotations/${annotationId}`);
+      // 修正：使用image-annotations接口
+      await apiClient.delete(`/api/v1/image-annotations/${annotationId}`);
     } catch (error) {
       console.error('删除标注失败:', error);
       throw error;
@@ -80,10 +91,28 @@ export class AnnotationService {
    */
   static async requestAIAnnotation(fileId: string, type: string, options: any = {}): Promise<{ data: any }> {
     try {
-      const response = await apiClient.post<ApiResponse<any>>(`/api/v1/annotations/${fileId}/ai-assist`, {
-        type,
-        options
-      });
+      // 修正：根据类型使用正确的AI辅助接口
+      let endpoint = '';
+      let requestData: any = { raw_data_id: fileId };
+      
+      switch (type) {
+        case 'qa':
+          endpoint = '/api/v1/annotations/ai-assist/image-qa';
+          requestData.questions = options.questions;
+          requestData.model_provider = options.model_provider || 'openai';
+          break;
+        case 'caption':
+          endpoint = '/api/v1/annotations/ai-assist/image-caption';
+          requestData.model_provider = options.model_provider || 'openai';
+          break;
+        case 'object_detection':
+          endpoint = '/api/v1/annotations/ai-assist/object-detection';
+          break;
+        default:
+          throw new Error(`不支持的AI标注类型: ${type}`);
+      }
+      
+      const response = await apiClient.post<ApiResponse<any>>(endpoint, requestData);
       return { data: response.data };
     } catch (error) {
       // 如果AI服务不可用，返回模拟数据
@@ -183,13 +212,25 @@ export class AnnotationService {
     created_by: string;
   }>> {
     try {
-      const response = await apiClient.get<ApiResponse<Array<{
-        id: string;
-        annotations: AnnotationData;
-        created_at: string;
-        created_by: string;
-      }>>>(`/api/v1/annotations/${fileId}/history`);
-      return response.data || [];
+      // 修正：使用image-annotations接口获取历史
+      const response = await apiClient.get<ApiResponse<{
+        annotations: Array<{
+          id: string;
+          content: any;
+          created_at: string;
+          created_by: string;
+        }>;
+        pagination: any;
+      }>>(`/api/v1/image-annotations?file_id=${fileId}`);
+      
+      // 将标注数据转换为历史格式
+      const annotations = response.data?.annotations || [];
+      return annotations.map((annotation: any) => ({
+        id: annotation.id,
+        annotations: annotation.content || {},
+        created_at: annotation.created_at,
+        created_by: annotation.created_by || 'unknown'
+      }));
     } catch (error) {
       console.warn('获取标注历史失败:', error);
       return [];

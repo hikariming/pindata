@@ -40,7 +40,7 @@ export class ImageAnnotationService {
         }
       });
 
-      const response = await apiClient.get<ApiResponse<{
+      const response = await apiClient.get<{
         annotations: ImageAnnotation[];
         pagination: {
           page: number;
@@ -50,9 +50,9 @@ export class ImageAnnotationService {
           has_next: boolean;
           has_prev: boolean;
         };
-      }>>(`/api/v1/image-annotations?${queryParams.toString()}`);
+      }>(`/api/v1/image-annotations?${queryParams.toString()}`);
 
-      return response.data || { 
+      return response || { 
         annotations: [], 
         pagination: {
           page: 1,
@@ -92,14 +92,17 @@ export class ImageAnnotationService {
    */
   static async createImageAnnotation(annotation: Omit<ImageAnnotation, 'id' | 'created_at' | 'updated_at'>): Promise<ImageAnnotation> {
     try {
-      const response = await apiClient.post<ApiResponse<{ annotation: ImageAnnotation }>>(
+      const response = await apiClient.post<any>(
         '/api/v1/image-annotations',
         annotation
       );
-      if (!response.data?.annotation) {
+      // 后端直接返回 { annotation: {...}, message: "..." } 格式
+      const annotationResponse = response.annotation;
+      if (!annotationResponse) {
+        console.error('响应数据:', response);
         throw new Error('创建标注响应格式错误');
       }
-      return response.data.annotation;
+      return annotationResponse;
     } catch (error) {
       console.error('创建图片标注失败:', error);
       throw error;
@@ -133,13 +136,10 @@ export class ImageAnnotationService {
    */
   static async deleteImageAnnotation(annotationId: string, deletedBy?: string): Promise<void> {
     try {
-      // 先通过POST请求记录删除信息，然后删除
-      if (deletedBy) {
-        await apiClient.post(`/api/v1/image-annotations/${annotationId}/delete`, {
-          deleted_by: deletedBy
-        });
-      }
-      await apiClient.delete(`/api/v1/image-annotations/${annotationId}`);
+      // 发送DELETE请求，包含删除人信息
+      await apiClient.delete(`/api/v1/image-annotations/${annotationId}`, {
+        deleted_by: deletedBy || 'user'
+      });
     } catch (error) {
       console.error('删除图片标注失败:', error);
       throw error;
@@ -215,10 +215,10 @@ export class ImageAnnotationService {
    */
   static async getAnnotationStats(fileId: string): Promise<AnnotationStats> {
     try {
-      const response = await apiClient.get<ApiResponse<AnnotationStats>>(
+      const response = await apiClient.get<AnnotationStats>(
         `/api/v1/files/${fileId}/annotations/stats`
       );
-      return response.data || {
+      return response || {
         total_annotations: 0,
         by_type: {} as Record<ImageAnnotationType, number>,
         by_source: {} as Record<AnnotationSource, number>,
@@ -299,8 +299,8 @@ export class ImageAnnotationService {
       // 将AI生成的结果转换为标注格式并保存
       const annotation = await this.createImageAnnotation({
         file_id: fileId,
-        type: 'qa',
-        source: 'ai',
+        type: 'QA',
+        source: 'AI',
         content: {
           question: aiResponse.data.qa_pairs[0].question,
           answer: aiResponse.data.qa_pairs[0].answer
@@ -344,8 +344,8 @@ export class ImageAnnotationService {
       // 将AI生成的结果转换为标注格式并保存
       const annotation = await this.createImageAnnotation({
         file_id: fileId,
-        type: 'caption',
-        source: 'ai',
+        type: 'CAPTION',
+        source: 'AI',
         content: {
           caption: aiResponse.data.caption
         },
@@ -387,8 +387,8 @@ export class ImageAnnotationService {
       // 将检测结果转换为标注格式并保存
       const annotation = await this.createImageAnnotation({
         file_id: fileId,
-        type: 'object_detection',
-        source: 'ai',
+        type: 'OBJECT_DETECTION',
+        source: 'AI',
         content: {
           objects: aiResponse.data.objects
         },
@@ -412,7 +412,7 @@ export class ImageAnnotationService {
     fileId: string,
     type: ImageAnnotationType,
     content: any,
-    source: AnnotationSource = 'human'
+    source: AnnotationSource = 'HUMAN'
   ): Promise<ImageAnnotation> {
     return this.createImageAnnotation({
       file_id: fileId,

@@ -113,7 +113,7 @@ class AnnotationHistory(db.Model):
     __tablename__ = 'annotation_history'
     
     id = Column(String(36), primary_key=True)
-    annotation_id = Column(String(36), ForeignKey('image_annotations.id'), nullable=False)
+    annotation_id = Column(String(36), ForeignKey('image_annotations.id'), nullable=True)
     action = Column(String(20), nullable=False)  # create, update, delete
     changes = Column(JSON)  # 变更记录
     created_by = Column(String(36), nullable=False)
