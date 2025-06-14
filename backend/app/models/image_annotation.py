@@ -9,22 +9,22 @@ from app.db import db
 
 class ImageAnnotationType(enum.Enum):
     """图片标注类型枚举"""
-    QA = "qa"
-    CAPTION = "caption"
-    CLASSIFICATION = "classification"
-    OBJECT_DETECTION = "object_detection"
-    SEGMENTATION = "segmentation"
-    KEYPOINT = "keypoint"
-    OCR = "ocr"
-    CUSTOM = "custom"
+    QA = "QA"
+    CAPTION = "CAPTION"
+    CLASSIFICATION = "CLASSIFICATION"
+    OBJECT_DETECTION = "OBJECT_DETECTION"
+    SEGMENTATION = "SEGMENTATION"
+    KEYPOINT = "KEYPOINT"
+    OCR = "OCR"
+    CUSTOM = "CUSTOM"
 
 
 class AnnotationSource(enum.Enum):
     """标注来源枚举"""
-    HUMAN = "human"
-    AI = "ai"
-    DETECTION = "detection"
-    IMPORTED = "imported"
+    HUMAN_ANNOTATED = "HUMAN_ANNOTATED"
+    AI_GENERATED = "AI_GENERATED"
+    AI_ASSISTED = "AI_ASSISTED"
+    IMPORTED = "IMPORTED"
 
 
 class ImageAnnotation(db.Model):
@@ -54,7 +54,7 @@ class ImageAnnotation(db.Model):
     tags = Column(JSON)  # 标签列表
     
     # 元数据
-    metadata = Column(JSON)  # 元数据
+    annotation_metadata = Column(JSON)  # 元数据
     model_info = Column(JSON)  # AI模型信息（如果是AI生成）
     
     # 审核信息
@@ -88,7 +88,7 @@ class ImageAnnotation(db.Model):
             'is_verified': self.is_verified,
             'category': self.category,
             'tags': self.tags,
-            'metadata': self.metadata,
+            'annotation_metadata': self.annotation_metadata,
             'model_info': self.model_info,
             'review_status': self.review_status,
             'reviewer_id': self.reviewer_id,

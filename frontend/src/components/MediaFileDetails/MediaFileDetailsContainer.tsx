@@ -77,6 +77,7 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
   const [activeTab, setActiveTab] = useState('preview');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentAnnotations, setCurrentAnnotations] = useState<any[]>([]);
 
   useEffect(() => {
     if (fileData && (fileData.file_category === 'image' || fileData.file_category === 'video')) {
@@ -95,20 +96,55 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
     }
   };
 
-  const handleAIAnnotation = async (annotationType: 'qa' | 'caption' | 'transcript', options?: any) => {
+  const handleAIAnnotation = async (type: string, options?: any) => {
     if (!fileData) return;
 
     setIsProcessing(true);
     try {
-      const result = await requestAIAnnotation(annotationType, options);
-      if (result) {
-        // 刷新标注列表
-        // 这里可以根据实际API结构调整
+      // 对于图片，使用新的图片标注API
+      if (fileData.file_category === 'image' && (type === 'qa' || type === 'caption' || type === 'object_detection')) {
+        await generateAIAnnotation(type as 'qa' | 'caption' | 'object_detection', options);
+      } else {
+        // 对于其他类型，使用原有API
+        const result = await requestAIAnnotation(type as 'qa' | 'caption' | 'transcript', options);
+        if (result) {
+          // 刷新标注列表
+          // 这里可以根据实际API结构调整
+        }
       }
     } catch (error) {
       console.error('AI标注失败:', error);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleSaveAnnotation = async (annotation: any) => {
+    if (!fileData) return;
+
+    try {
+      // 使用图片标注API保存区域标注
+      await createImageAnnotation({
+        file_id: actualFileId!,
+        type: 'OBJECT_DETECTION', // 区域标注类型
+        source: 'HUMAN',
+        content: {
+          label: annotation.label
+        },
+        region: annotation.region,
+        confidence: 1.0, // 人工标注置信度设为1.0
+        category: annotation.label,
+        metadata: {
+          timestamp: annotation.timestamp,
+          annotation_type: annotation.type,
+          description: annotation.description
+        }
+      });
+      
+      console.log('标注保存成功');
+    } catch (error) {
+      console.error('保存标注失败:', error);
+      throw error; // 重新抛出错误，让UI组件处理
     }
   };
 
@@ -316,6 +352,8 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
                   fileData={fileData}
                   previewUrl={previewUrl}
                   onAIAnnotation={handleAIAnnotation}
+                  onSaveAnnotation={handleSaveAnnotation}
+                  onAnnotationsChange={setCurrentAnnotations}
                 />
               )}
               {fileData.file_category === 'video' && (
@@ -333,22 +371,16 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
             </TabsContent>
 
             <TabsContent value="annotations" className="h-full m-0 p-0">
-              {fileData?.file_type?.startsWith('image/') ? (
-                <ImageAnnotationPanel
-                  fileData={fileData}
-                />
-              ) : (
-                <MediaAnnotationPanel
-                  fileData={fileData}
-                  annotations={annotations}
-                  loading={annotationsLoading}
-                  onCreateAnnotation={createAnnotation}
-                  onUpdateAnnotation={updateAnnotation}
-                  onDeleteAnnotation={deleteAnnotation}
-                  onAIAnnotation={handleAIAnnotation}
-                  isProcessing={isProcessing}
-                />
-              )}
+              <MediaAnnotationPanel
+                fileData={fileData}
+                annotations={fileData?.file_type?.startsWith('image/') ? currentAnnotations : annotations}
+                loading={fileData?.file_type?.startsWith('image/') ? imageAnnotationsLoading : annotationsLoading}
+                onCreateAnnotation={fileData?.file_type?.startsWith('image/') ? createImageAnnotation : createAnnotation}
+                onUpdateAnnotation={fileData?.file_type?.startsWith('image/') ? updateImageAnnotation : updateAnnotation}
+                onDeleteAnnotation={fileData?.file_type?.startsWith('image/') ? deleteImageAnnotation : deleteAnnotation}
+                onAIAnnotation={handleAIAnnotation}
+                isProcessing={isProcessing}
+              />
             </TabsContent>
 
             <TabsContent value="metadata" className="h-full m-0 p-0">

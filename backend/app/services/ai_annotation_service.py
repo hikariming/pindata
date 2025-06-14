@@ -6,12 +6,16 @@ from PIL import Image
 from io import BytesIO
 import cv2
 import numpy as np
-from app.models import RawData, AnnotationType
+from app.models import RawData, AnnotationType, LLMConfig, ProviderType
 from app.services.storage_service import StorageService
-import openai
-import google.generativeai as genai
-from anthropic import Anthropic
-import whisper
+from app.services.llm_conversion_service import LLMConversionService
+from langchain.schema import HumanMessage, SystemMessage
+try:
+    import whisper
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WHISPER_AVAILABLE = False
+    whisper = None
 
 
 class AIAnnotationService:
@@ -19,40 +23,73 @@ class AIAnnotationService:
     
     def __init__(self):
         self.storage_service = StorageService()
+        self.llm_service = LLMConversionService()
         
-        # 初始化各种AI模型客户端
-        self.openai_client = None
-        self.anthropic_client = None
+        # 初始化Whisper模型（本地模型，不依赖配置）
         self.whisper_model = None
+        self._init_whisper()
+    
+    def _init_whisper(self):
+        """初始化Whisper模型，支持离线环境"""
+        if not WHISPER_AVAILABLE:
+            print("Whisper包未安装，语音转录功能不可用")
+            return
         
-        # 从环境变量获取API密钥
-        self._init_ai_clients()
-    
-    def _init_ai_clients(self):
-        """初始化AI客户端"""
         try:
-            # OpenAI
-            if os.getenv('OPENAI_API_KEY'):
-                openai.api_key = os.getenv('OPENAI_API_KEY')
-                self.openai_client = openai
+            # 设置缓存目录，优先使用本地缓存
+            import os
+            cache_dir = os.environ.get('WHISPER_CACHE_DIR', '/root/.cache/whisper')
+            os.makedirs(cache_dir, exist_ok=True)
             
-            # Anthropic Claude
-            if os.getenv('ANTHROPIC_API_KEY'):
-                self.anthropic_client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+            # 检查本地是否已有模型文件
+            model_path = os.path.join(cache_dir, "base.pt")
+            if os.path.exists(model_path):
+                print("使用本地Whisper模型")
+            else:
+                print("本地Whisper模型不存在，将尝试下载（如果有网络连接）")
             
-            # Google Gemini
-            if os.getenv('GOOGLE_API_KEY'):
-                genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+            # 加载模型，指定缓存目录
+            self.whisper_model = whisper.load_model("base", download_root=cache_dir)
+            print("✅ Whisper模型加载成功")
             
-            # Whisper (本地模型)
-            try:
-                self.whisper_model = whisper.load_model("base")
-            except Exception as e:
-                print(f"Whisper模型加载失败: {e}")
-                
         except Exception as e:
-            print(f"AI客户端初始化失败: {e}")
+            print(f"⚠️ Whisper模型加载失败: {e}")
+            print("   语音转录功能将不可用，但不影响其他功能")
+            self.whisper_model = None
     
+    def _get_default_llm_config(self, supports_vision: bool = False) -> Optional[LLMConfig]:
+        """获取默认的LLM配置"""
+        try:
+            query = LLMConfig.query.filter(
+                LLMConfig.is_active == True,
+                LLMConfig.is_default == True
+            )
+            
+            if supports_vision:
+                query = query.filter(LLMConfig.supports_vision == True)
+            
+            return query.first()
+        except Exception as e:
+            print(f"获取LLM配置失败: {e}")
+            return None
+    
+    def _get_llm_config_by_provider(self, provider: str, supports_vision: bool = False) -> Optional[LLMConfig]:
+        """根据提供商获取LLM配置"""
+        try:
+            provider_enum = ProviderType(provider.upper())
+            query = LLMConfig.query.filter(
+                LLMConfig.is_active == True,
+                LLMConfig.provider == provider_enum
+            )
+            
+            if supports_vision:
+                query = query.filter(LLMConfig.supports_vision == True)
+            
+            return query.first()
+        except Exception as e:
+            print(f"获取LLM配置失败: {e}")
+            return None
+
     async def generate_image_qa(self, raw_data: RawData, questions: List[str] = None, 
                                model_provider: str = "openai") -> Dict[str, Any]:
         """
@@ -69,6 +106,22 @@ class AIAnnotationService:
         if raw_data.file_category != 'image':
             raise ValueError("只能对图片数据生成问答标注")
         
+        # 获取LLM配置
+        llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
+        if not llm_config:
+            # 尝试获取默认的视觉模型
+            llm_config = self._get_default_llm_config(supports_vision=True)
+            if not llm_config:
+                return {
+                    "qa_pairs": [],
+                    "metadata": {
+                        "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的{model_provider}模型",
+                        "model_provider": model_provider,
+                        "total_questions": 0,
+                        "avg_confidence": 0
+                    }
+                }
+        
         try:
             # 获取图片数据
             image_data = await self._get_image_data(raw_data)
@@ -77,31 +130,36 @@ class AIAnnotationService:
             if not questions:
                 questions = self._generate_default_image_questions(raw_data)
             
-            # 根据不同的模型提供商生成答案
+            # 获取LLM客户端
+            llm_client = self.llm_service.get_llm_client(llm_config)
+            
+            # 生成问答对
             qa_pairs = []
             
             for question in questions:
-                if model_provider == "openai" and self.openai_client:
-                    answer = await self._ask_openai_vision(image_data, question)
-                elif model_provider == "anthropic" and self.anthropic_client:
-                    answer = await self._ask_claude_vision(image_data, question)
-                elif model_provider == "google":
-                    answer = await self._ask_gemini_vision(image_data, question)
-                else:
-                    answer = {"text": "AI服务暂不可用", "confidence": 0.0}
-                
-                qa_pairs.append({
-                    "question": question,
-                    "answer": answer.get("text", ""),
-                    "confidence": answer.get("confidence", 0.0),
-                    "model": model_provider,
-                    "timestamp": self._get_timestamp()
-                })
+                try:
+                    answer = await self._ask_vision_model(llm_client, image_data, question, llm_config)
+                    qa_pairs.append({
+                        "question": question,
+                        "answer": answer.get("text", ""),
+                        "confidence": answer.get("confidence", 0.0),
+                        "model": llm_config.model_name,
+                        "timestamp": self._get_timestamp()
+                    })
+                except Exception as e:
+                    qa_pairs.append({
+                        "question": question,
+                        "answer": f"处理失败: {str(e)}",
+                        "confidence": 0.0,
+                        "model": llm_config.model_name,
+                        "timestamp": self._get_timestamp()
+                    })
             
             return {
                 "qa_pairs": qa_pairs,
                 "metadata": {
-                    "model_provider": model_provider,
+                    "model_provider": llm_config.provider.value,
+                    "model_name": llm_config.model_name,
                     "image_dimensions": image_data.get("dimensions"),
                     "total_questions": len(questions),
                     "avg_confidence": sum([qa["confidence"] for qa in qa_pairs]) / len(qa_pairs) if qa_pairs else 0
@@ -126,25 +184,37 @@ class AIAnnotationService:
         if raw_data.file_category != 'image':
             raise ValueError("只能对图片数据生成描述标注")
         
+        # 获取LLM配置
+        llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
+        if not llm_config:
+            llm_config = self._get_default_llm_config(supports_vision=True)
+            if not llm_config:
+                return {
+                    "caption": "",
+                    "confidence": 0.0,
+                    "metadata": {
+                        "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的{model_provider}模型",
+                        "model_provider": model_provider,
+                        "timestamp": self._get_timestamp()
+                    }
+                }
+        
         try:
             # 获取图片数据
             image_data = await self._get_image_data(raw_data)
             
+            # 获取LLM客户端
+            llm_client = self.llm_service.get_llm_client(llm_config)
+            
             # 生成描述
-            if model_provider == "openai" and self.openai_client:
-                result = await self._generate_openai_caption(image_data)
-            elif model_provider == "anthropic" and self.anthropic_client:
-                result = await self._generate_claude_caption(image_data)
-            elif model_provider == "google":
-                result = await self._generate_gemini_caption(image_data)
-            else:
-                result = {"caption": "AI服务暂不可用", "confidence": 0.0}
+            result = await self._generate_caption_with_llm(llm_client, image_data, llm_config)
             
             return {
                 "caption": result.get("caption", ""),
                 "confidence": result.get("confidence", 0.0),
                 "metadata": {
-                    "model_provider": model_provider,
+                    "model_provider": llm_config.provider.value,
+                    "model_name": llm_config.model_name,
                     "image_dimensions": image_data.get("dimensions"),
                     "timestamp": self._get_timestamp()
                 }
@@ -168,38 +238,50 @@ class AIAnnotationService:
         if raw_data.file_category != 'video':
             raise ValueError("只能对视频数据生成字幕标注")
         
+        if not WHISPER_AVAILABLE or not self.whisper_model:
+            error_msg = "Whisper包未安装" if not WHISPER_AVAILABLE else "Whisper模型未加载"
+            return {
+                "transcript_segments": [],
+                "language": language,
+                "metadata": {
+                    "error": f"{error_msg}，无法进行语音转录。请确保安装正确的openai-whisper包",
+                    "model": "whisper-base",
+                    "total_duration": 0,
+                    "total_segments": 0,
+                    "avg_confidence": 0,
+                    "timestamp": self._get_timestamp()
+                }
+            }
+        
         try:
             # 从视频中提取音频
             audio_path = await self._extract_audio_from_video(raw_data)
             
             # 使用Whisper进行语音转录
-            if self.whisper_model:
-                result = self.whisper_model.transcribe(audio_path, language=language)
-                
-                # 转换为片段格式
-                segments = []
-                for segment in result.get("segments", []):
-                    segments.append({
-                        "start_time": segment["start"],
-                        "end_time": segment["end"],
-                        "text": segment["text"].strip(),
-                        "confidence": segment.get("avg_logprob", 0.0),
-                        "tokens": segment.get("tokens", [])
-                    })
-                
-                return {
-                    "transcript_segments": segments,
-                    "language": result.get("language", language),
-                    "metadata": {
-                        "model": "whisper-base",
-                        "total_duration": max([s["end_time"] for s in segments]) if segments else 0,
-                        "total_segments": len(segments),
-                        "avg_confidence": sum([s["confidence"] for s in segments]) / len(segments) if segments else 0,
-                        "timestamp": self._get_timestamp()
-                    }
+            result = self.whisper_model.transcribe(audio_path, language=language)
+            
+            # 转换为片段格式
+            segments = []
+            for segment in result.get("segments", []):
+                segments.append({
+                    "start_time": segment["start"],
+                    "end_time": segment["end"],
+                    "text": segment["text"].strip(),
+                    "confidence": segment.get("avg_logprob", 0.0),
+                    "tokens": segment.get("tokens", [])
+                })
+            
+            return {
+                "transcript_segments": segments,
+                "language": result.get("language", language),
+                "metadata": {
+                    "model": "whisper-base",
+                    "total_duration": max([s["end_time"] for s in segments]) if segments else 0,
+                    "total_segments": len(segments),
+                    "avg_confidence": sum([s["confidence"] for s in segments]) / len(segments) if segments else 0,
+                    "timestamp": self._get_timestamp()
                 }
-            else:
-                raise Exception("Whisper模型未加载")
+            }
                 
         except Exception as e:
             raise Exception(f"生成视频字幕失败: {str(e)}")
@@ -265,96 +347,63 @@ class AIAnnotationService:
         except Exception as e:
             raise Exception(f"获取图片数据失败: {str(e)}")
     
-    async def _ask_openai_vision(self, image_data: Dict, question: str) -> Dict[str, Any]:
-        """使用OpenAI GPT-4V回答图片相关问题"""
+    async def _ask_vision_model(self, llm_client, image_data: Dict, question: str, llm_config: LLMConfig) -> Dict[str, Any]:
+        """使用视觉模型回答图片相关问题"""
         try:
-            response = self.openai_client.ChatCompletion.create(
-                model="gpt-4-vision-preview",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": question},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_data['base64']}"
-                                }
-                            }
-                        ]
+            # 构建消息内容
+            content_parts = [
+                {"type": "text", "text": question},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_data['base64']}"
                     }
-                ],
-                max_tokens=500
-            )
+                }
+            ]
             
-            answer_text = response.choices[0].message.content
+            # 创建消息
+            messages = [HumanMessage(content=content_parts)]
+            
+            # 调用LLM
+            response = llm_client.invoke(messages)
             
             return {
-                "text": answer_text,
-                "confidence": 0.85,  # GPT-4V通常置信度较高
-                "model": "gpt-4-vision-preview"
+                "text": response.content,
+                "confidence": 0.85,  # 默认置信度
+                "model": llm_config.model_name
             }
             
         except Exception as e:
-            return {"text": f"OpenAI API调用失败: {str(e)}", "confidence": 0.0}
+            return {"text": f"模型调用失败: {str(e)}", "confidence": 0.0}
     
-    async def _ask_claude_vision(self, image_data: Dict, question: str) -> Dict[str, Any]:
-        """使用Claude Vision回答图片相关问题"""
+    async def _generate_caption_with_llm(self, llm_client, image_data: Dict, llm_config: LLMConfig) -> Dict[str, Any]:
+        """使用LLM生成图片描述"""
         try:
-            message = self.anthropic_client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=500,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "image/jpeg",
-                                    "data": image_data['base64']
-                                }
-                            },
-                            {
-                                "type": "text",
-                                "text": question
-                            }
-                        ]
+            # 构建消息内容
+            content_parts = [
+                {"type": "text", "text": "请详细描述这张图片的内容，包括主要对象、场景、颜色、氛围等。"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_data['base64']}"
                     }
-                ]
-            )
+                }
+            ]
             
-            answer_text = message.content[0].text
+            # 创建消息
+            messages = [HumanMessage(content=content_parts)]
+            
+            # 调用LLM
+            response = llm_client.invoke(messages)
             
             return {
-                "text": answer_text,
-                "confidence": 0.90,  # Claude通常置信度较高
-                "model": "claude-3-sonnet"
+                "caption": response.content,
+                "confidence": 0.85,
+                "model": llm_config.model_name
             }
             
         except Exception as e:
-            return {"text": f"Claude API调用失败: {str(e)}", "confidence": 0.0}
-    
-    async def _ask_gemini_vision(self, image_data: Dict, question: str) -> Dict[str, Any]:
-        """使用Google Gemini Vision回答图片相关问题"""
-        try:
-            model = genai.GenerativeModel('gemini-pro-vision')
-            
-            # 重新构建PIL图像
-            image_bytes = base64.b64decode(image_data['base64'])
-            image = Image.open(BytesIO(image_bytes))
-            
-            response = model.generate_content([question, image])
-            
-            return {
-                "text": response.text,
-                "confidence": 0.80,  # Gemini置信度
-                "model": "gemini-pro-vision"
-            }
-            
-        except Exception as e:
-            return {"text": f"Gemini API调用失败: {str(e)}", "confidence": 0.0}
+            return {"caption": f"生成描述失败: {str(e)}", "confidence": 0.0}
     
     def _generate_default_image_questions(self, raw_data: RawData) -> List[str]:
         """生成默认的图片问题"""

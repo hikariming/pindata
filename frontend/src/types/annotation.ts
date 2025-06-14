@@ -22,21 +22,21 @@ export interface ImageAnnotation {
 
 // 图片标注类型
 export type ImageAnnotationType = 
-  | 'qa'                    // 问答
-  | 'caption'               // 描述
-  | 'classification'        // 分类
-  | 'object_detection'      // 目标检测
-  | 'segmentation'          // 图像分割
-  | 'keypoint'              // 关键点检测
-  | 'ocr'                   // 文字识别
-  | 'custom';               // 自定义
+  | 'QA'                    // 问答
+  | 'CAPTION'               // 描述
+  | 'CLASSIFICATION'        // 分类
+  | 'OBJECT_DETECTION'      // 目标检测
+  | 'SEGMENTATION'          // 图像分割
+  | 'KEYPOINT'              // 关键点检测
+  | 'OCR'                   // 文字识别
+  | 'CUSTOM';               // 自定义
 
 // 标注来源
 export type AnnotationSource = 
-  | 'human'                 // 人工标注
-  | 'ai'                    // AI生成
-  | 'detection'             // 自动检测
-  | 'imported';             // 导入的标注
+  | 'HUMAN'                 // 人工标注
+  | 'AI'                    // AI生成
+  | 'DETECTION'             // 自动检测
+  | 'IMPORTED';             // 导入的标注
 
 // 边界框定义
 export interface BoundingBox {

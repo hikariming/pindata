@@ -96,18 +96,28 @@ def create_image_annotation():
     """创建图片标注"""
     data = request.get_json()
     
+    # 映射前端发送的source值到数据库枚举值
+    source_mapping = {
+        'HUMAN': 'HUMAN_ANNOTATED',
+        'AI': 'AI_GENERATED', 
+        'DETECTION': 'AI_ASSISTED',
+        'IMPORTED': 'IMPORTED'
+    }
+    
     try:
+        mapped_source = source_mapping.get(data['source'], data['source'])
+        
         annotation = ImageAnnotation(
             file_id=data['file_id'],
             type=ImageAnnotationType(data['type']),
-            source=AnnotationSource(data['source']),
+            source=AnnotationSource(mapped_source),
             content=data['content'],
             region=data.get('region'),
             coordinates=data.get('coordinates'),
             confidence=data.get('confidence', 0.0),
             category=data.get('category'),
             tags=data.get('tags', []),
-            metadata=data.get('metadata', {}),
+            annotation_metadata=data.get('metadata', {}),
             created_by=data.get('created_by')
         )
         
@@ -292,19 +302,29 @@ def create_batch_annotations():
     created_annotations = []
     failed_annotations = []
     
+    # 映射前端发送的source值到数据库枚举值
+    source_mapping = {
+        'HUMAN': 'HUMAN_ANNOTATED',
+        'AI': 'AI_GENERATED', 
+        'DETECTION': 'AI_ASSISTED',
+        'IMPORTED': 'IMPORTED'
+    }
+    
     for i, annotation_data in enumerate(annotations_data):
         try:
+            mapped_source = source_mapping.get(annotation_data['source'], annotation_data['source'])
+            
             annotation = ImageAnnotation(
                 file_id=annotation_data['file_id'],
                 type=ImageAnnotationType(annotation_data['type']),
-                source=AnnotationSource(annotation_data['source']),
+                source=AnnotationSource(mapped_source),
                 content=annotation_data['content'],
                 region=annotation_data.get('region'),
                 coordinates=annotation_data.get('coordinates'),
                 confidence=annotation_data.get('confidence', 0.0),
                 category=annotation_data.get('category'),
                 tags=annotation_data.get('tags', []),
-                metadata=annotation_data.get('metadata', {}),
+                annotation_metadata=annotation_data.get('metadata', {}),
                 created_by=annotation_data.get('created_by')
             )
             
@@ -358,7 +378,7 @@ def create_batch_annotations():
         404: {'description': '标注不存在'}
     }
 })
-def review_annotation(annotation_id):
+def review_image_annotation(annotation_id):
     """审核标注"""
     annotation = ImageAnnotation.query.get_or_404(annotation_id)
     data = request.get_json()

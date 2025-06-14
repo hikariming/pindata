@@ -24,9 +24,9 @@ import {
 
 interface Annotation {
   id: string;
-  type: 'qa' | 'caption' | 'transcript' | 'detection';
+  type: 'qa' | 'caption' | 'transcript' | 'detection' | 'OBJECT_DETECTION';
   content: any;
-  source: 'human' | 'ai' | 'detection';
+  source: 'human' | 'ai' | 'detection' | 'HUMAN_ANNOTATED' | 'AI_GENERATED';
   confidence?: number;
   timestamp: string;
   region?: any;
@@ -69,7 +69,7 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
     qa: annotations.filter(a => a.type === 'qa'),
     caption: annotations.filter(a => a.type === 'caption'),
     transcript: annotations.filter(a => a.type === 'transcript'),
-    detection: annotations.filter(a => a.type === 'detection')
+    detection: annotations.filter(a => a.type === 'detection' || a.type === 'OBJECT_DETECTION')
   };
 
   const handleCreateAnnotation = async () => {
@@ -156,19 +156,19 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
             </Badge>
           )}
           <Badge 
-            variant={annotation.source === 'ai' ? 'default' : 'outline'}
+            variant={annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'default' : 'outline'}
             className={
-              annotation.source === 'ai' ? 'bg-blue-100 text-blue-800' : 
+              annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'bg-blue-100 text-blue-800' : 
               'bg-green-100 text-green-800'
             }
           >
-            {annotation.source === 'ai' ? (
+            {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? (
               <><BotIcon size={12} className="mr-1" />AI</>
             ) : (
               <><UserIcon size={12} className="mr-1" />人工</>
             )}
           </Badge>
-          {annotation.type === 'detection' && (
+          {(annotation.type === 'detection' || annotation.type === 'OBJECT_DETECTION') && (
             <Badge variant="secondary" className="bg-purple-100 text-purple-800">
               <MousePointerIcon size={12} className="mr-1" />检测
             </Badge>
@@ -233,13 +233,18 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
           </div>
         )}
         
-        {annotation.type === 'detection' && (
+        {(annotation.type === 'detection' || annotation.type === 'OBJECT_DETECTION') && (
           <div>
             <label className="text-sm font-medium text-gray-700">检测对象:</label>
-            <p className="text-sm mt-1 font-medium">{annotation.content.label || '未知对象'}</p>
+            <p className="text-sm mt-1 font-medium">{annotation.content?.label || annotation.category || '未知对象'}</p>
             {annotation.category && (
               <p className="text-xs text-gray-500 mt-1">
                 类别: {annotation.category}
+              </p>
+            )}
+            {annotation.content?.description && (
+              <p className="text-xs text-gray-500 mt-1">
+                描述: {annotation.content.description}
               </p>
             )}
             {annotation.region && (
@@ -251,14 +256,21 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
                 <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
                   <div className="text-gray-600 mb-1">大模型训练格式:</div>
                   <div className="space-y-1">
-                    <div>YOLO: {annotation.content.label} {((annotation.region.x + annotation.region.width/2)/1000).toFixed(6)} {((annotation.region.y + annotation.region.height/2)/1000).toFixed(6)} {(annotation.region.width/1000).toFixed(6)} {(annotation.region.height/1000).toFixed(6)}</div>
-                    <div>COCO: {JSON.stringify({
-                      id: Math.floor(Math.random()*10000), 
-                      category_id: 1, 
-                      bbox: [annotation.region.x, annotation.region.y, annotation.region.width, annotation.region.height], 
-                      area: annotation.region.width * annotation.region.height
-                    })}</div>
-                    <div>Pascal VOC: &lt;bndbox&gt;&lt;xmin&gt;{Math.round(annotation.region.x)}&lt;/xmin&gt;&lt;ymin&gt;{Math.round(annotation.region.y)}&lt;/ymin&gt;&lt;xmax&gt;{Math.round(annotation.region.x + annotation.region.width)}&lt;/xmax&gt;&lt;ymax&gt;{Math.round(annotation.region.y + annotation.region.height)}&lt;/ymax&gt;&lt;/bndbox&gt;</div>
+                    <div className="break-all">
+                      <strong>YOLO:</strong> {annotation.content?.label || annotation.category || 'object'} {((annotation.region.x + annotation.region.width/2)/1000).toFixed(6)} {((annotation.region.y + annotation.region.height/2)/1000).toFixed(6)} {(annotation.region.width/1000).toFixed(6)} {(annotation.region.height/1000).toFixed(6)}
+                    </div>
+                    <div className="break-all">
+                      <strong>COCO:</strong> {JSON.stringify({
+                        id: annotation.id,
+                        category_id: 1, 
+                        bbox: [annotation.region.x, annotation.region.y, annotation.region.width, annotation.region.height], 
+                        area: annotation.region.width * annotation.region.height,
+                        iscrowd: 0
+                      })}
+                    </div>
+                    <div className="break-all">
+                      <strong>Pascal VOC:</strong> &lt;bndbox&gt;&lt;xmin&gt;{Math.round(annotation.region.x)}&lt;/xmin&gt;&lt;ymin&gt;{Math.round(annotation.region.y)}&lt;/ymin&gt;&lt;xmax&gt;{Math.round(annotation.region.x + annotation.region.width)}&lt;/xmax&gt;&lt;ymax&gt;{Math.round(annotation.region.y + annotation.region.height)}&lt;/ymax&gt;&lt;/bndbox&gt;
+                    </div>
                   </div>
                 </div>
               </>

@@ -15,10 +15,13 @@ import {
   MousePointerIcon,
   XIcon,
   TagIcon,
-  SaveIcon
+  SaveIcon,
+  CheckIcon,
+  RefreshCwIcon
 } from 'lucide-react';
 import { AIQuestionDialog } from './dialogs/AIQuestionDialog';
 import { ObjectDetectionDialog } from './dialogs/ObjectDetectionDialog';
+import { useImageAnnotations } from '../../hooks/useImageAnnotations';
 
 interface Annotation {
   id: string;
@@ -36,6 +39,8 @@ interface ImagePreviewPanelProps {
   fileData: any;
   previewUrl: string;
   onAIAnnotation: (type: string, options?: any) => void;
+  onSaveAnnotation?: (annotation: Annotation) => Promise<void>;
+  onAnnotationsChange?: (annotations: any[]) => void;
 }
 
 interface ObjectDetectionOptions {
@@ -49,7 +54,9 @@ interface ObjectDetectionOptions {
 export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   fileData,
   previewUrl,
-  onAIAnnotation
+  onAIAnnotation,
+  onSaveAnnotation,
+  onAnnotationsChange
 }) => {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -66,11 +73,21 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   const [annotationLabel, setAnnotationLabel] = useState('');
   const [annotationDescription, setAnnotationDescription] = useState('');
   const [imageNaturalSize, setImageNaturalSize] = useState<{width: number, height: number} | null>(null);
+  const [isLoadingAnnotations, setIsLoadingAnnotations] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   // 对话框状态
   const [showAIQuestionDialog, setShowAIQuestionDialog] = useState(false);
   const [showObjectDetectionDialog, setShowObjectDetectionDialog] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
+
+  // 使用图片标注 hook
+  const {
+    annotations: dbAnnotations,
+    loading: annotationsLoading,
+    createAnnotation,
+    refreshAnnotations
+  } = useImageAnnotations(fileData?.id || '');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -79,6 +96,36 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   useEffect(() => {
     drawRegionOverlay();
   }, [selectedRegion, annotations, scale, position, rotation, imageNaturalSize]);
+
+  // 加载数据库中的标注
+  useEffect(() => {
+    if (dbAnnotations && dbAnnotations.length > 0) {
+      const convertedAnnotations = dbAnnotations.map(dbAnnotation => ({
+        id: dbAnnotation.id,
+        region: dbAnnotation.region,
+        label: dbAnnotation.content?.label || dbAnnotation.category || '未知对象',
+        type: 'detection' as const,
+        source: dbAnnotation.source === 'HUMAN_ANNOTATED' ? 'human' as const : 'ai' as const,
+        timestamp: new Date(dbAnnotation.created_at).getTime(),
+        confidence: dbAnnotation.confidence,
+        category: dbAnnotation.category,
+        description: dbAnnotation.content?.description
+      }));
+      setAnnotations(convertedAnnotations);
+      
+      // 通知父组件标注数据已更新
+      if (onAnnotationsChange) {
+        onAnnotationsChange(dbAnnotations);
+      }
+    }
+  }, [dbAnnotations, onAnnotationsChange]);
+
+  // 组件加载时刷新标注
+  useEffect(() => {
+    if (fileData?.id) {
+      refreshAnnotations();
+    }
+  }, [fileData?.id, refreshAnnotations]);
 
   const drawRegionOverlay = () => {
     const canvas = canvasRef.current;
@@ -185,24 +232,52 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
     };
   };
 
-  const handleSaveAnnotation = () => {
+  const handleSaveAnnotation = async () => {
     if (!selectedRegion || !annotationLabel.trim()) return;
     
-    const newAnnotation: Annotation = {
-      id: Date.now().toString(),
-      region: selectedRegion,
-      label: annotationLabel.trim(),
-      type: 'detection',
-      source: 'human',
-      timestamp: Date.now(),
-      description: annotationDescription.trim() || undefined
-    };
-    
-    setAnnotations(prev => [...prev, newAnnotation]);
-    setSelectedRegion(null);
-    setAnnotationLabel('');
-    setAnnotationDescription('');
-    setShowAnnotationDialog(false);
+    try {
+      setIsLoadingAnnotations(true);
+      
+      // 保存到数据库
+      const annotationData = {
+        file_id: fileData.id,
+        type: 'OBJECT_DETECTION',
+        source: 'HUMAN',
+        content: {
+          label: annotationLabel.trim(),
+          description: annotationDescription.trim() || undefined
+        },
+        region: selectedRegion,
+        confidence: 1.0,
+        category: annotationLabel.trim(),
+        annotation_metadata: {
+          timestamp: Date.now(),
+          annotation_type: 'detection'
+        }
+      };
+      
+      const savedAnnotation = await createAnnotation(annotationData);
+      
+      // 显示成功提示
+      setShowSuccessMessage(true);
+      
+      // 清空表单并关闭对话框
+      setSelectedRegion(null);
+      setAnnotationLabel('');
+      setAnnotationDescription('');
+      setShowAnnotationDialog(false);
+      
+      // 隐藏成功消息
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('保存标注失败:', error);
+      // 这里可以添加错误提示
+    } finally {
+      setIsLoadingAnnotations(false);
+    }
   };
 
   const handleDeleteAnnotation = (id: string) => {
@@ -421,9 +496,27 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                 选中区域: {Math.round(selectedRegion.width)} × {Math.round(selectedRegion.height)}
               </Badge>
             )}
+            {annotations.length > 0 && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                <TagIcon size={12} className="mr-1" />
+                已标注: {annotations.length}
+              </Badge>
+            )}
           </div>
         </Card>
       </div>
+
+      {/* 成功提示消息 */}
+      {showSuccessMessage && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+          <Card className="p-4 bg-green-50 border-green-200">
+            <div className="flex items-center space-x-2 text-green-800">
+              <CheckIcon size={20} className="text-green-600" />
+              <span className="font-medium">标注保存成功！</span>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* 主图像容器 */}
       <div 
@@ -541,11 +634,15 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                 </Button>
                 <Button 
                   onClick={handleSaveAnnotation}
-                  disabled={!annotationLabel.trim()}
+                  disabled={!annotationLabel.trim() || isLoadingAnnotations}
                   className="bg-blue-500 hover:bg-blue-600"
                 >
-                  <SaveIcon size={16} className="mr-1" />
-                  保存
+                  {isLoadingAnnotations ? (
+                    <RefreshCwIcon size={16} className="mr-1 animate-spin" />
+                  ) : (
+                    <SaveIcon size={16} className="mr-1" />
+                  )}
+                  {isLoadingAnnotations ? '保存中...' : '保存'}
                 </Button>
               </div>
             </div>
@@ -557,10 +654,21 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
       {annotations.length > 0 && (
         <div className="absolute top-20 left-4 z-10 max-w-xs">
           <Card className="p-3 bg-white">
-            <h4 className="font-medium mb-2 flex items-center">
-              <TagIcon size={16} className="mr-1" />
-              标注列表 ({annotations.length})
-            </h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium flex items-center">
+                <TagIcon size={16} className="mr-1" />
+                标注列表 ({annotations.length})
+              </h4>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={refreshAnnotations}
+                disabled={annotationsLoading}
+                className="p-1 h-6 w-6"
+              >
+                <RefreshCwIcon size={12} className={annotationsLoading ? 'animate-spin' : ''} />
+              </Button>
+            </div>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {annotations.map((annotation) => (
                 <div 
@@ -571,6 +679,19 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
                     <div className="font-medium">{annotation.label}</div>
                     <div className="text-gray-500">
                       {Math.round(annotation.region.width)}×{Math.round(annotation.region.height)}
+                    </div>
+                    <div className="flex items-center space-x-1 mt-1">
+                      <Badge 
+                        variant={annotation.source === 'ai' ? 'default' : 'outline'}
+                        className="text-xs px-1 py-0"
+                      >
+                        {annotation.source === 'ai' ? 'AI' : '人工'}
+                      </Badge>
+                      {annotation.confidence && (
+                        <Badge variant="secondary" className="text-xs px-1 py-0">
+                          {Math.round(annotation.confidence * 100)}%
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <Button
