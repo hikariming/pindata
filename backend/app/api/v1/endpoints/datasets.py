@@ -821,79 +821,8 @@ def get_dataset_generation_status(dataset_id):
 })
 def generate_multimodal_dataset():
     """AI自动生成多模态数据集"""
-    from app.models import RawData
-    from app.services.ai_annotation_service import AIAnnotationService
-    from app.tasks.multimodal_dataset_tasks import generate_multimodal_dataset_task
-    
-    data = request.get_json()
-    
-    dataset_name = data.get('dataset_name')
-    dataset_description = data.get('dataset_description', '')
-    selected_files = data.get('selected_files', [])
-    model_config = data.get('model_config')
-    generation_config = data.get('generation_config', {})
-    
-    # 参数验证
-    if not dataset_name:
-        return jsonify({'error': '数据集名称不能为空'}), 400
-    
-    if not selected_files:
-        return jsonify({'error': '请选择要处理的文件'}), 400
-    
-    if not model_config or not model_config.get('id'):
-        return jsonify({'error': '请选择AI模型'}), 400
-    
-    # 验证选中的文件是否存在且为多媒体文件
-    file_ids = [f.get('id') for f in selected_files if f.get('id')]
-    if not file_ids:
-        return jsonify({'error': '文件ID不能为空'}), 400
-    
-    raw_files = RawData.query.filter(RawData.id.in_(file_ids)).all()
-    if len(raw_files) != len(file_ids):
-        return jsonify({'error': '部分文件不存在'}), 404
-    
-    # 检查文件类型
-    supported_categories = ['image', 'video']
-    invalid_files = [f for f in raw_files if f.file_category not in supported_categories]
-    if invalid_files:
-        invalid_names = [f.filename for f in invalid_files]
-        return jsonify({
-            'error': f'以下文件类型不支持多模态数据集生成: {", ".join(invalid_names)}'
-        }), 400
-    
-    # 验证模型配置
-    from app.models import LLMConfig
-    llm_config = LLMConfig.query.get(model_config['id'])
-    if not llm_config:
-        return jsonify({'error': '指定的AI模型不存在'}), 404
-    
-    if not llm_config.supports_vision:
-        return jsonify({'error': f'模型 {llm_config.name} 不支持视觉功能'}), 400
-    
-    if not llm_config.is_active:
-        return jsonify({'error': f'模型 {llm_config.name} 已被禁用'}), 400
-    
-    try:
-        # 启动异步任务生成多模态数据集
-        task = generate_multimodal_dataset_task.delay(
-            dataset_name=dataset_name,
-            dataset_description=dataset_description,
-            file_ids=file_ids,
-            model_config=model_config,
-            generation_config=generation_config
-        )
-        
-        return jsonify({
-            'message': '多模态数据集生成任务已启动',
-            'task_id': task.id,
-            'dataset_name': dataset_name,
-            'total_files': len(file_ids),
-            'model_info': {
-                'name': llm_config.name,
-                'provider': llm_config.provider.value
-            }
-        }), 202
-        
-    except Exception as e:
-        logger.error(f"启动多模态数据集生成任务失败: {str(e)}")
-        return jsonify({'error': f'启动任务失败: {str(e)}'}), 500 
+    # 功能暂时不可用，返回相应提示
+    return jsonify({
+        'error': '多模态数据集生成功能正在开发中，敬请期待',
+        'status': 'under_development'
+    }), 503 
