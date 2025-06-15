@@ -47,21 +47,50 @@ class DataGovernanceService {
 
   async getProjects(params: ProjectsQuery = {}): Promise<ProjectsResponse> {
     const response = await apiClient.get(`${this.baseUrl}/projects`, { params });
-    return (response as any).data.data;
+    // 处理新的API响应格式: { success: true, message: "操作成功", data: { projects: [], total: 0, limit: 50, offset: 0 } }
+    const responseData = (response as any).data;
+    if (responseData.success && responseData.data) {
+      return {
+        projects: responseData.data.projects || [],
+        total: responseData.data.total || 0,
+        limit: responseData.data.limit || 50,
+        offset: responseData.data.offset || 0
+      };
+    }
+    // 兼容旧格式
+    return (response as any).data.data || { projects: [], total: 0, limit: 50, offset: 0 };
   }
 
   async getProject(id: number): Promise<DataGovernanceProject> {
     const response = await apiClient.get(`${this.baseUrl}/projects/${id}`);
+    const responseData = (response as any).data;
+    // 新格式处理
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    // 兼容旧格式
     return (response as any).data.data;
   }
 
   async createProject(data: CreateProjectRequest): Promise<DataGovernanceProject> {
     const response = await apiClient.post(`${this.baseUrl}/projects`, data);
+    const responseData = (response as any).data;
+    // 新格式处理
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    // 兼容旧格式
     return (response as any).data.data;
   }
 
   async updateProject(id: number, data: UpdateProjectRequest): Promise<DataGovernanceProject> {
     const response = await apiClient.put(`${this.baseUrl}/projects/${id}`, data);
+    const responseData = (response as any).data;
+    // 新格式处理
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    // 兼容旧格式
     return (response as any).data.data;
   }
 
@@ -72,6 +101,12 @@ class DataGovernanceService {
   async getStats(organizationId?: number): Promise<ProjectStats> {
     const params = organizationId ? { organization_id: organizationId } : {};
     const response = await apiClient.get(`${this.baseUrl}/stats`, { params });
+    const responseData = (response as any).data;
+    // 新格式处理
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    // 兼容旧格式
     return (response as any).data.data;
   }
 }

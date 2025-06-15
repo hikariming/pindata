@@ -97,6 +97,15 @@ export const DataGovernanceProjects: React.FC = () => {
   };
 
   const displayProjects = projects || [];
+  
+  // 添加调试日志，帮助诊断数据加载情况
+  console.log('DataGovernanceProjects - 数据状态:', {
+    projects,
+    total,
+    loading: projectsLoading,
+    error: projectsError,
+    displayProjectsLength: displayProjects.length
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">

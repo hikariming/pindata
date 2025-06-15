@@ -28,9 +28,10 @@ export function useProjects(options: UseProjectsOptions = {}) {
     
     try {
       const response = await dataGovernanceService.getProjects(queryParams);
-      setProjects(response.projects);
-      setTotal(response.total);
+      setProjects(response.projects || []);
+      setTotal(response.total || 0);
     } catch (err: any) {
+      console.error('获取项目列表失败:', err);
       setError(err.message || '获取项目列表失败');
       setProjects([]);
       setTotal(0);
