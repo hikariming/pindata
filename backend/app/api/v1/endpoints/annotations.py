@@ -9,6 +9,9 @@ from app.celery_app import celery
 from datetime import datetime
 import uuid
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def find_or_create_raw_data_from_library_file(file_id):
@@ -612,75 +615,19 @@ def delete_annotation(annotation_id):
     }
 })
 def ai_generate_image_qa():
-    """AI辅助生成图片问答标注（异步）"""
-    data = request.get_json()
+    """AI辅助生成图片问答标注（待开发）"""
+    logger.info("收到AI图像问答请求，但功能暂未开发完成")
     
-    raw_data_id = data.get('raw_data_id')
-    questions = data.get('questions', [])
-    model_config = data.get('model_config')
-    region = data.get('region')
-    
-    # 验证数据是否存在，支持整数ID（RawData）和UUID（LibraryFile）
-    try:
-        data_object = None
-        is_library_file = False
-        
-        if isinstance(raw_data_id, (int, str)):
-            # 如果是整数或纯数字字符串，直接查询RawData
-            if isinstance(raw_data_id, int) or (isinstance(raw_data_id, str) and raw_data_id.isdigit()):
-                if isinstance(raw_data_id, str):
-                    raw_data_id = int(raw_data_id)
-                data_object = RawData.query.get(raw_data_id)
-                is_library_file = False
-            # 如果是UUID字符串格式，直接查询LibraryFile
-            elif isinstance(raw_data_id, str) and len(raw_data_id) == 36 and '-' in raw_data_id:
-                data_object = LibraryFile.query.get(raw_data_id)
-                is_library_file = True
-            else:
-                return jsonify({'error': f'无效的raw_data_id格式: {raw_data_id}'}), 400
-        else:
-            return jsonify({'error': f'raw_data_id必须是整数或UUID字符串: {raw_data_id}'}), 400
-            
-    except (ValueError, TypeError) as e:
-        return jsonify({'error': f'无效的数据ID: {raw_data_id}, 错误: {str(e)}'}), 400
-        
-    if not data_object:
-        return jsonify({'error': '数据不存在'}), 404
-    
-    # 检查文件类型
-    if is_library_file:
-        # LibraryFile 使用 file_type 字段
-        file_type = data_object.file_type.lower()
-        if file_type not in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']:
-            return jsonify({'error': '只能对图片数据进行问答标注'}), 400
-    else:
-        # RawData 使用 file_category 字段
-        if data_object.file_category != 'image':
-            return jsonify({'error': '只能对图片数据进行问答标注'}), 400
-    
-    try:
-        # 通过名称字符串启动异步任务，避免循环导入
-        task_name = 'app.tasks.multimodal_dataset_tasks.generate_ai_image_qa_task'
-        task_kwargs = {
-            'raw_data_id': raw_data_id,
-            'questions': questions if questions else None,
-            'model_config': model_config,
-            'region': region,
-            'is_library_file': is_library_file
+    return jsonify({
+        'message': '该功能正在开发中，敬请期待',
+        'status': 'under_development',
+        'qa_pairs': [],
+        'metadata': {
+            'error': 'AI图像问答功能正在开发中，暂时无法使用',
+            'total_questions': 0,
+            'avg_confidence': 0
         }
-        task = celery.send_task(name=task_name, kwargs=task_kwargs)
-        
-        return jsonify({
-            'message': 'AI图片问答标注任务已提交',
-            'celery_task_id': task.id,
-            'status': 'submitted',
-            'raw_data_id': raw_data_id,
-            'is_library_file': is_library_file,
-            'check_status_url': f'/api/v1/tasks/{task.id}/status'
-        }), 202
-        
-    except Exception as e:
-        return jsonify({'error': f'提交AI标注任务失败: {str(e)}'}), 500
+    }), 200
 
 
 @api_v1.route('/annotations/ai-assist/image-caption', methods=['POST'])

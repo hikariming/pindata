@@ -412,26 +412,20 @@ export const AIQuestionDialog: React.FC<AIQuestionDialogProps> = ({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={
-              (selectedQuestions.length === 0 && !customQuestion.trim()) || 
-              isProcessing || 
-              !selectedModelId ||
-              loadingModels
-            }
-            className="bg-blue-500 hover:bg-blue-600"
+            disabled={true}
+            className="bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
           >
-            {isProcessing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                AI分析中...
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} className="mr-2" />
-                开始AI问答 ({selectedQuestions.length + (customQuestion.trim() ? 1 : 0)}个问题)
-              </>
-            )}
+            <Sparkles size={16} className="mr-2" />
+            AI问答功能开发中，敬请期待
           </Button>
+        </div>
+        
+        {/* 添加开发中提示 */}
+        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
+          <div className="text-sm text-amber-700">
+            <span className="font-medium">功能开发中：</span>
+            AI问答功能正在完善中，暂时无法使用。请稍后再试。
+          </div>
         </div>
       </DialogContent>
     </Dialog>

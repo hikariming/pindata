@@ -61,11 +61,19 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
     }
   }, [annotations, loading, isProcessing, fileData]);
 
-  const [activeTab, setActiveTab] = useState('detection'); // 默认切换到检测标签页
+  const [activeTab, setActiveTab] = useState('qa'); // 改为默认显示问答标签页
   const [editingId, setEditingId] = useState<string | null>(null);
   const [detectionFilter, setDetectionFilter] = useState<'all' | 'human' | 'ai'>('all');
   const [newAnnotation, setNewAnnotation] = useState({
     type: 'qa' as const,
+    question: '',
+    answer: '',
+    caption: '',
+    transcript: ''
+  });
+
+  // 编辑状态管理
+  const [editForm, setEditForm] = useState({
     question: '',
     answer: '',
     caption: '',
@@ -101,6 +109,80 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
     if (detectionFilter === 'ai') return annotation.source === 'ai' || annotation.source === 'AI_GENERATED';
     return true;
   });
+
+  // 开始编辑标注
+  const handleStartEdit = (annotation: UnifiedAnnotation) => {
+    setEditingId(annotation.id);
+    if (annotation.type === 'qa') {
+      setEditForm({
+        question: annotation.content.question || '',
+        answer: annotation.content.answer || '',
+        caption: '',
+        transcript: ''
+      });
+    } else if (annotation.type === 'caption') {
+      setEditForm({
+        question: '',
+        answer: '',
+        caption: annotation.content.caption || '',
+        transcript: ''
+      });
+    } else if (annotation.type === 'transcript') {
+      setEditForm({
+        question: '',
+        answer: '',
+        caption: '',
+        transcript: annotation.content.text || ''
+      });
+    }
+  };
+
+  // 保存编辑
+  const handleSaveEdit = async (annotation: UnifiedAnnotation) => {
+    try {
+      let updatedContent = { ...annotation.content };
+      
+      if (annotation.type === 'qa') {
+        updatedContent = {
+          question: editForm.question,
+          answer: editForm.answer
+        };
+      } else if (annotation.type === 'caption') {
+        updatedContent = {
+          caption: editForm.caption
+        };
+      } else if (annotation.type === 'transcript') {
+        updatedContent = {
+          text: editForm.transcript
+        };
+      }
+
+      await onUpdateAnnotation(annotation.id, {
+        content: updatedContent
+      });
+
+      setEditingId(null);
+      setEditForm({
+        question: '',
+        answer: '',
+        caption: '',
+        transcript: ''
+      });
+    } catch (error) {
+      console.error('更新标注失败:', error);
+    }
+  };
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({
+      question: '',
+      answer: '',
+      caption: '',
+      transcript: ''
+    });
+  };
 
   const handleCreateAnnotation = async () => {
     let content: any = {};
@@ -158,6 +240,16 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
     }
   };
 
+  const handleDeleteAnnotation = async (id: string) => {
+    if (confirm('确定要删除这个标注吗？')) {
+      try {
+        await onDeleteAnnotation(id);
+      } catch (error) {
+        console.error('删除标注失败:', error);
+      }
+    }
+  };
+
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -175,199 +267,282 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
   const AnnotationCard: React.FC<{ annotation: UnifiedAnnotation; showType?: boolean }> = ({ 
     annotation, 
     showType = false 
-  }) => (
-    <Card key={annotation.id} className="p-4 mb-3">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          {showType && (
-            <Badge variant="outline">
-              {annotation.type === 'qa' ? '问答' : 
-               annotation.type === 'caption' ? '描述' : '转录'}
-            </Badge>
-          )}
-          <Badge 
-            variant={annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'default' : 'outline'}
-            className={
-              annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'bg-blue-100 text-blue-800' : 
-              'bg-green-100 text-green-800'
-            }
-          >
-            {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? (
-              <><BotIcon size={12} className="mr-1" />AI</>
-            ) : (
-              <><UserIcon size={12} className="mr-1" />人工</>
+  }) => {
+    const isEditing = editingId === annotation.id;
+    
+    return (
+      <Card key={annotation.id} className="p-4 mb-3">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            {showType && (
+              <Badge variant="outline">
+                {annotation.type === 'qa' ? '问答' : 
+                 annotation.type === 'caption' ? '描述' : '转录'}
+              </Badge>
             )}
-          </Badge>
-          {(annotation.type === 'detection' || annotation.type === 'OBJECT_DETECTION') && (
-            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-              <MousePointerIcon size={12} className="mr-1" />检测
+            <Badge 
+              variant={annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'default' : 'outline'}
+              className={
+                annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'bg-blue-100 text-blue-800' : 
+                'bg-green-100 text-green-800'
+              }
+            >
+              {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? (
+                <><BotIcon size={12} className="mr-1" />AI</>
+              ) : (
+                <><UserIcon size={12} className="mr-1" />人工</>
+              )}
             </Badge>
-          )}
-          {annotation.confidence && (
-            <Badge variant="secondary" className="text-xs">
-              {Math.round(annotation.confidence * 100)}%
-            </Badge>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setEditingId(editingId === annotation.id ? null : annotation.id)}
-          >
-            <EditIcon size={14} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onDeleteAnnotation(annotation.id)}
-            className="text-red-600 hover:text-red-700"
-          >
-            <TrashIcon size={14} />
-          </Button>
-        </div>
-      </div>
-
-      {/* 标注内容 */}
-      <div className="space-y-2">
-        {annotation.type === 'qa' && (
-          <>
-            <div>
-              <label className="text-sm font-medium text-gray-700">问题:</label>
-              <p className="text-sm mt-1">{annotation.content.question}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">答案:</label>
-              <p className="text-sm mt-1 text-gray-600">{annotation.content.answer}</p>
-            </div>
-          </>
-        )}
-        
-        {annotation.type === 'caption' && (
-          <div>
-            <label className="text-sm font-medium text-gray-700">描述:</label>
-            <p className="text-sm mt-1">{annotation.content.caption}</p>
-          </div>
-        )}
-        
-        {annotation.type === 'transcript' && (
-          <div>
-            <label className="text-sm font-medium text-gray-700">转录文本:</label>
-            <p className="text-sm mt-1">{annotation.content.text}</p>
-            {annotation.timeRange && (
-              <p className="text-xs text-gray-500 mt-1">
-                时间: {formatTimeRange(annotation.timeRange)}
-              </p>
+            {(annotation.type === 'detection' || annotation.type === 'OBJECT_DETECTION') && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                <MousePointerIcon size={12} className="mr-1" />检测
+              </Badge>
+            )}
+            {annotation.confidence && (
+              <Badge variant="secondary" className="text-xs">
+                {Math.round(annotation.confidence * 100)}%
+              </Badge>
             )}
           </div>
-        )}
-        
-        {(annotation.type === 'detection' || annotation.type === 'OBJECT_DETECTION') && (
-          <div>
-            <label className="text-sm font-medium text-gray-700">检测对象:</label>
-            <p className="text-sm mt-1 font-medium">{annotation.content?.label || annotation.category || '未知对象'}</p>
-            {annotation.category && (
-              <p className="text-xs text-gray-500 mt-1">
-                类别: {annotation.category}
-              </p>
-            )}
-            {annotation.content?.description && (
-              <p className="text-xs text-gray-500 mt-1">
-                描述: {annotation.content.description}
-              </p>
-            )}
-            {annotation.region && (
+          
+          <div className="flex items-center space-x-1">
+            {isEditing ? (
               <>
-                <p className="text-xs text-gray-500 mt-1">
-                  位置: {Math.round(annotation.region.x)}, {Math.round(annotation.region.y)} 
-                  (尺寸: {Math.round(annotation.region.width)}×{Math.round(annotation.region.height)})
-                </p>
-                
-                {/* 可视化边界框 */}
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
-                  <div className="text-xs text-gray-600 mb-2 flex items-center">
-                    <RectangleIcon size={12} className="mr-1" />
-                    标注框预览
-                  </div>
-                  <div 
-                    className="relative bg-white border-2 rounded mx-auto"
-                    style={{
-                      width: '120px',
-                      height: '80px',
-                      borderColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b'
-                    }}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleSaveEdit(annotation)}
+                  className="text-green-600 hover:text-green-700"
+                >
+                  <CheckIcon size={14} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCancelEdit}
+                  className="text-gray-600 hover:text-gray-700"
+                >
+                  <XIcon size={14} />
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* 只允许编辑人工标注和非检测类型的标注 */}
+                {(annotation.source === 'human' || annotation.source === 'HUMAN_ANNOTATED') && 
+                 annotation.type !== 'detection' && annotation.type !== 'OBJECT_DETECTION' && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleStartEdit(annotation)}
                   >
-                    <div 
-                      className="absolute border-2 rounded"
-                      style={{
-                        borderColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b',
-                        backgroundColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        left: `${Math.min(80, Math.max(5, (annotation.region.x / Math.max(annotation.region.x + annotation.region.width, 1000)) * 100))}%`,
-                        top: `${Math.min(60, Math.max(5, (annotation.region.y / Math.max(annotation.region.y + annotation.region.height, 1000)) * 70))}%`,
-                        width: `${Math.min(35, Math.max(10, (annotation.region.width / Math.max(annotation.region.x + annotation.region.width, 1000)) * 100))}%`,
-                        height: `${Math.min(25, Math.max(8, (annotation.region.height / Math.max(annotation.region.y + annotation.region.height, 1000)) * 70))}%`
-                      }}
-                    >
-                      <div 
-                        className="absolute -top-4 left-0 text-xs px-1 py-0 rounded text-white text-[10px] leading-3"
-                        style={{
-                          backgroundColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b'
-                        }}
-                      >
-                        {annotation.content?.label || annotation.category || '对象'}
-                      </div>
-                    </div>
-                    <div className="absolute bottom-1 right-1 text-[10px] text-gray-400">
-                      {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'AI' : '人工'}
-                    </div>
-                  </div>
-                  <div className="text-[10px] text-gray-500 mt-1 text-center">
-                    {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 
-                      '绿色框 = AI检测' : '橙色框 = 人工标注'}
-                  </div>
-                </div>
-                
-                <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
-                  <div className="text-gray-600 mb-1">大模型训练格式:</div>
-                  <div className="space-y-1">
-                    <div className="break-all">
-                      <strong>YOLO:</strong> {annotation.content?.label || annotation.category || 'object'} {((annotation.region.x + annotation.region.width/2)/1000).toFixed(6)} {((annotation.region.y + annotation.region.height/2)/1000).toFixed(6)} {(annotation.region.width/1000).toFixed(6)} {(annotation.region.height/1000).toFixed(6)}
-                    </div>
-                    <div className="break-all">
-                      <strong>COCO:</strong> {JSON.stringify({
-                        id: annotation.id,
-                        category_id: 1, 
-                        bbox: [annotation.region.x, annotation.region.y, annotation.region.width, annotation.region.height], 
-                        area: annotation.region.width * annotation.region.height,
-                        iscrowd: 0
-                      })}
-                    </div>
-                    <div className="break-all">
-                      <strong>Pascal VOC:</strong> &lt;bndbox&gt;&lt;xmin&gt;{Math.round(annotation.region.x)}&lt;/xmin&gt;&lt;ymin&gt;{Math.round(annotation.region.y)}&lt;/ymin&gt;&lt;xmax&gt;{Math.round(annotation.region.x + annotation.region.width)}&lt;/xmax&gt;&lt;ymax&gt;{Math.round(annotation.region.y + annotation.region.height)}&lt;/ymax&gt;&lt;/bndbox&gt;
-                    </div>
-                  </div>
-                </div>
+                    <EditIcon size={14} />
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleDeleteAnnotation(annotation.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <TrashIcon size={14} />
+                </Button>
               </>
             )}
           </div>
-        )}
-      </div>
-
-      {/* 元数据 */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-gray-500">
-        <div className="flex items-center space-x-1">
-          <ClockIcon size={12} />
-          <span>{formatTimestamp(annotation.timestamp)}</span>
         </div>
-        {annotation.region && (
-          <span>
-            区域: {Math.round(annotation.region.x)}, {Math.round(annotation.region.y)}
-          </span>
-        )}
-      </div>
-    </Card>
-  );
+
+        {/* 标注内容 */}
+        <div className="space-y-2">
+          {annotation.type === 'qa' && (
+            <>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">问题:</label>
+                    <Input
+                      value={editForm.question}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, question: e.target.value }))}
+                      placeholder="输入问题..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">答案:</label>
+                    <Textarea
+                      value={editForm.answer}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, answer: e.target.value }))}
+                      placeholder="输入答案..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">问题:</label>
+                    <p className="text-sm mt-1">{annotation.content.question}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">答案:</label>
+                    <p className="text-sm mt-1 text-gray-600">{annotation.content.answer}</p>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+          
+          {annotation.type === 'caption' && (
+            <>
+              {isEditing ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">描述:</label>
+                  <Textarea
+                    value={editForm.caption}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, caption: e.target.value }))}
+                    placeholder="输入描述内容..."
+                    rows={4}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">描述:</label>
+                  <p className="text-sm mt-1">{annotation.content.caption}</p>
+                </div>
+              )}
+            </>
+          )}
+          
+          {annotation.type === 'transcript' && (
+            <>
+              {isEditing ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">转录文本:</label>
+                  <Textarea
+                    value={editForm.transcript}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, transcript: e.target.value }))}
+                    placeholder="输入转录文本..."
+                    rows={4}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">转录文本:</label>
+                  <p className="text-sm mt-1">{annotation.content.text}</p>
+                  {annotation.timeRange && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      时间: {formatTimeRange(annotation.timeRange)}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+          
+          {(annotation.type === 'detection' || annotation.type === 'OBJECT_DETECTION') && (
+            <div>
+              <label className="text-sm font-medium text-gray-700">检测对象:</label>
+              <p className="text-sm mt-1 font-medium">{annotation.content?.label || annotation.category || '未知对象'}</p>
+              {annotation.category && (
+                <p className="text-xs text-gray-500 mt-1">
+                  类别: {annotation.category}
+                </p>
+              )}
+              {annotation.content?.description && (
+                <p className="text-xs text-gray-500 mt-1">
+                  描述: {annotation.content.description}
+                </p>
+              )}
+              {annotation.region && (
+                <>
+                  <p className="text-xs text-gray-500 mt-1">
+                    位置: {Math.round(annotation.region.x)}, {Math.round(annotation.region.y)} 
+                    (尺寸: {Math.round(annotation.region.width)}×{Math.round(annotation.region.height)})
+                  </p>
+                  
+                  {/* 可视化边界框 */}
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                    <div className="text-xs text-gray-600 mb-2 flex items-center">
+                      <RectangleIcon size={12} className="mr-1" />
+                      标注框预览
+                    </div>
+                    <div 
+                      className="relative bg-white border-2 rounded mx-auto"
+                      style={{
+                        width: '120px',
+                        height: '80px',
+                        borderColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b'
+                      }}
+                    >
+                      <div 
+                        className="absolute border-2 rounded"
+                        style={{
+                          borderColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b',
+                          backgroundColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                          left: `${Math.min(80, Math.max(5, (annotation.region.x / Math.max(annotation.region.x + annotation.region.width, 1000)) * 100))}%`,
+                          top: `${Math.min(60, Math.max(5, (annotation.region.y / Math.max(annotation.region.y + annotation.region.height, 1000)) * 70))}%`,
+                          width: `${Math.min(35, Math.max(10, (annotation.region.width / Math.max(annotation.region.x + annotation.region.width, 1000)) * 100))}%`,
+                          height: `${Math.min(25, Math.max(8, (annotation.region.height / Math.max(annotation.region.y + annotation.region.height, 1000)) * 70))}%`
+                        }}
+                      >
+                        <div 
+                          className="absolute -top-4 left-0 text-xs px-1 py-0 rounded text-white text-[10px] leading-3"
+                          style={{
+                            backgroundColor: annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? '#10b981' : '#f59e0b'
+                          }}
+                        >
+                          {annotation.content?.label || annotation.category || '对象'}
+                        </div>
+                      </div>
+                      <div className="absolute bottom-1 right-1 text-[10px] text-gray-400">
+                        {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 'AI' : '人工'}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1 text-center">
+                      {annotation.source === 'ai' || annotation.source === 'AI_GENERATED' ? 
+                        '绿色框 = AI检测' : '橙色框 = 人工标注'}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                    <div className="text-gray-600 mb-1">大模型训练格式:</div>
+                    <div className="space-y-1">
+                      <div className="break-all">
+                        <strong>YOLO:</strong> {annotation.content?.label || annotation.category || 'object'} {((annotation.region.x + annotation.region.width/2)/1000).toFixed(6)} {((annotation.region.y + annotation.region.height/2)/1000).toFixed(6)} {(annotation.region.width/1000).toFixed(6)} {(annotation.region.height/1000).toFixed(6)}
+                      </div>
+                      <div className="break-all">
+                        <strong>COCO:</strong> {JSON.stringify({
+                          id: annotation.id,
+                          category_id: 1, 
+                          bbox: [annotation.region.x, annotation.region.y, annotation.region.width, annotation.region.height], 
+                          area: annotation.region.width * annotation.region.height,
+                          iscrowd: 0
+                        })}
+                      </div>
+                      <div className="break-all">
+                        <strong>Pascal VOC:</strong> &lt;bndbox&gt;&lt;xmin&gt;{Math.round(annotation.region.x)}&lt;/xmin&gt;&lt;ymin&gt;{Math.round(annotation.region.y)}&lt;/ymin&gt;&lt;xmax&gt;{Math.round(annotation.region.x + annotation.region.width)}&lt;/xmax&gt;&lt;ymax&gt;{Math.round(annotation.region.y + annotation.region.height)}&lt;/ymax&gt;&lt;/bndbox&gt;
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 元数据 */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-gray-500">
+          <div className="flex items-center space-x-1">
+            <ClockIcon size={12} />
+            <span>{formatTimestamp(annotation.timestamp)}</span>
+          </div>
+          {annotation.region && (
+            <span>
+              区域: {Math.round(annotation.region.x)}, {Math.round(annotation.region.y)}
+            </span>
+          )}
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -393,13 +568,12 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
         {/* AI快速标注按钮 */}
         <div className="flex items-center space-x-2 mb-4">
           <Button
-            onClick={() => handleAIAssist('qa')}
-            disabled={isProcessing}
-            className="bg-blue-500 hover:bg-blue-600"
+            disabled={true}
+            className="bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
             size="sm"
           >
             <BrainIcon size={16} className="mr-2" />
-            {isProcessing ? 'AI处理中...' : 'AI问答'}
+            AI问答（开发中）
           </Button>
           
           {fileData.file_category === 'image' && (
@@ -425,6 +599,13 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
               AI转录
             </Button>
           )}
+          
+          {/* 手工标注提示 */}
+          <div className="flex-1 text-right">
+            <span className="text-sm text-gray-600">
+              💡 提示：可以在下方各标签页中手动添加和编辑标注
+            </span>
+          </div>
         </div>
       </div>
 
@@ -453,45 +634,90 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
             {/* 问答标注 */}
             <TabsContent value="qa" className="m-0 space-y-4">
               {/* 新增问答 */}
-              <Card className="p-4">
-                <h4 className="font-medium mb-3">添加问答标注</h4>
+              <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-blue-800">手工添加问答标注</h4>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                    <UserIcon size={12} className="mr-1" />
+                    人工标注
+                  </Badge>
+                </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1">问题</label>
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
+                      问题 <span className="text-red-500">*</span>
+                    </label>
                     <Input
                       value={newAnnotation.question}
                       onChange={(e) => setNewAnnotation(prev => ({
                         ...prev,
                         question: e.target.value
                       }))}
-                      placeholder="输入问题..."
+                      placeholder="例如：这张图片的主要内容是什么？"
+                      className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      提示：尽量提出具体、明确的问题
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">答案</label>
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
+                      答案 <span className="text-red-500">*</span>
+                    </label>
                     <Textarea
                       value={newAnnotation.answer}
                       onChange={(e) => setNewAnnotation(prev => ({
                         ...prev,
                         answer: e.target.value
                       }))}
-                      placeholder="输入答案..."
-                      rows={3}
+                      placeholder="例如：这是一张展示城市夜景的照片，包含了高楼大厦和灯光效果..."
+                      rows={4}
+                      className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      提示：提供详细、准确的答案，这将用于训练和评估
+                    </p>
                   </div>
-                  <Button
-                    onClick={handleCreateAnnotation}
-                    disabled={!newAnnotation.question.trim() || !newAnnotation.answer.trim()}
-                    className="w-full"
-                  >
-                    <PlusIcon size={16} className="mr-2" />
-                    添加问答
-                  </Button>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="text-xs text-gray-600">
+                      字符统计: 问题 {newAnnotation.question.length} / 答案 {newAnnotation.answer.length}
+                    </div>
+                    <Button
+                      onClick={handleCreateAnnotation}
+                      disabled={!newAnnotation.question.trim() || !newAnnotation.answer.trim()}
+                      className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300"
+                    >
+                      <PlusIcon size={16} className="mr-2" />
+                      添加问答标注
+                    </Button>
+                  </div>
                 </div>
               </Card>
 
               {/* 问答列表 */}
               <div className="space-y-3">
+                {/* 操作提示 */}
+                {groupedAnnotations.qa.length > 0 && (
+                  <Card className="p-3 bg-gray-50 border-gray-200">
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">操作提示：</span>
+                        <span>点击编辑按钮修改问答内容，点击删除按钮移除标注</span>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          <UserIcon size={12} className="mr-1" />
+                          人工: {groupedAnnotations.qa.filter(a => a.source === 'human' || a.source === 'HUMAN_ANNOTATED').length}
+                        </Badge>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          <BotIcon size={12} className="mr-1" />
+                          AI: {groupedAnnotations.qa.filter(a => a.source === 'ai' || a.source === 'AI_GENERATED').length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
                 {loading && (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -500,10 +726,26 @@ export const MediaAnnotationPanel: React.FC<MediaAnnotationPanelProps> = ({
                 )}
                 
                 {!loading && groupedAnnotations.qa.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <MessageSquareIcon size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p>暂无问答标注</p>
-                    <p className="text-sm">开始添加问答或使用AI辅助生成</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <MessageSquareIcon size={64} className="mx-auto mb-4 text-gray-300" />
+                    <h4 className="text-lg font-medium mb-2">开始创建问答标注</h4>
+                    <p className="mb-4 max-w-md mx-auto">
+                      问答标注是训练多模态大模型的重要数据。您可以：
+                    </p>
+                    <div className="space-y-2 text-sm max-w-sm mx-auto">
+                      <div className="flex items-center justify-start space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>手动添加具体、明确的问题和详细答案</span>
+                      </div>
+                      <div className="flex items-center justify-start space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>创建高质量的训练数据对</span>
+                      </div>
+                      <div className="flex items-center justify-start space-x-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span>支持编辑和完善现有标注</span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 

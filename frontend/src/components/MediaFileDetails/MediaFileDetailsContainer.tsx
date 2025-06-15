@@ -454,12 +454,11 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
           {/* 操作按钮 */}
           <div className="flex items-center space-x-2">
             <Button
-              onClick={() => handleAIAnnotation('qa')}
-              disabled={isProcessing}
-              className="bg-blue-500 hover:bg-blue-600"
+              disabled={true}
+              className="bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
             >
               <BrainIcon size={16} className="mr-2" />
-              {isProcessing ? 'AI处理中...' : 'AI标注'}
+              AI标注（开发中）
             </Button>
             <Button onClick={() => handleDownload('original')} variant="outline">
               <DownloadIcon size={16} className="mr-2" />
@@ -491,7 +490,7 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
             </TabsTrigger>
             <TabsTrigger value="annotations" className="flex items-center space-x-2">
               <MessageSquare size={16} />
-              <span>标注 ({annotations.length})</span>
+              <span>标注 ({unifiedAnnotations.length})</span>
             </TabsTrigger>
             <TabsTrigger value="metadata" className="flex items-center space-x-2">
               <InfoIcon size={16} />
