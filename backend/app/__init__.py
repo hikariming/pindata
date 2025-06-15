@@ -16,6 +16,7 @@ from app.api.v1.endpoints.auth import auth_bp
 from app.api.v1.endpoints.users import users_bp
 from app.api.v1.endpoints.organizations import organizations_bp
 from app.api.v1.endpoints.roles import roles_bp
+from app.api.v1.endpoints.data_governance import data_governance_bp
 from config.config import config
 
 # 配置日志
@@ -62,6 +63,7 @@ def create_app(config_name='development'):
     app.register_blueprint(users_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(organizations_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(roles_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(data_governance_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
     # 注册任务状态查询蓝图
     from app.api.v1.endpoints.tasks import tasks_bp

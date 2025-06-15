@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,106 +18,16 @@ import {
   GitBranchIcon,
   Activity,
   BarChart3Icon,
+  Loader2Icon,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Select } from '../../components/ui/select';
-import { DataGovernanceProject } from './types';
+import { DataGovernanceProject } from '../../types/data-governance';
+import { useProjects, useProjectStats } from '../../hooks/useDataGovernance';
 
-const mockProjects: DataGovernanceProject[] = [
-  {
-    id: '1',
-    name: '客户数据统一治理',
-    description: '整合来自多个业务系统的客户数据，建立统一的客户画像',
-    status: 'active',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-06-10',
-    owner: {
-      id: '1',
-      username: 'zhangsan',
-      fullName: '张三',
-      email: 'zhangsan@company.com',
-      role: 'owner',
-      joinedAt: '2024-01-15',
-    },
-    team: [
-      { id: '1', username: 'zhangsan', fullName: '张三', email: 'zhangsan@company.com', role: 'owner', joinedAt: '2024-01-15' },
-      { id: '2', username: 'lisi', fullName: '李四', email: 'lisi@company.com', role: 'admin', joinedAt: '2024-01-16' },
-      { id: '3', username: 'wangwu', fullName: '王五', email: 'wangwu@company.com', role: 'editor', joinedAt: '2024-01-20' },
-    ],
-    metrics: {
-      totalDataSize: 2.5e9, // 2.5GB
-      processedFiles: 1250,
-      totalFiles: 1500,
-      dataQualityScore: 85,
-      lastProcessedAt: '2024-06-10T10:30:00Z',
-      processingProgress: 83,
-    },
-    pipeline: [],
-    dataSource: [],
-  },
-  {
-    id: '2',
-    name: '产品文档知识库构建',
-    description: '将产品相关的技术文档、用户手册转换为结构化知识库',
-    status: 'active',
-    createdAt: '2024-02-01',
-    updatedAt: '2024-06-09',
-    owner: {
-      id: '4',
-      username: 'zhaoliu',
-      fullName: '赵六',
-      email: 'zhaoliu@company.com',
-      role: 'owner',
-      joinedAt: '2024-02-01',
-    },
-    team: [
-      { id: '4', username: 'zhaoliu', fullName: '赵六', email: 'zhaoliu@company.com', role: 'owner', joinedAt: '2024-02-01' },
-      { id: '5', username: 'sunqi', fullName: '孙七', email: 'sunqi@company.com', role: 'editor', joinedAt: '2024-02-05' },
-    ],
-    metrics: {
-      totalDataSize: 1.2e9, // 1.2GB
-      processedFiles: 850,
-      totalFiles: 1000,
-      dataQualityScore: 92,
-      lastProcessedAt: '2024-06-09T15:45:00Z',
-      processingProgress: 85,
-    },
-    pipeline: [],
-    dataSource: [],
-  },
-  {
-    id: '3', 
-    name: '财务报表数据分析',
-    description: '对历史财务数据进行清洗和分析，支持AI驱动的财务洞察',
-    status: 'draft',
-    createdAt: '2024-05-20',
-    updatedAt: '2024-06-08',
-    owner: {
-      id: '6',
-      username: 'qianba',
-      fullName: '钱八',
-      email: 'qianba@company.com',
-      role: 'owner',
-      joinedAt: '2024-05-20',
-    },
-    team: [
-      { id: '6', username: 'qianba', fullName: '钱八', email: 'qianba@company.com', role: 'owner', joinedAt: '2024-05-20' },
-    ],
-    metrics: {
-      totalDataSize: 0.8e9, // 0.8GB
-      processedFiles: 120,
-      totalFiles: 300,
-      dataQualityScore: 78,
-      lastProcessedAt: '2024-06-08T09:20:00Z',
-      processingProgress: 40,
-    },
-    pipeline: [],
-    dataSource: [],
-  },
-];
 
 export const DataGovernanceProjects: React.FC = () => {
   const { t } = useTranslation();
@@ -125,6 +35,27 @@ export const DataGovernanceProjects: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('updated');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch projects with current filters
+  const { projects, total, loading: projectsLoading, error: projectsError, refetch } = useProjects({
+    search: debouncedSearchTerm || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    sort_by: sortBy,
+    limit: 50,
+    offset: 0
+  });
+
+  // Fetch project stats
+  const { stats, loading: statsLoading, error: statsError } = useProjectStats();
 
   const formatDataSize = (bytes: number): string => {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -161,12 +92,11 @@ export const DataGovernanceProjects: React.FC = () => {
     );
   };
 
-  const filteredProjects = mockProjects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const displayProjects = projects || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -200,7 +130,13 @@ export const DataGovernanceProjects: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm">总工程数</p>
-                  <p className="text-3xl font-bold">{mockProjects.length}</p>
+                  <p className="text-3xl font-bold">
+                    {statsLoading ? (
+                      <Loader2Icon size={24} className="animate-spin" />
+                    ) : (
+                      stats?.totalProjects || 0
+                    )}
+                  </p>
                 </div>
                 <FolderIcon size={32} className="text-blue-200" />
               </div>
@@ -210,7 +146,11 @@ export const DataGovernanceProjects: React.FC = () => {
                 <div>
                   <p className="text-green-100 text-sm">进行中</p>
                   <p className="text-3xl font-bold">
-                    {mockProjects.filter(p => p.status === 'active').length}
+                    {statsLoading ? (
+                      <Loader2Icon size={24} className="animate-spin" />
+                    ) : (
+                      stats?.activeProjects || 0
+                    )}
                   </p>
                 </div>
                 <Activity size={32} className="text-green-200" />
@@ -221,7 +161,11 @@ export const DataGovernanceProjects: React.FC = () => {
                 <div>
                   <p className="text-purple-100 text-sm">团队成员</p>
                   <p className="text-3xl font-bold">
-                    {new Set(mockProjects.flatMap(p => p.team.map(m => m.id))).size}
+                    {statsLoading ? (
+                      <Loader2Icon size={24} className="animate-spin" />
+                    ) : (
+                      stats?.teamMembersCount || 0
+                    )}
                   </p>
                 </div>
                 <UsersIcon size={32} className="text-purple-200" />
@@ -232,7 +176,11 @@ export const DataGovernanceProjects: React.FC = () => {
                 <div>
                   <p className="text-orange-100 text-sm">数据处理量</p>
                   <p className="text-3xl font-bold">
-                    {formatDataSize(mockProjects.reduce((sum, p) => sum + p.metrics.totalDataSize, 0))}
+                    {statsLoading ? (
+                      <Loader2Icon size={24} className="animate-spin" />
+                    ) : (
+                      formatDataSize(stats?.totalDataSize || 0)
+                    )}
                   </p>
                 </div>
                 <DatabaseIcon size={32} className="text-orange-200" />
@@ -272,9 +220,38 @@ export const DataGovernanceProjects: React.FC = () => {
           </div>
         </div>
 
+        {/* Loading状态 */}
+        {projectsLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2Icon size={48} className="animate-spin text-blue-500" />
+            <span className="ml-2 text-lg text-gray-600">加载中...</span>
+          </div>
+        )}
+
+        {/* 错误状态 */}
+        {(projectsError || statsError) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <AlertCircleIcon size={20} className="text-red-500 mr-2" />
+              <span className="text-red-700">
+                {projectsError || statsError}
+              </span>
+            </div>
+            <Button 
+              onClick={handleRefresh}
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+            >
+              重试
+            </Button>
+          </div>
+        )}
+
         {/* 工程列表 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
+        {!projectsLoading && !projectsError && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {displayProjects.map((project) => (
             <Card 
               key={project.id} 
               className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm border border-gray-200/50"
@@ -374,21 +351,32 @@ export const DataGovernanceProjects: React.FC = () => {
                 </div>
               </div>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filteredProjects.length === 0 && (
+        {/* 空状态 */}
+        {!projectsLoading && !projectsError && displayProjects.length === 0 && (
           <div className="text-center py-12">
             <FolderIcon size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无工程</h3>
-            <p className="text-gray-600 mb-4">创建您的第一个数据治理工程来开始</p>
-            <Button 
-              onClick={() => navigate('/governance/create')}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-            >
-              <PlusIcon size={16} className="mr-2" />
-              创建工程
-            </Button>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm || statusFilter !== 'all' ? '没有找到匹配的工程' : '暂无工程'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm || statusFilter !== 'all' 
+                ? '尝试调整搜索条件或过滤器' 
+                : '创建您的第一个数据治理工程来开始'
+              }
+            </p>
+            {(!searchTerm && statusFilter === 'all') && (
+              <Button 
+                onClick={() => navigate('/governance/create')}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+              >
+                <PlusIcon size={16} className="mr-2" />
+                创建工程
+              </Button>
+            )}
           </div>
         )}
       </div>
