@@ -2,11 +2,78 @@ from flask import jsonify, request
 from flasgger import swag_from
 from app.api.v1 import api_v1
 from app.models import GovernedData, RawData, AnnotationType, AnnotationSource
+from app.models.library_file import LibraryFile
 from app.db import db
 from app.services.ai_annotation_service import ai_annotation_service
+from app.celery_app import celery
 from datetime import datetime
 import uuid
 import asyncio
+
+
+def find_or_create_raw_data_from_library_file(file_id):
+    """从LibraryFile查找或创建对应的RawData记录"""
+    # 获取LibraryFile信息
+    library_file = LibraryFile.query.get(file_id)
+    if not library_file:
+        return None
+    
+    # 检查是否已有对应的RawData记录
+    # 使用文件名、大小等特征查找，避免使用不存在的 library_file_id 字段
+    existing_raw_data = RawData.query.filter_by(
+        filename=library_file.filename,
+        file_size=library_file.file_size,
+        minio_object_name=library_file.minio_object_name
+    ).first()
+    
+    if existing_raw_data:
+        return existing_raw_data
+    
+    # 根据文件类型确定file_category和file_type
+    file_type_mapping = {
+        'jpg': ('image', 'IMAGE_JPG'),
+        'jpeg': ('image', 'IMAGE_JPG'),
+        'png': ('image', 'IMAGE_PNG'),
+        'gif': ('image', 'IMAGE_GIF'),
+        'bmp': ('image', 'IMAGE_BMP'),
+        'svg': ('image', 'IMAGE_SVG'),
+        'webp': ('image', 'IMAGE_WEBP'),
+        'mp4': ('video', 'VIDEO_MP4'),
+        'avi': ('video', 'VIDEO_AVI'),
+        'mov': ('video', 'VIDEO_MOV'),
+        'wmv': ('video', 'VIDEO_WMV'),
+        'flv': ('video', 'VIDEO_FLV'),
+        'webm': ('video', 'VIDEO_WEBM'),
+        'pdf': ('document', 'DOCUMENT_PDF'),
+        'docx': ('document', 'DOCUMENT_DOCX'),
+        'xlsx': ('document', 'DOCUMENT_XLSX'),
+        'pptx': ('document', 'DOCUMENT_PPTX'),
+        'txt': ('document', 'DOCUMENT_TXT'),
+        'md': ('document', 'DOCUMENT_MD'),
+    }
+    
+    file_ext = library_file.file_type.lower()
+    file_category, file_type_enum = file_type_mapping.get(file_ext, ('other', 'OTHER'))
+    
+    # 创建新的RawData记录
+    from app.models.raw_data import FileType, ProcessingStatus
+    raw_data = RawData(
+        filename=library_file.filename,
+        original_filename=library_file.original_filename,
+        file_type=FileType[file_type_enum],
+        file_category=file_category,
+        file_size=library_file.file_size,
+        minio_object_name=library_file.minio_object_name,
+        processing_status=ProcessingStatus.COMPLETED  # 假设LibraryFile已经处理过
+    )
+    
+    try:
+        db.session.add(raw_data)
+        db.session.commit()
+        return raw_data
+    except Exception as e:
+        db.session.rollback()
+        raise e
 
 
 @api_v1.route('/annotations', methods=['GET'])
@@ -493,7 +560,7 @@ def delete_annotation(annotation_id):
 @api_v1.route('/annotations/ai-assist/image-qa', methods=['POST'])
 @swag_from({
     'tags': ['AI辅助标注'],
-    'summary': 'AI辅助生成图片问答标注',
+    'summary': 'AI辅助生成图片问答标注（异步）',
     'parameters': [{
         'name': 'body',
         'in': 'body',
@@ -501,7 +568,7 @@ def delete_annotation(annotation_id):
         'schema': {
             'type': 'object',
             'properties': {
-                'raw_data_id': {'type': 'integer', 'description': '原始数据ID'},
+                'raw_data_id': {'type': ['integer', 'string'], 'description': '原始数据ID（整数）或文件库ID（UUID字符串）'},
                 'questions': {
                     'type': 'array',
                     'items': {'type': 'string'},
@@ -511,61 +578,109 @@ def delete_annotation(annotation_id):
                     'type': 'string',
                     'enum': ['openai', 'anthropic', 'google'],
                     'default': 'openai',
-                    'description': 'AI模型提供商'
+                    'description': 'AI模型提供商（已弃用，使用model_config）'
+                },
+                'model_config': {
+                    'type': 'object',
+                    'description': '指定的AI模型配置',
+                    'properties': {
+                        'id': {'type': 'string', 'description': '模型配置ID'},
+                        'name': {'type': 'string', 'description': '模型名称'},
+                        'provider': {'type': 'string', 'description': '模型提供商'},
+                        'model_name': {'type': 'string', 'description': '模型标识'}
+                    },
+                    'required': ['id']
+                },
+                'region': {
+                    'type': 'object',
+                    'description': '选中的图片区域',
+                    'properties': {
+                        'x': {'type': 'number'},
+                        'y': {'type': 'number'},
+                        'width': {'type': 'number'},
+                        'height': {'type': 'number'}
+                    }
                 }
             },
             'required': ['raw_data_id']
         }
     }],
     'responses': {
-        200: {'description': 'AI标注生成成功'},
+        202: {'description': 'AI标注任务已提交，返回任务ID'},
         400: {'description': '请求参数错误'},
         404: {'description': '原始数据不存在'}
     }
 })
 def ai_generate_image_qa():
-    """AI辅助生成图片问答标注"""
+    """AI辅助生成图片问答标注（异步）"""
     data = request.get_json()
     
     raw_data_id = data.get('raw_data_id')
     questions = data.get('questions', [])
-    model_provider = data.get('model_provider', 'openai')
+    model_config = data.get('model_config')
+    region = data.get('region')
     
-    # 验证原始数据是否存在
-    raw_data = RawData.query.get(raw_data_id)
-    if not raw_data:
-        return jsonify({'error': '原始数据不存在'}), 404
+    # 验证数据是否存在，支持整数ID（RawData）和UUID（LibraryFile）
+    try:
+        data_object = None
+        is_library_file = False
+        
+        if isinstance(raw_data_id, (int, str)):
+            # 如果是整数或纯数字字符串，直接查询RawData
+            if isinstance(raw_data_id, int) or (isinstance(raw_data_id, str) and raw_data_id.isdigit()):
+                if isinstance(raw_data_id, str):
+                    raw_data_id = int(raw_data_id)
+                data_object = RawData.query.get(raw_data_id)
+                is_library_file = False
+            # 如果是UUID字符串格式，直接查询LibraryFile
+            elif isinstance(raw_data_id, str) and len(raw_data_id) == 36 and '-' in raw_data_id:
+                data_object = LibraryFile.query.get(raw_data_id)
+                is_library_file = True
+            else:
+                return jsonify({'error': f'无效的raw_data_id格式: {raw_data_id}'}), 400
+        else:
+            return jsonify({'error': f'raw_data_id必须是整数或UUID字符串: {raw_data_id}'}), 400
+            
+    except (ValueError, TypeError) as e:
+        return jsonify({'error': f'无效的数据ID: {raw_data_id}, 错误: {str(e)}'}), 400
+        
+    if not data_object:
+        return jsonify({'error': '数据不存在'}), 404
     
-    if raw_data.file_category != 'image':
-        return jsonify({'error': '只能对图片数据进行问答标注'}), 400
+    # 检查文件类型
+    if is_library_file:
+        # LibraryFile 使用 file_type 字段
+        file_type = data_object.file_type.lower()
+        if file_type not in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']:
+            return jsonify({'error': '只能对图片数据进行问答标注'}), 400
+    else:
+        # RawData 使用 file_category 字段
+        if data_object.file_category != 'image':
+            return jsonify({'error': '只能对图片数据进行问答标注'}), 400
     
     try:
-        # 调用AI服务生成标注
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        result = loop.run_until_complete(
-            ai_annotation_service.generate_image_qa(
-                raw_data=raw_data,
-                questions=questions if questions else None,
-                model_provider=model_provider
-            )
-        )
+        # 通过名称字符串启动异步任务，避免循环导入
+        task_name = 'app.tasks.multimodal_dataset_tasks.generate_ai_image_qa_task'
+        task_kwargs = {
+            'raw_data_id': raw_data_id,
+            'questions': questions if questions else None,
+            'model_config': model_config,
+            'region': region,
+            'is_library_file': is_library_file
+        }
+        task = celery.send_task(name=task_name, kwargs=task_kwargs)
         
         return jsonify({
-            'message': 'AI图片问答标注生成成功',
-            'annotation_data': result,
-            'suggested_annotation': {
-                'raw_data_id': raw_data_id,
-                'project_id': raw_data.data_source_id,  # 使用数据源ID作为项目ID
-                'questions_answers': result['qa_pairs'],
-                'annotation_source': 'ai_generated',
-                'metadata': result['metadata']
-            }
-        })
+            'message': 'AI图片问答标注任务已提交',
+            'celery_task_id': task.id,
+            'status': 'submitted',
+            'raw_data_id': raw_data_id,
+            'is_library_file': is_library_file,
+            'check_status_url': f'/api/v1/tasks/{task.id}/status'
+        }), 202
         
     except Exception as e:
-        return jsonify({'error': f'AI标注生成失败: {str(e)}'}), 500
+        return jsonify({'error': f'提交AI标注任务失败: {str(e)}'}), 500
 
 
 @api_v1.route('/annotations/ai-assist/image-caption', methods=['POST'])
@@ -755,3 +870,128 @@ def ai_detect_objects():
         
     except Exception as e:
         return jsonify({'error': f'AI对象检测失败: {str(e)}'}), 500
+
+
+@api_v1.route('/annotations/validate-data-id', methods=['POST'])
+@swag_from({
+    'tags': ['AI辅助标注'],
+    'summary': '验证数据ID是否存在',
+    'parameters': [{
+        'name': 'body',
+        'in': 'body',
+        'required': True,
+        'schema': {
+            'type': 'object',
+            'properties': {
+                'raw_data_id': {'type': 'string', 'description': '原始数据ID（支持数字或UUID）'}
+            },
+            'required': ['raw_data_id']
+        }
+    }],
+    'responses': {
+        200: {'description': '数据ID验证结果'},
+        400: {'description': '请求参数错误'}
+    }
+})
+def validate_data_id():
+    """验证数据ID是否存在并返回相关信息"""
+    data = request.get_json()
+    raw_data_id = data.get('raw_data_id')
+    
+    if not raw_data_id:
+        return jsonify({'error': '数据ID不能为空'}), 400
+    
+    result = {
+        'exists': False,
+        'data_type': None,
+        'data_info': None,
+        'suggestions': []
+    }
+    
+    try:
+        # 尝试多种方式查找数据
+        raw_data = None
+        
+        # 1. 数字ID查找
+        if isinstance(raw_data_id, str) and raw_data_id.isdigit():
+            raw_data = RawData.query.get(int(raw_data_id))
+            if raw_data:
+                result['data_type'] = 'raw_data_integer'
+                result['exists'] = True
+                result['data_info'] = {
+                    'id': raw_data.id,
+                    'filename': raw_data.filename,
+                    'file_category': raw_data.file_category,
+                    'file_type': raw_data.file_type.value
+                }
+        
+        # 2. UUID查找 - 先尝试RawData
+        elif isinstance(raw_data_id, str) and len(raw_data_id) == 36:
+            try:
+                raw_data = RawData.query.filter_by(id=raw_data_id).first()
+                if raw_data:
+                    result['data_type'] = 'raw_data_uuid'
+                    result['exists'] = True
+                    result['data_info'] = {
+                        'id': raw_data.id,
+                        'filename': raw_data.filename,
+                        'file_category': raw_data.file_category,
+                        'file_type': raw_data.file_type.value
+                    }
+            except:
+                pass
+            
+            # 3. UUID查找 - 尝试GovernedData
+            if not raw_data:
+                from app.models import GovernedData
+                governed_data = GovernedData.query.get(raw_data_id)
+                if governed_data:
+                    result['data_type'] = 'governed_data'
+                    result['data_info'] = {
+                        'id': governed_data.id,
+                        'name': governed_data.name,
+                        'raw_data_id': governed_data.raw_data_id
+                    }
+                    
+                    if governed_data.raw_data_id:
+                        raw_data = RawData.query.get(governed_data.raw_data_id)
+                        if raw_data:
+                            result['exists'] = True
+                            result['data_info']['raw_data'] = {
+                                'id': raw_data.id,
+                                'filename': raw_data.filename,
+                                'file_category': raw_data.file_category,
+                                'file_type': raw_data.file_type.value
+                            }
+                        else:
+                            result['suggestions'].append(f'GovernedData存在但关联的RawData(ID:{governed_data.raw_data_id})不存在')
+                    else:
+                        result['suggestions'].append('GovernedData存在但没有关联的raw_data_id')
+        
+        # 4. 模糊查找
+        if not result['exists']:
+            # 按文件名查找
+            similar_files = RawData.query.filter(
+                RawData.filename.contains(str(raw_data_id)[:8])
+            ).limit(5).all()
+            
+            if similar_files:
+                result['suggestions'].append('找到相似的文件:')
+                for file in similar_files:
+                    result['suggestions'].append(f'ID:{file.id}, 文件名:{file.filename}')
+        
+        if not result['exists'] and not result['suggestions']:
+            result['suggestions'] = [
+                '数据不存在，可能的原因:',
+                '1. 文件已被删除',
+                '2. 传递的ID不正确',
+                '3. 数据库中没有该记录'
+            ]
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'验证失败: {str(e)}',
+            'raw_data_id': raw_data_id
+        }), 500

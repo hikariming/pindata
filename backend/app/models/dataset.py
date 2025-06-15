@@ -1,7 +1,25 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Boolean, BigInteger
 from sqlalchemy.orm import relationship
+from enum import Enum
 from app.db import db
+
+class DatasetType(Enum):
+    """数据集类型枚举"""
+    MULTIMODAL = 'multimodal'
+    TEXT = 'text'
+    IMAGE = 'image'
+    VIDEO = 'video'
+    AUDIO = 'audio'
+    TABULAR = 'tabular'
+    
+class DatasetFormat(Enum):
+    """数据集格式枚举"""
+    JSONL = 'jsonl'
+    JSON = 'json'
+    CSV = 'csv'
+    PARQUET = 'parquet'
+    TSV = 'tsv'
 
 class Dataset(db.Model):
     """数据集模型"""
@@ -18,6 +36,19 @@ class Dataset(db.Model):
     task_type = Column(String(100))  # 任务类型
     language = Column(String(50))  # 语言
     featured = Column(Boolean, default=False)  # 是否推荐
+    
+    # 新增字段，用于多模态数据集生成
+    dataset_type = Column(String(50))  # 数据集类型
+    dataset_format = Column(String(50))  # 数据集格式
+    status = Column(String(50), default='pending')  # 生成状态
+    generation_progress = Column(Integer, default=0)  # 生成进度 0-100
+    file_path = Column(String(500))  # 生成的文件路径
+    file_size = Column(BigInteger)  # 文件大小（字节）
+    record_count = Column(Integer)  # 记录数量
+    error_message = Column(Text)  # 错误信息
+    meta_data = Column(JSON)  # 元数据
+    completed_at = Column(DateTime)  # 完成时间
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

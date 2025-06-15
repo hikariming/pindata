@@ -116,7 +116,22 @@ export const MediaFileDetailsContainer: React.FC<MediaFileDetailsContainerProps>
     try {
       // 对于图片，使用新的图片标注API
       if (fileData.file_category === 'image' && (type === 'qa' || type === 'caption' || type === 'object_detection')) {
-        await generateAIAnnotation(type as 'qa' | 'caption' | 'object_detection', options);
+        // 确保正确传递模型配置
+        const aiOptions: any = {
+          ...options
+        };
+        
+        // 如果options中有model配置，传递给AI标注服务
+        if (options?.model) {
+          aiOptions.model = options.model;
+        }
+        
+        // 如果有region信息，也传递给AI服务
+        if (options?.region) {
+          aiOptions.region = options.region;
+        }
+        
+        await generateAIAnnotation(type as 'qa' | 'caption' | 'object_detection', aiOptions);
       } else {
         // 对于其他类型，使用原有API
         const result = await requestAIAnnotation(type as 'qa' | 'caption' | 'transcript', options);

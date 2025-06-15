@@ -65,6 +65,9 @@ class RawData(db.Model):
     # 扩展数据源配置关联（用于数据库表和API数据源）
     data_source_config_id = Column(String(36), ForeignKey('data_source_configs.id'))
     
+    # 关联文件库中的文件
+    library_file_id = Column(String(36), ForeignKey('library_files.id'))
+    
     # 文件基础信息
     checksum = Column(String(64))  # 文件校验和
     mime_type = Column(String(100))  # MIME类型
@@ -119,6 +122,7 @@ class RawData(db.Model):
     dataset = relationship('Dataset')
     data_source = relationship('ProjectDataSource', foreign_keys=[data_source_id])
     data_source_config = relationship('DataSourceConfig', foreign_keys=[data_source_config_id])
+    library_file = relationship('LibraryFile', foreign_keys=[library_file_id])
     
     @property
     def file_category_display(self):
@@ -175,6 +179,7 @@ class RawData(db.Model):
             'dataset_id': self.dataset_id,
             'data_source_id': self.data_source_id,
             'data_source_config_id': self.data_source_config_id,
+            'library_file_id': self.library_file_id,
             'checksum': self.checksum,
             'mime_type': self.mime_type,
             'encoding': self.encoding,

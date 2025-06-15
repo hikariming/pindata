@@ -1,4 +1,4 @@
-from .dataset import Dataset, DatasetVersion, DatasetTag, DatasetLike, DatasetDownload
+from .dataset import Dataset, DatasetVersion, DatasetTag, DatasetLike, DatasetDownload, DatasetType, DatasetFormat
 from .dataset_version import EnhancedDatasetVersion, EnhancedDatasetFile, VersionType
 from .task import Task, TaskType, TaskStatus
 from .plugin import Plugin
@@ -33,7 +33,7 @@ from .data_quality_assessment import DataQualityAssessment, QualityDimension, As
 from .data_source_config import DataSourceConfig, DataSourceType as ConfigDataSourceType, DatabaseType, APIAuthType, DataSourceStatus as ConfigDataSourceStatus
 
 __all__ = [
-    'Dataset', 'DatasetVersion', 'DatasetTag', 'DatasetLike', 'DatasetDownload',
+    'Dataset', 'DatasetVersion', 'DatasetTag', 'DatasetLike', 'DatasetDownload', 'DatasetType', 'DatasetFormat',
     'EnhancedDatasetVersion', 'EnhancedDatasetFile', 'VersionType',
     'Task', 'TaskType', 'TaskStatus', 'Plugin', 'RawData', 'FileType', 'ProcessingStatus',
     'Library', 'LibraryFile', 'DataType', 'ProcessStatus',

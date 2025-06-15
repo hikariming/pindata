@@ -12,6 +12,7 @@ from app.celery_app import celery
 from app.tasks.conversion_tasks import process_conversion_job
 from app.tasks.dataset_import_tasks import import_dataset_task
 from app.tasks.dataset_generation_tasks import generate_dataset_task
+from app.tasks.multimodal_dataset_tasks import generate_multimodal_dataset_task, generate_ai_image_qa_task
 
 if __name__ == '__main__':
     # 启动 Celery Worker

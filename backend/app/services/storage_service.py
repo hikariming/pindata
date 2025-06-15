@@ -106,27 +106,62 @@ class StorageService:
             logger.error(f"检查bucket是否存在时出错: {str(e)}")
             return False
     
-    def get_file(self, object_name: str) -> bytes:
+    def get_file(self, object_name: str, bucket_name: str = None) -> bytes:
         """
         从 MinIO 获取文件
         
         Args:
             object_name: 对象名
+            bucket_name: 指定的存储桶名，如果为None则尝试多个可能的桶
             
         Returns:
             bytes: 文件内容
         """
         try:
             client = self._get_client()
-            bucket_name = current_app.config['MINIO_BUCKET_NAME']
-            response = client.get_object(bucket_name, object_name)
-            return response.read()
-        except S3Error as e:
-            logger.error(f"MinIO 获取文件失败: {str(e)}")
-            raise Exception(f"文件获取失败: {str(e)}")
+            
+            # 如果指定了bucket，直接使用
+            if bucket_name:
+                response = client.get_object(bucket_name, object_name)
+                return response.read()
+            
+            # 否则按优先级尝试不同的bucket
+            possible_buckets = [
+                current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data'),
+                current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets'),
+                current_app.config.get('MINIO_BUCKET_NAME', 'pindata-bucket')
+            ]
+            
+            last_error = None
+            for bucket in possible_buckets:
+                try:
+                    logger.info(f"尝试从bucket '{bucket}' 获取文件: {object_name}")
+                    response = client.get_object(bucket, object_name)
+                    logger.info(f"文件获取成功，来源bucket: {bucket}")
+                    return response.read()
+                except S3Error as e:
+                    last_error = e
+                    logger.warning(f"从bucket '{bucket}' 获取文件失败: {str(e)}")
+                    continue
+                except Exception as e:
+                    last_error = e
+                    logger.warning(f"从bucket '{bucket}' 获取文件失败: {str(e)}")
+                    continue
+            
+            # 所有bucket都尝试失败
+            error_msg = f"文件获取失败: {object_name}，已尝试的buckets: {possible_buckets}"
+            if last_error:
+                error_msg += f"，最后错误: {str(last_error)}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+            
         except Exception as e:
-            logger.error(f"获取文件失败: {str(e)}")
-            raise
+            if "文件获取失败:" in str(e):
+                # 如果是我们自己抛出的错误，直接传递
+                raise
+            else:
+                logger.error(f"获取文件失败: {str(e)}")
+                raise Exception(f"文件获取失败: {str(e)}")
     
     def download_file(self, bucket_name: str, object_name: str, local_file_path: str) -> bool:
         """

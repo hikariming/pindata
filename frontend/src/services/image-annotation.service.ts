@@ -275,9 +275,43 @@ export class ImageAnnotationService {
     options: {
       questions?: string[];
       model_provider?: 'openai' | 'anthropic' | 'google';
+      model?: {
+        id: string;
+        name: string;
+        provider: string;
+        model_name: string;
+      };
+      region?: { x: number; y: number; width: number; height: number };
     } = {}
   ): Promise<ImageAnnotation> {
     try {
+      // 构建请求数据
+      const requestData: any = {
+        raw_data_id: fileId,
+        questions: options.questions
+      };
+
+      // 优先使用前端选择的模型配置
+      if (options.model && options.model.id) {
+        requestData.model_config = {
+          id: options.model.id,
+          name: options.model.name,
+          provider: options.model.provider,
+          model_name: options.model.model_name
+        };
+      } else if (options.model_provider) {
+        // 兼容旧的model_provider参数
+        requestData.model_provider = options.model_provider;
+      } else {
+        // 如果没有指定模型，使用默认值
+        requestData.model_provider = 'openai';
+      }
+
+      // 如果有选中区域，传递区域信息
+      if (options.region) {
+        requestData.region = options.region;
+      }
+
       // 调用AI生成问答标注
       const aiResponse = await apiClient.post<ApiResponse<{
         qa_pairs: Array<{
@@ -286,11 +320,7 @@ export class ImageAnnotationService {
           confidence: number;
         }>;
         metadata: any;
-      }>>('/api/v1/annotations/ai-assist/image-qa', {
-        raw_data_id: fileId,
-        questions: options.questions,
-        model_provider: options.model_provider || 'openai'
-      });
+      }>>('/api/v1/annotations/ai-assist/image-qa', requestData);
 
       if (!aiResponse.data?.qa_pairs?.[0]) {
         throw new Error('AI问答生成失败');
@@ -324,18 +354,42 @@ export class ImageAnnotationService {
     fileId: string,
     options: {
       model_provider?: 'openai' | 'anthropic' | 'google';
+      model?: {
+        id: string;
+        name: string;
+        provider: string;
+        model_name: string;
+      };
     } = {}
   ): Promise<ImageAnnotation> {
     try {
+      // 构建请求数据
+      const requestData: any = {
+        raw_data_id: fileId
+      };
+
+      // 优先使用前端选择的模型配置
+      if (options.model && options.model.id) {
+        requestData.model_config = {
+          id: options.model.id,
+          name: options.model.name,
+          provider: options.model.provider,
+          model_name: options.model.model_name
+        };
+      } else if (options.model_provider) {
+        // 兼容旧的model_provider参数
+        requestData.model_provider = options.model_provider;
+      } else {
+        // 如果没有指定模型，使用默认值
+        requestData.model_provider = 'openai';
+      }
+
       // 调用AI生成图片描述
       const aiResponse = await apiClient.post<ApiResponse<{
         caption: string;
         confidence: number;
         metadata: any;
-      }>>('/api/v1/annotations/ai-assist/image-caption', {
-        raw_data_id: fileId,
-        model_provider: options.model_provider || 'openai'
-      });
+      }>>('/api/v1/annotations/ai-assist/image-caption', requestData);
 
       if (!aiResponse.data?.caption) {
         throw new Error('AI描述生成失败');

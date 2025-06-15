@@ -165,11 +165,38 @@ export class AnnotationService {
         case 'qa':
           endpoint = '/api/v1/annotations/ai-assist/image-qa';
           requestData.questions = options.questions;
-          requestData.model_provider = options.model_provider || 'openai';
+          
+          // 优先使用前端选择的模型配置
+          if (options.model && options.model.id) {
+            requestData.model_config = {
+              id: options.model.id,
+              name: options.model.name,
+              provider: options.model.provider,
+              model_name: options.model.model_name
+            };
+          } else {
+            requestData.model_provider = options.model_provider || 'openai';
+          }
+          
+          // 如果有选中区域，传递区域信息
+          if (options.region) {
+            requestData.region = options.region;
+          }
           break;
         case 'caption':
           endpoint = '/api/v1/annotations/ai-assist/image-caption';
-          requestData.model_provider = options.model_provider || 'openai';
+          
+          // 优先使用前端选择的模型配置
+          if (options.model && options.model.id) {
+            requestData.model_config = {
+              id: options.model.id,
+              name: options.model.name,
+              provider: options.model.provider,
+              model_name: options.model.model_name
+            };
+          } else {
+            requestData.model_provider = options.model_provider || 'openai';
+          }
           break;
         case 'object_detection':
           endpoint = '/api/v1/annotations/ai-assist/object-detection';

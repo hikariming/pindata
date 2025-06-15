@@ -434,14 +434,20 @@ export const ImagePreviewPanel: React.FC<ImagePreviewPanelProps> = ({
   };
 
   // AI问答处理
-  const handleAIQuestions = async (questions: string[]) => {
+  const handleAIQuestions = async (questions: string[], selectedModel?: any) => {
     setIsAIProcessing(true);
     setShowAIQuestionDialog(false);
     
     try {
       const options = {
         questions: questions,
-        region: selectedRegion
+        region: selectedRegion,
+        model: selectedModel ? {
+          id: selectedModel.id,
+          name: selectedModel.name,
+          provider: selectedModel.provider,
+          model_name: selectedModel.model_name
+        } : undefined
       };
       
       await onAIAnnotation('qa', options);

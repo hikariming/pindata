@@ -91,14 +91,18 @@ class AIAnnotationService:
             return None
 
     async def generate_image_qa(self, raw_data: RawData, questions: List[str] = None, 
-                               model_provider: str = "openai") -> Dict[str, Any]:
+                               model_config: Dict[str, Any] = None,
+                               model_provider: str = "openai",
+                               region: Dict[str, float] = None) -> Dict[str, Any]:
         """
         为图片生成问答标注
         
         Args:
             raw_data: 原始数据对象
             questions: 用户提供的问题列表，如果为空则生成默认问题
-            model_provider: 模型提供商 (openai, anthropic, google)
+            model_config: 指定的模型配置信息
+            model_provider: 模型提供商 (兼容参数)
+            region: 选中的图片区域
         
         Returns:
             包含问答对的字典
@@ -107,20 +111,39 @@ class AIAnnotationService:
             raise ValueError("只能对图片数据生成问答标注")
         
         # 获取LLM配置
-        llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
-        if not llm_config:
-            # 尝试获取默认的视觉模型
-            llm_config = self._get_default_llm_config(supports_vision=True)
-            if not llm_config:
+        llm_config = None
+        
+        # 优先使用前端指定的模型配置
+        if model_config and model_config.get('id'):
+            from app.models import LLMConfig
+            llm_config = LLMConfig.query.get(model_config['id'])
+            if llm_config and not llm_config.supports_vision:
                 return {
                     "qa_pairs": [],
                     "metadata": {
-                        "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的{model_provider}模型",
-                        "model_provider": model_provider,
+                        "error": f"选中的模型 {llm_config.name} 不支持视觉功能",
+                        "model_name": llm_config.name,
                         "total_questions": 0,
                         "avg_confidence": 0
                     }
                 }
+        
+        # 如果没有指定模型或模型不存在，尝试获取默认模型
+        if not llm_config:
+            llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
+            if not llm_config:
+                # 尝试获取默认的视觉模型
+                llm_config = self._get_default_llm_config(supports_vision=True)
+                if not llm_config:
+                    return {
+                        "qa_pairs": [],
+                        "metadata": {
+                            "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的模型",
+                            "model_provider": model_provider,
+                            "total_questions": 0,
+                            "avg_confidence": 0
+                        }
+                    }
         
         try:
             # 获取图片数据
@@ -138,13 +161,14 @@ class AIAnnotationService:
             
             for question in questions:
                 try:
-                    answer = await self._ask_vision_model(llm_client, image_data, question, llm_config)
+                    answer = await self._ask_vision_model(llm_client, image_data, question, llm_config, region)
                     qa_pairs.append({
                         "question": question,
                         "answer": answer.get("text", ""),
                         "confidence": answer.get("confidence", 0.0),
                         "model": llm_config.model_name,
-                        "timestamp": self._get_timestamp()
+                        "timestamp": self._get_timestamp(),
+                        "region": region  # 记录区域信息
                     })
                 except Exception as e:
                     qa_pairs.append({
@@ -152,7 +176,8 @@ class AIAnnotationService:
                         "answer": f"处理失败: {str(e)}",
                         "confidence": 0.0,
                         "model": llm_config.model_name,
-                        "timestamp": self._get_timestamp()
+                        "timestamp": self._get_timestamp(),
+                        "region": region
                     })
             
             return {
@@ -162,7 +187,14 @@ class AIAnnotationService:
                     "model_name": llm_config.model_name,
                     "image_dimensions": image_data.get("dimensions"),
                     "total_questions": len(questions),
-                    "avg_confidence": sum([qa["confidence"] for qa in qa_pairs]) / len(qa_pairs) if qa_pairs else 0
+                    "avg_confidence": sum([qa["confidence"] for qa in qa_pairs]) / len(qa_pairs) if qa_pairs else 0,
+                    "region": region,  # 记录区域信息
+                    "selected_model": {
+                        "id": llm_config.id,
+                        "name": llm_config.name,
+                        "provider": llm_config.provider.value,
+                        "model_name": llm_config.model_name
+                    }
                 }
             }
             
@@ -170,6 +202,7 @@ class AIAnnotationService:
             raise Exception(f"生成图片问答失败: {str(e)}")
     
     async def generate_image_caption(self, raw_data: RawData, 
+                                   model_config: Dict[str, Any] = None,
                                    model_provider: str = "openai") -> Dict[str, Any]:
         """
         为图片生成描述标注
@@ -185,19 +218,38 @@ class AIAnnotationService:
             raise ValueError("只能对图片数据生成描述标注")
         
         # 获取LLM配置
-        llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
-        if not llm_config:
-            llm_config = self._get_default_llm_config(supports_vision=True)
-            if not llm_config:
+        llm_config = None
+        
+        # 优先使用前端指定的模型配置
+        if model_config and model_config.get('id'):
+            from app.models import LLMConfig
+            llm_config = LLMConfig.query.get(model_config['id'])
+            if llm_config and not llm_config.supports_vision:
                 return {
                     "caption": "",
                     "confidence": 0.0,
                     "metadata": {
-                        "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的{model_provider}模型",
-                        "model_provider": model_provider,
+                        "error": f"选中的模型 {llm_config.name} 不支持视觉功能",
+                        "model_name": llm_config.name,
                         "timestamp": self._get_timestamp()
                     }
                 }
+        
+        # 如果没有指定模型或模型不存在，尝试获取默认模型
+        if not llm_config:
+            llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
+            if not llm_config:
+                llm_config = self._get_default_llm_config(supports_vision=True)
+                if not llm_config:
+                    return {
+                        "caption": "",
+                        "confidence": 0.0,
+                        "metadata": {
+                            "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的模型",
+                            "model_provider": model_provider,
+                            "timestamp": self._get_timestamp()
+                        }
+                    }
         
         try:
             # 获取图片数据
@@ -347,12 +399,172 @@ class AIAnnotationService:
         except Exception as e:
             raise Exception(f"获取图片数据失败: {str(e)}")
     
-    async def _ask_vision_model(self, llm_client, image_data: Dict, question: str, llm_config: LLMConfig) -> Dict[str, Any]:
+    async def generate_image_qa_from_library_file(self, library_file, questions: List[str] = None, 
+                                                model_config: Dict[str, Any] = None,
+                                                model_provider: str = "openai",
+                                                region: Dict[str, float] = None) -> Dict[str, Any]:
+        """
+        为LibraryFile中的图片生成问答标注
+        
+        Args:
+            library_file: LibraryFile对象
+            questions: 用户提供的问题列表，如果为空则生成默认问题
+            model_config: 指定的模型配置信息
+            model_provider: 模型提供商 (兼容参数)
+            region: 选中的图片区域
+        
+        Returns:
+            包含问答对的字典
+        """
+        # 检查文件类型
+        file_type = library_file.file_type.lower()
+        if file_type not in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']:
+            raise ValueError("只能对图片文件生成问答标注")
+        
+        # 获取LLM配置 (复用现有逻辑)
+        llm_config = None
+        
+        # 优先使用前端指定的模型配置
+        if model_config and model_config.get('id'):
+            from app.models import LLMConfig
+            llm_config = LLMConfig.query.get(model_config['id'])
+            if llm_config and not llm_config.supports_vision:
+                return {
+                    "qa_pairs": [],
+                    "metadata": {
+                        "error": f"选中的模型 {llm_config.name} 不支持视觉功能",
+                        "model_name": llm_config.name,
+                        "total_questions": 0,
+                        "avg_confidence": 0
+                    }
+                }
+        
+        # 如果没有指定模型或模型不存在，尝试获取默认模型
+        if not llm_config:
+            llm_config = self._get_llm_config_by_provider(model_provider, supports_vision=True)
+            if not llm_config:
+                # 尝试获取默认的视觉模型
+                llm_config = self._get_default_llm_config(supports_vision=True)
+                if not llm_config:
+                    return {
+                        "qa_pairs": [],
+                        "metadata": {
+                            "error": f"未找到可用的视觉模型配置，请在LLM配置中添加支持视觉的模型",
+                            "model_provider": model_provider,
+                            "total_questions": 0,
+                            "avg_confidence": 0
+                        }
+                    }
+        
+        try:
+            # 获取图片数据
+            image_data = await self._get_image_data_from_library_file(library_file)
+            
+            # 如果没有提供问题，生成默认问题
+            if not questions:
+                questions = self._generate_default_image_questions_for_library_file(library_file)
+            
+            # 获取LLM客户端
+            llm_client = self.llm_service.get_llm_client(llm_config)
+            
+            # 生成问答对
+            qa_pairs = []
+            
+            for question in questions:
+                try:
+                    answer = await self._ask_vision_model(llm_client, image_data, question, llm_config, region)
+                    qa_pairs.append({
+                        "question": question,
+                        "answer": answer.get("text", ""),
+                        "confidence": answer.get("confidence", 0.0),
+                        "model": llm_config.model_name,
+                        "timestamp": self._get_timestamp(),
+                        "region": region  # 记录区域信息
+                    })
+                except Exception as e:
+                    qa_pairs.append({
+                        "question": question,
+                        "answer": f"处理失败: {str(e)}",
+                        "confidence": 0.0,
+                        "model": llm_config.model_name,
+                        "timestamp": self._get_timestamp(),
+                        "region": region
+                    })
+            
+            return {
+                "qa_pairs": qa_pairs,
+                "metadata": {
+                    "model_provider": llm_config.provider.value,
+                    "model_name": llm_config.model_name,
+                    "image_dimensions": image_data.get("dimensions"),
+                    "total_questions": len(questions),
+                    "avg_confidence": sum([qa["confidence"] for qa in qa_pairs]) / len(qa_pairs) if qa_pairs else 0,
+                    "region": region,  # 记录区域信息
+                    "selected_model": {
+                        "id": llm_config.id,
+                        "name": llm_config.name,
+                        "provider": llm_config.provider.value,
+                        "model_name": llm_config.model_name
+                    }
+                }
+            }
+            
+        except Exception as e:
+            raise Exception(f"生成图片问答失败: {str(e)}")
+    
+    async def _get_image_data_from_library_file(self, library_file) -> Dict[str, Any]:
+        """从LibraryFile获取图片数据"""
+        try:
+            # 从MinIO获取图片文件，使用LibraryFile中记录的bucket名称
+            bucket_name = library_file.minio_bucket or 'raw-data'
+            image_bytes = self.storage_service.get_file(
+                library_file.minio_object_name, 
+                bucket_name=bucket_name
+            )
+            
+            # 转换为PIL Image
+            image = Image.open(BytesIO(image_bytes))
+            
+            # 转换为base64编码
+            buffered = BytesIO()
+            image.save(buffered, format=image.format or "JPEG")
+            img_base64 = base64.b64encode(buffered.getvalue()).decode()
+            
+            return {
+                "base64": img_base64,
+                "format": image.format,
+                "dimensions": {"width": image.width, "height": image.height},
+                "mode": image.mode
+            }
+            
+        except Exception as e:
+            raise Exception(f"获取LibraryFile图片数据失败: {str(e)}")
+    
+    def _generate_default_image_questions_for_library_file(self, library_file) -> List[str]:
+        """为LibraryFile生成默认的图片问题"""
+        return [
+            "这张图片中显示了什么？",
+            "描述图片中的主要对象和它们的位置。",
+            "图片中有哪些颜色？",
+            "这张图片的场景或背景是什么？",
+            "图片中是否有人物？如果有，他们在做什么？",
+            "这张图片可能是在什么时间或地点拍摄的？",
+            "图片的整体氛围或情绪是什么？",
+            "图片中有没有文字或标志？如果有，写的是什么？"
+        ]
+    
+    async def _ask_vision_model(self, llm_client, image_data: Dict, question: str, llm_config: LLMConfig, region: Dict[str, float] = None) -> Dict[str, Any]:
         """使用视觉模型回答图片相关问题"""
         try:
+            # 构建问题文本，如果有区域信息则添加区域描述
+            question_text = question
+            if region:
+                region_desc = f"请注意这个问题主要关于图片中的特定区域（位置: x={region.get('x', 0):.0f}, y={region.get('y', 0):.0f}, 宽度={region.get('width', 0):.0f}, 高度={region.get('height', 0):.0f}）。{question}"
+                question_text = region_desc
+            
             # 构建消息内容
             content_parts = [
-                {"type": "text", "text": question},
+                {"type": "text", "text": question_text},
                 {
                     "type": "image_url",
                     "image_url": {

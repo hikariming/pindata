@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Textarea } from '../../ui/textarea';
 import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { MessageSquare, Sparkles, User, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { MessageSquare, Sparkles, User, Search, Settings } from 'lucide-react';
+import { LLMService } from '../../../services/llm.service';
+import { LLMConfig } from '../../../types/llm';
 
 interface AIQuestionDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (questions: string[]) => void;
+  onSubmit: (questions: string[], selectedModel?: LLMConfig) => void;
   isProcessing: boolean;
   fileType: 'image' | 'video';
   selectedRegion?: { x: number; y: number; width: number; height: number } | null;
@@ -84,6 +87,43 @@ export const AIQuestionDialog: React.FC<AIQuestionDialogProps> = ({
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [customQuestion, setCustomQuestion] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('general');
+  
+  // 新增状态用于模型选择
+  const [availableModels, setAvailableModels] = useState<LLMConfig[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string>('');
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelError, setModelError] = useState<string | null>(null);
+
+  // 加载支持视觉的模型
+  useEffect(() => {
+    if (open) {
+      loadVisionModels();
+    }
+  }, [open]);
+
+  const loadVisionModels = async () => {
+    setLoadingModels(true);
+    setModelError(null);
+    try {
+      const { configs } = await LLMService.getConfigs({
+        is_active: true,
+        supports_vision: true
+      });
+      
+      setAvailableModels(configs);
+      
+      // 自动选择默认模型或第一个可用模型
+      if (configs.length > 0) {
+        const defaultModel = configs.find(c => c.is_default) || configs[0];
+        setSelectedModelId(defaultModel.id);
+      }
+    } catch (error) {
+      setModelError('加载模型配置失败');
+      console.error('加载视觉模型失败:', error);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
 
   const handleQuestionToggle = (question: string) => {
     setSelectedQuestions(prev => 
@@ -102,7 +142,10 @@ export const AIQuestionDialog: React.FC<AIQuestionDialogProps> = ({
     
     if (allQuestions.length === 0) return;
     
-    onSubmit(allQuestions);
+    // 获取选中的模型
+    const selectedModel = availableModels.find(m => m.id === selectedModelId);
+    
+    onSubmit(allQuestions, selectedModel);
     setSelectedQuestions([]);
     setCustomQuestion('');
   };
@@ -159,6 +202,63 @@ export const AIQuestionDialog: React.FC<AIQuestionDialogProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+          {/* 模型选择 */}
+          <div className="border-b pb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <Settings size={16} />
+                <label className="text-sm font-medium">选择AI模型</label>
+                {loadingModels && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={loadVisionModels}
+                disabled={loadingModels}
+                className="h-6 px-2 text-xs"
+              >
+                刷新
+              </Button>
+            </div>
+            
+            {modelError ? (
+              <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                {modelError}
+              </div>
+            ) : availableModels.length > 0 ? (
+              <Select value={selectedModelId} onValueChange={setSelectedModelId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择支持视觉的AI模型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={model.is_default ? 'default' : 'outline'} className="text-xs">
+                          {model.provider}
+                        </Badge>
+                        <span>{model.name}</span>
+                        <span className="text-xs text-gray-500">({model.model_name})</span>
+                        {model.is_default && (
+                          <Badge variant="secondary" className="text-xs">默认</Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+                <div className="font-medium mb-1">暂无可用的视觉模型</div>
+                <div className="text-xs">
+                  请在系统设置中配置支持视觉功能的AI模型（如 GPT-4V、Claude 3 等）
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 分类选择 */}
           <div className="flex space-x-2 flex-wrap">
             {shouldShowRegionalQuestions && (
@@ -312,7 +412,12 @@ export const AIQuestionDialog: React.FC<AIQuestionDialogProps> = ({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={selectedQuestions.length === 0 && !customQuestion.trim() || isProcessing}
+            disabled={
+              (selectedQuestions.length === 0 && !customQuestion.trim()) || 
+              isProcessing || 
+              !selectedModelId ||
+              loadingModels
+            }
             className="bg-blue-500 hover:bg-blue-600"
           >
             {isProcessing ? (

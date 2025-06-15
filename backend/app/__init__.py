@@ -63,6 +63,10 @@ def create_app(config_name='development'):
     app.register_blueprint(organizations_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(roles_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
+    # 注册任务状态查询蓝图
+    from app.api.v1.endpoints.tasks import tasks_bp
+    app.register_blueprint(tasks_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    
     # 初始化数据库（包括自动创建数据库和表）
     try:
         if init_database(app):

@@ -1,12 +1,85 @@
-from flask import jsonify, request
+from flask import jsonify, request, Blueprint
 from flasgger import swag_from
 from app.api.v1 import api_v1
 from app.models import Task, TaskStatus, ConversionJob, ConversionStatus
 from app.db import db
 from app.utils.response import success_response, error_response
 import logging
+from flask_restful import Api, Resource
+from celery.result import AsyncResult
+from app.celery_app import celery
 
 logger = logging.getLogger(__name__)
+
+# 创建蓝图
+tasks_bp = Blueprint('tasks', __name__)
+api = Api(tasks_bp)
+
+class TaskStatusResource(Resource):
+    """任务状态查询资源"""
+    
+    def options(self, task_id):
+        """处理 CORS 预检请求"""
+        return {}, 200
+    
+    @swag_from({
+        'tags': ['任务管理'],
+        'summary': '查询任务状态',
+        'parameters': [{
+            'name': 'task_id',
+            'in': 'path',
+            'type': 'string',
+            'required': True,
+            'description': '任务ID'
+        }],
+        'responses': {
+            200: {'description': '任务状态查询成功'},
+            404: {'description': '任务不存在'}
+        }
+    })
+    def get(self, task_id):
+        """查询任务状态"""
+        try:
+            # 获取任务结果
+            task_result = AsyncResult(task_id, app=celery)
+            
+            # 构建响应数据
+            response_data = {
+                'task_id': task_id,
+                'state': task_result.state,
+                'ready': task_result.ready(),
+                'successful': task_result.successful() if task_result.ready() else None,
+                'failed': task_result.failed() if task_result.ready() else None
+            }
+            
+            # 根据任务状态添加额外信息
+            if task_result.state == 'PENDING':
+                response_data['meta'] = {
+                    'status': '任务等待中...'
+                }
+            elif task_result.state == 'PROGRESS':
+                response_data['meta'] = task_result.info or {}
+            elif task_result.state == 'SUCCESS':
+                response_data['result'] = task_result.result
+                response_data['meta'] = {
+                    'status': '任务完成'
+                }
+            elif task_result.state == 'FAILURE':
+                response_data['meta'] = {
+                    'error': str(task_result.info) if task_result.info else '任务执行失败',
+                    'status': '任务失败'
+                }
+                response_data['traceback'] = task_result.traceback
+            else:
+                response_data['meta'] = task_result.info or {}
+            
+            return response_data, 200
+            
+        except Exception as e:
+            return {
+                'error': f'查询任务状态失败: {str(e)}',
+                'task_id': task_id
+            }, 500
 
 @api_v1.route('/tasks', methods=['GET'])
 @swag_from({
@@ -431,4 +504,7 @@ def batch_delete_tasks():
     except Exception as e:
         logger.error(f"批量删除任务失败: {str(e)}")
         db.session.rollback()
-        return error_response('服务器内部错误666'), 500 
+        return error_response('服务器内部错误666'), 500
+
+# 注册路由
+api.add_resource(TaskStatusResource, '/tasks/<string:task_id>/status') 
