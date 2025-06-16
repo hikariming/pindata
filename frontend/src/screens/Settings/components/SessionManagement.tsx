@@ -97,8 +97,8 @@ export const SessionManagement: React.FC = () => {
     }
   };
 
-  const currentSession = sessions.find(session => session.is_current);
-  const otherSessions = sessions.filter(session => !session.is_current);
+  const currentSession = Array.isArray(sessions) ? sessions.find(session => session.is_current) : undefined;
+  const otherSessions = Array.isArray(sessions) ? sessions.filter(session => !session.is_current) : [];
 
   if (sessionsLoading) {
     return (

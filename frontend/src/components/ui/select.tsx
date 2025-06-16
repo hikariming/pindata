@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronDownIcon, CheckIcon } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export interface SelectProps {
@@ -76,7 +76,7 @@ const SelectTrigger = React.forwardRef<
       {...props}
     >
       {children}
-      <ChevronDownIcon className={cn("h-4 w-4 opacity-50 transition-transform", isOpen && "rotate-180")} />
+      <ChevronDown className={cn("h-4 w-4 opacity-50 transition-transform", isOpen && "rotate-180")} />
     </button>
   );
 });
@@ -139,7 +139,7 @@ const SelectItem = React.forwardRef<
       {...props}
     >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-        {isSelected && <CheckIcon className="h-4 w-4" />}
+        {isSelected && <Check className="h-4 w-4" />}
       </span>
       {children}
     </div>

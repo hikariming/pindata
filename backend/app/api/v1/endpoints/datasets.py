@@ -748,4 +748,81 @@ def get_dataset_generation_status(dataset_id):
         'task': generation_task.to_dict(),
         'celery_status': celery_status,
         'dataset': dataset.to_dict()
-    }) 
+    })
+
+
+@api_v1.route('/datasets/multimodal/generate', methods=['POST'])
+@swag_from({
+    'tags': ['数据集'],
+    'summary': 'AI自动生成多模态数据集',
+    'parameters': [{
+        'name': 'body',
+        'in': 'body',
+        'required': True,
+        'schema': {
+            'type': 'object',
+            'properties': {
+                'dataset_name': {
+                    'type': 'string',
+                    'description': '数据集名称'
+                },
+                'dataset_description': {
+                    'type': 'string', 
+                    'description': '数据集描述'
+                },
+                'selected_files': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'id': {'type': 'integer'},
+                            'filename': {'type': 'string'},
+                            'file_category': {'type': 'string'},
+                            'file_path': {'type': 'string'}
+                        }
+                    },
+                    'description': '选中的多模态文件列表'
+                },
+                'model_config': {
+                    'type': 'object',
+                    'description': '视觉AI模型配置',
+                    'properties': {
+                        'id': {'type': 'string', 'description': '模型配置ID'},
+                        'name': {'type': 'string', 'description': '模型名称'},
+                        'provider': {'type': 'string', 'description': '模型提供商'},
+                        'model_name': {'type': 'string', 'description': '模型标识'}
+                    },
+                    'required': ['id']
+                },
+                'generation_config': {
+                    'type': 'object',
+                    'description': '生成配置',
+                    'properties': {
+                        'qa_per_image': {'type': 'integer', 'default': 5, 'description': '每张图片生成问答对数量'},
+                        'include_captions': {'type': 'boolean', 'default': True, 'description': '是否包含图片描述'},
+                        'include_object_detection': {'type': 'boolean', 'default': False, 'description': '是否包含物体检测'},
+                        'output_format': {'type': 'string', 'enum': ['jsonl', 'json', 'csv'], 'default': 'jsonl', 'description': '输出格式'},
+                        'custom_questions': {
+                            'type': 'array',
+                            'items': {'type': 'string'},
+                            'description': '自定义问题模板'
+                        }
+                    }
+                }
+            },
+            'required': ['dataset_name', 'selected_files', 'model_config', 'generation_config']
+        }
+    }],
+    'responses': {
+        202: {'description': '多模态数据集生成任务已启动'},
+        400: {'description': '参数错误'},
+        404: {'description': '文件不存在'}
+    }
+})
+def generate_multimodal_dataset():
+    """AI自动生成多模态数据集"""
+    # 功能暂时不可用，返回相应提示
+    return jsonify({
+        'error': '多模态数据集生成功能正在开发中，敬请期待',
+        'status': 'under_development'
+    }), 503 

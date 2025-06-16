@@ -95,8 +95,14 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
 
     const result = await createLibrary(createData);
     if (result) {
-      onSuccess?.();
-      onBack();
+      // 确保成功回调在页面跳转之前执行
+      if (onSuccess) {
+        await onSuccess();
+      }
+      // 延迟跳转，确保数据刷新完成
+      setTimeout(() => {
+        onBack();
+      }, 100);
     }
   };
 
@@ -269,7 +275,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             ) : (
               <>
                 <BrainIcon className="w-4 h-4 mr-2" />
-                {t('rawData.createLibrary')}
+                {t('rawData.createLibrary.create')}
               </>
             )}
           </Button>

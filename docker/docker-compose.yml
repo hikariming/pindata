@@ -101,6 +101,9 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_SECURE=false
       - MINIO_BUCKET_NAME=pindata-bucket
+      - MINIO_RAW_DATA_BUCKET=raw-data
+      - MINIO_DATASETS_BUCKET=datasets
+      - MINIO_DEFAULT_BUCKET=pindata-bucket
       
       # Celery配置
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -179,6 +182,9 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_SECURE=false
       - MINIO_BUCKET_NAME=pindata-bucket
+      - MINIO_RAW_DATA_BUCKET=raw-data
+      - MINIO_DATASETS_BUCKET=datasets
+      - MINIO_DEFAULT_BUCKET=pindata-bucket
       
       # Celery配置
       - CELERY_BROKER_URL=redis://redis:6379/0

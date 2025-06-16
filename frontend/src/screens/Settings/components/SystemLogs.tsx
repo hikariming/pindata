@@ -12,14 +12,14 @@ import {
 } from "../../../components/ui/select";
 import { Badge } from "../../../components/ui/badge";
 import {
-  DownloadIcon,
-  SearchIcon,
-  PlayIcon,
-  PauseIcon,
-  RefreshCwIcon,
-  Loader2Icon,
-  AlertCircleIcon,
-  InfoIcon
+  Download,
+  Search,
+  Play,
+  Pause,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { useSystemLogs } from '../../../hooks/useSystemLogs';
 import { LogLevel } from '../../../types/systemLog';
@@ -59,15 +59,15 @@ export const SystemLogs = (): JSX.Element => {
   const getLevelIcon = (level: LogLevel) => {
     switch (level) {
       case 'error':
-        return <AlertCircleIcon className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
       case 'warn':
-        return <AlertCircleIcon className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
       case 'info':
-        return <InfoIcon className="w-4 h-4" />;
+        return <Info className="w-4 h-4" />;
       case 'debug':
-        return <InfoIcon className="w-4 h-4" />;
+        return <Info className="w-4 h-4" />;
       default:
-        return <InfoIcon className="w-4 h-4" />;
+        return <Info className="w-4 h-4" />;
     }
   };
 
@@ -110,7 +110,7 @@ export const SystemLogs = (): JSX.Element => {
       {logsError && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
           <div className="flex items-center">
-            <AlertCircleIcon className="w-5 h-5 text-red-600 mr-2" />
+            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
             <span className="text-red-800">{logsError}</span>
           </div>
         </div>
@@ -137,12 +137,12 @@ export const SystemLogs = (): JSX.Element => {
             >
               {isLogPaused ? (
                 <>
-                  <PlayIcon className="w-4 h-4 mr-2" />
+                  <Play className="w-4 h-4 mr-2" />
                   {t('settings.logResume')}
                 </>
               ) : (
                 <>
-                  <PauseIcon className="w-4 h-4 mr-2" />
+                  <Pause className="w-4 h-4 mr-2" />
                   {t('settings.logPause')}
                 </>
               )}
@@ -155,9 +155,9 @@ export const SystemLogs = (): JSX.Element => {
               className="border-[#d1dbe8]"
             >
               {logsLoading ? (
-                <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <RefreshCwIcon className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4 mr-2" />
               )}
               {t('settings.llm.refresh')}
             </Button>
@@ -167,7 +167,7 @@ export const SystemLogs = (): JSX.Element => {
               onClick={handleExportLogs}
               className="border-[#d1dbe8]"
             >
-              <DownloadIcon className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-2" />
               {t('settings.exportLogs')}
             </Button>
             <Button
@@ -184,7 +184,7 @@ export const SystemLogs = (): JSX.Element => {
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7096] w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7096] w-4 h-4" />
               <Input
                 placeholder={t('settings.searchLogs')}
                 value={searchQuery}
@@ -209,7 +209,7 @@ export const SystemLogs = (): JSX.Element => {
           </Select>
 
           <Button onClick={handleLogSearch} size="sm">
-            <SearchIcon className="w-4 h-4" />
+            <Search className="w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -217,7 +217,7 @@ export const SystemLogs = (): JSX.Element => {
       <div className="p-6">
         {logsLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2Icon className="w-6 h-6 animate-spin mr-2" />
+            <Loader2 className="w-6 h-6 animate-spin mr-2" />
             <span>{t('settings.loadingLogs')}</span>
           </div>
         ) : (

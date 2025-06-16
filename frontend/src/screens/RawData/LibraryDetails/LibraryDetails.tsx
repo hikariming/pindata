@@ -280,7 +280,14 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
     }
   };
 
-  const supportedFormats = ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'txt', 'md'];
+  const supportedFormats = [
+    // 文档类型
+    'pdf', 'docx', 'doc', 'pptx', 'ppt', 'txt', 'md',
+    // 图片类型
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg',
+    // 视频类型
+    'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'
+  ];
 
   const selectAllState = getSelectAllState();
   const selectedFilesForConversion = files.filter(f => selectedFiles.has(f.id));

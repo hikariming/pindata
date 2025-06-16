@@ -453,14 +453,15 @@
       "innovative": "创新",
       "modelNotSelected": "未选择AI模型，请返回Step3进行配置"
     },
-    "chunkSettingsOverview": {
+    "chunkSettingOverview": {
       "title": "文档分片设置",
+      "refresh": "刷新",
       "hidePreview": "隐藏预览",
       "showPreview": "预览分片",
       "chunkSize": "分片大小",
       "overlapSize": "重叠大小",
       "estimatedChunks": "预估分片",
-      "efficiency": "分片效率",
+      "chunkEfficiency": "分片效率",
       "high": "高",
       "medium": "中",
       "low": "低",
@@ -469,8 +470,9 @@
       "enabled": "开启",
       "disabled": "关闭",
       "realChunkPreview": "真实文档分片预览",
-      "basedOnActualFiles": "基于选中文件实际内容",
-      "loadingContent": "正在加载文档内容...",
+      "basedOnActualContent": "基于选中文件实际内容",
+      "loadingDocumentContent": "正在加载文档内容...",
+      "retry": "重试",
       "chunk": "分片",
       "source": "来源",
       "position": "位置",
@@ -479,42 +481,42 @@
       "overlap": "重叠",
       "previewLength": "预览长度",
       "contentTruncated": "* 内容已截断显示",
-      "showingChunks": "* 显示前{{count}}个分片，来自选中文件的实际内容",
-      "noChunksToPreview": "暂无可预览的分片"
+      "displayFirst": "* 显示前{{count}}个分片，来自选中文件的实际内容",
+      "noPreviewAvailable": "暂无可预览的分片"
     },
-    "promptConfigOverview": {
-      "title": "提示词配置",
-      "promptLength": "提示词长度",
-      "estimatedTokens": "预估Token",
-      "complexity": "复杂度",
-      "simple": "简单",
-      "medium": "中等",
-      "complex": "复杂",
-      "promptPreview": "提示词预览",
-      "promptNotConfigured": "提示词未配置，请返回Step3进行设置"
-    },
-    "processingEstimation": {
+          "promptConfigOverview": {
+        "title": "提示词配置",
+        "promptLength": "提示词长度",
+        "estimatedToken": "预估Token",
+        "complexity": "复杂度",
+        "simple": "简单",
+        "medium": "中等",
+        "complex": "复杂",
+        "promptPreview": "提示词预览",
+        "promptNotConfigured": "提示词未配置，请返回Step3进行设置"
+      },
+    "processingEstimate": {
       "title": "处理预估",
       "estimatedTime": "预估时间",
       "minutes": "分钟",
-      "estimatedEntries": "预估条目",
+      "estimatedItems": "预估条目",
       "tokenConsumption": "Token消耗",
       "outputSize": "输出大小",
-      "processOverview": "处理流程概览",
-      "documentParsing": "文档解析与分片",
-      "aiProcessing": "AI模型处理",
-      "formatOutput": "格式化输出",
+      "processingFlowOverview": "处理流程概览",
+      "documentParsingAndChunking": "文档解析与分片",
+      "aiModelProcessing": "AI模型处理",
+      "formattingOutput": "格式化输出",
       "datasetGeneration": "数据集生成"
     },
     "generateDataset": {
       "title": "开始生成数据集",
-      "description": "确认所有配置无误后，点击开始生成您的智能数据集",
-      "backToModify": "返回修改",
-      "startGenerate": "开始生成数据集",
+      "confirmAllConfigs": "确认所有配置无误后，点击开始生成您的智能数据集",
+      "returnToModify": "返回修改",
+      "startGenerating": "开始生成数据集",
       "generating": "生成中...",
-      "configIncomplete": "配置不完整",
+      "incompleteConfig": "配置不完整",
       "generationFailed": "数据集生成失败",
-      "retry": "重试生成"
+      "retryGenerating": "重试生成"
     }
   }
 }

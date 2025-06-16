@@ -31,6 +31,9 @@ class Config:
     DATABASE_INIT_RETRY_COUNT = int(os.getenv('DATABASE_INIT_RETRY_COUNT', '3'))
     DATABASE_INIT_RETRY_DELAY = int(os.getenv('DATABASE_INIT_RETRY_DELAY', '5'))
     
+    # 数据库迁移配置
+    AUTO_MIGRATE = os.getenv('AUTO_MIGRATE', 'true').lower() == 'true'
+    
     # Redis配置
     REDIS_URL = os.getenv('REDIS_URL')
     
@@ -40,6 +43,9 @@ class Config:
     MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY')
     MINIO_SECURE = os.getenv('MINIO_SECURE', 'false').lower() == 'true'
     MINIO_BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
+    MINIO_RAW_DATA_BUCKET = os.getenv('MINIO_RAW_DATA_BUCKET', 'raw-data')
+    MINIO_DATASETS_BUCKET = os.getenv('MINIO_DATASETS_BUCKET', 'datasets')
+    MINIO_DEFAULT_BUCKET = os.getenv('MINIO_DEFAULT_BUCKET', 'pindata-bucket')
     
     # Celery配置
     CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')

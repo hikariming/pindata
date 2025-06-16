@@ -428,14 +428,15 @@
       "innovative": "Innovative",
       "modelNotSelected": "No AI model selected, please return to Step3 for configuration"
     },
-    "chunkSettingsOverview": {
+    "chunkSettingOverview": {
       "title": "Document Chunking Settings",
+      "refresh": "Refresh",
       "hidePreview": "Hide Preview",
       "showPreview": "Preview Chunks",
       "chunkSize": "Chunk Size",
       "overlapSize": "Overlap Size",
       "estimatedChunks": "Estimated Chunks",
-      "efficiency": "Chunking Efficiency",
+      "chunkEfficiency": "Chunking Efficiency",
       "high": "High",
       "medium": "Medium",
       "low": "Low",
@@ -444,8 +445,9 @@
       "enabled": "Enabled",
       "disabled": "Disabled",
       "realChunkPreview": "Real Document Chunk Preview",
-      "basedOnActualFiles": "Based on actual content of selected files",
-      "loadingContent": "Loading document content...",
+      "basedOnActualContent": "Based on actual content of selected files",
+      "loadingDocumentContent": "Loading document content...",
+      "retry": "Retry",
       "chunk": "Chunk",
       "source": "Source",
       "position": "Position",
@@ -454,13 +456,13 @@
       "overlap": "Overlap",
       "previewLength": "Preview Length",
       "contentTruncated": "* Content truncated for display",
-      "showingChunks": "* Showing first {{count}} chunks from actual content of selected files",
-      "noChunksToPreview": "No chunks available for preview"
+      "displayFirst": "* Showing first {{count}} chunks from actual content of selected files",
+      "noPreviewAvailable": "No chunks available for preview"
     },
     "promptConfigOverview": {
       "title": "Prompt Configuration",
       "promptLength": "Prompt Length",
-      "estimatedTokens": "Estimated Tokens",
+      "estimatedToken": "Estimated Tokens",
       "complexity": "Complexity",
       "simple": "Simple",
       "medium": "Medium",
@@ -468,28 +470,28 @@
       "promptPreview": "Prompt Preview",
       "promptNotConfigured": "Prompt not configured, please return to Step3 for setup"
     },
-    "processingEstimation": {
+    "processingEstimate": {
       "title": "Processing Estimation",
       "estimatedTime": "Estimated Time",
       "minutes": "minutes",
-      "estimatedEntries": "Estimated Entries",
+      "estimatedItems": "Estimated Items",
       "tokenConsumption": "Token Consumption",
       "outputSize": "Output Size",
-      "processOverview": "Process Overview",
-      "documentParsing": "Document Parsing & Chunking",
-      "aiProcessing": "AI Model Processing",
-      "formatOutput": "Format Output",
+      "processingFlowOverview": "Processing Flow Overview",
+      "documentParsingAndChunking": "Document Parsing & Chunking",
+      "aiModelProcessing": "AI Model Processing",
+      "formattingOutput": "Formatting Output",
       "datasetGeneration": "Dataset Generation"
     },
     "generateDataset": {
       "title": "Start Dataset Generation",
-      "description": "After confirming all configurations are correct, click to start generating your smart dataset",
-      "backToModify": "Back to Modify",
-      "startGenerate": "Start Dataset Generation",
+      "confirmAllConfigs": "After confirming all configurations are correct, click to start generating your smart dataset",
+      "returnToModify": "Return to Modify",
+      "startGenerating": "Start Dataset Generation",
       "generating": "Generating...",
-      "configIncomplete": "Configuration Incomplete",
+      "incompleteConfig": "Configuration Incomplete",
       "generationFailed": "Dataset generation failed",
-      "retry": "Retry Generation"
+      "retryGenerating": "Retry Generation"
     }
   }
 }

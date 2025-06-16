@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Badge } from "../../components/ui/badge";
 import {
-  BrainIcon,
-  ServerIcon,
-  AlertCircleIcon,
+  Brain,
+  Server,
+  AlertCircle,
   User,
   Shield,
   Users
@@ -72,14 +72,14 @@ export const Settings = (): JSX.Element => {
             value="llm"
             className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-[#1977e5] rounded-none bg-transparent"
           >
-            <BrainIcon className="w-4 h-4 mr-2" />
+            <Brain className="w-4 h-4 mr-2" />
             {t('settings.llmConfig')}
           </TabsTrigger>
           <TabsTrigger
             value="logs"
             className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-[#1977e5] rounded-none bg-transparent"
           >
-            <ServerIcon className="w-4 h-4 mr-2" />
+            <Server className="w-4 h-4 mr-2" />
             {t('settings.logs')}
             {stats && stats.recent_errors > 0 && (
               <Badge variant="destructive" className="ml-2 text-xs">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
-import { WandIcon, CheckCircleIcon, ExternalLinkIcon, FileTextIcon, InfoIcon } from 'lucide-react';
+import { Wand2, CheckCircle, ExternalLink, FileText, Info } from 'lucide-react';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
 
 
@@ -28,7 +28,7 @@ export const Step5Generation: React.FC = () => {
       <div className="p-6">
         <div className="text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <CheckCircleIcon className="w-8 h-8 text-green-500" />
+            <CheckCircle className="w-8 h-8 text-green-500" />
             <h3 className="text-xl font-semibold text-[#0c141c]">数据集生成任务已提交</h3>
           </div>
 
@@ -57,7 +57,7 @@ export const Step5Generation: React.FC = () => {
 
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
               <div className="flex items-start gap-3">
-                <InfoIcon className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="text-left">
                   <h4 className="font-medium text-blue-800 mb-2">后台处理说明</h4>
                   <ul className="text-sm text-blue-700 space-y-1">
@@ -91,7 +91,7 @@ export const Step5Generation: React.FC = () => {
               onClick={handleViewTasks}
               className="bg-[#1977e5] hover:bg-[#1565c0] text-white"
             >
-              <FileTextIcon className="w-4 h-4 mr-2" />
+              <FileText className="w-4 h-4 mr-2" />
               查看任务进度
             </Button>
             
@@ -101,7 +101,7 @@ export const Step5Generation: React.FC = () => {
                 onClick={handleViewDataset}
                 className="border-[#1977e5] text-[#1977e5] hover:bg-[#f0f7ff]"
               >
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
+                <ExternalLink className="w-4 h-4 mr-2" />
                 查看数据集
               </Button>
             )}

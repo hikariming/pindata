@@ -103,7 +103,7 @@ export default function FileUpload({
             {' '}或拖拽文件到这里
           </div>
           <p className="text-xs text-gray-500">
-            支持 PDF, Word, PowerPoint, TXT, Markdown 文件
+            支持文档、图片、视频文件
           </p>
           <p className="text-xs text-gray-500">
             最大文件大小: {formatFileSize(config.maxFileSize)}
@@ -116,7 +116,7 @@ export default function FileUpload({
         id="fileInput"
         type="file"
         multiple
-        accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md"
+        accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.mp4,.avi,.mov,.wmv,.flv,.webm"
         onChange={handleChange}
         className="hidden"
       />

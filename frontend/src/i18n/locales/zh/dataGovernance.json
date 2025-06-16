@@ -1,0 +1,365 @@
+{
+  "title": "数据治理工程",
+  "description": "企业数据治理与知识管理平台",
+  "projects": {
+    "title": "工程列表",
+    "createNew": "创建新工程",
+    "searchPlaceholder": "搜索工程名称或描述...",
+    "allStatuses": "全部状态",
+    "allOwners": "全部负责人",
+    "noProjects": "暂无工程",
+    "noProjectsDescription": "创建您的第一个数据治理工程以开始管理企业数据",
+    "stats": {
+      "totalProjects": "工程总数",
+      "activeProjects": "活跃工程",
+      "totalTeamMembers": "团队成员",
+      "dataProcessed": "数据处理量"
+    },
+    "status": {
+      "active": "活跃",
+      "draft": "草稿",
+      "completed": "已完成",
+      "archived": "已归档"
+    },
+    "actions": {
+      "view": "查看详情",
+      "edit": "编辑",
+      "archive": "归档",
+      "delete": "删除"
+    }
+  },
+  "projectDetail": {
+    "tabs": {
+      "overview": "概览",
+      "pipeline": "数据管道",
+      "team": "团队管理",
+      "data": "数据管理",
+      "reports": "分析报告"
+    },
+    "overview": {
+      "basicInfo": "基本信息",
+      "projectName": "工程名称",
+      "description": "描述",
+      "status": "状态",
+      "owner": "负责人",
+      "createdAt": "创建时间",
+      "lastUpdated": "最后更新",
+      "metrics": "数据指标",
+      "totalDataSize": "数据总量",
+      "processedFiles": "已处理文件",
+      "dataQuality": "数据质量评分",
+      "lastProcessed": "最后处理时间",
+      "teamOverview": "团队概览",
+      "teamMembers": "团队成员",
+      "recentActivity": "最近活动"
+    },
+    "dataSource": {
+      "title": "数据源配置",
+      "addSource": "添加数据源",
+      "connected": "已连接",
+      "disconnected": "未连接",
+      "error": "连接错误",
+      "configure": "配置"
+    }
+  },
+  "teamManagement": {
+    "title": "团队管理",
+    "description": "管理项目成员和权限设置",
+    "inviteMembers": "邀请成员",
+    "searchMembers": "搜索成员姓名或邮箱...",
+    "allRoles": "全部角色",
+    "stats": {
+      "owner": "所有者",
+      "admin": "管理员",
+      "editor": "编辑者",
+      "viewer": "查看者"
+    },
+    "roles": {
+      "owner": {
+        "label": "所有者",
+        "description": "拥有项目的完全控制权",
+        "permissions": ["全部权限"]
+      },
+      "admin": {
+        "label": "管理员",
+        "description": "可以管理团队和项目配置",
+        "permissions": ["管理成员", "配置管道", "查看数据", "编辑项目"]
+      },
+      "editor": {
+        "label": "编辑者",
+        "description": "可以编辑和处理项目数据",
+        "permissions": ["编辑数据", "运行管道", "查看报告"]
+      },
+      "viewer": {
+        "label": "查看者",
+        "description": "仅可查看项目内容",
+        "permissions": ["查看数据", "查看报告"]
+      }
+    },
+    "memberInfo": {
+      "you": "您",
+      "joinedAt": "加入于",
+      "noMembers": "未找到成员",
+      "tryAdjustFilters": "请尝试调整搜索条件"
+    },
+    "inviteDialog": {
+      "title": "邀请新成员",
+      "emailLabel": "邮箱地址",
+      "emailPlaceholder": "请输入邮箱地址",
+      "roleLabel": "角色权限",
+      "cancel": "取消",
+      "sendInvite": "发送邀请"
+    },
+    "actions": {
+      "editRole": "编辑角色",
+      "removeMember": "移除成员",
+      "save": "保存",
+      "cancel": "取消"
+    }
+  },
+  "dataIntegration": {
+    "title": "数据集成管理",
+    "description": "将现有数据集和数据库集成到工程中",
+    "refresh": "刷新",
+    "stats": {
+      "linkedDatasets": "已链接数据集",
+      "linkedLibraries": "已链接数据库",
+      "totalFiles": "总文件数",
+      "totalSize": "数据总量"
+    },
+    "tabs": {
+      "datasets": "数据集",
+      "libraries": "数据库"
+    },
+    "search": {
+      "datasets": "搜索数据集名称或描述...",
+      "libraries": "搜索数据库名称或描述...",
+      "allStatuses": "全部状态",
+      "allTypes": "全部类型"
+    },
+    "status": {
+      "ready": "就绪",
+      "active": "活跃",
+      "processing": "处理中",
+      "error": "错误"
+    },
+    "types": {
+      "training": "训练集",
+      "validation": "验证集",
+      "test": "测试集",
+      "documents": "文档",
+      "images": "图像",
+      "mixed": "混合"
+    },
+    "actions": {
+      "linkSelected": "链接选中的",
+      "linkToProject": "链接到工程",
+      "unlink": "取消链接",
+      "viewDetails": "查看详情",
+      "linked": "已链接"
+    },
+    "empty": {
+      "datasets": "未找到数据集",
+      "libraries": "未找到数据库",
+      "description": "请尝试调整搜索条件，或前往相应模块创建新的"
+    },
+    "progress": {
+      "title": "处理进度"
+    }
+  },
+  "projectWizard": {
+    "title": "创建新工程",
+    "subtitle": "企业数据治理工程向导",
+    "steps": {
+      "basic": {
+        "title": "基本信息",
+        "description": "设置工程名称和描述"
+      },
+      "template": {
+        "title": "选择模板",
+        "description": "选择工程模板或自定义"
+      },
+      "datasource": {
+        "title": "配置数据源",
+        "description": "设置数据输入源"
+      },
+      "team": {
+        "title": "团队设置",
+        "description": "配置团队成员和权限"
+      },
+      "review": {
+        "title": "预览确认",
+        "description": "确认配置并创建工程"
+      }
+    },
+    "basicInfo": {
+      "title": "工程基本信息",
+      "description": "为您的数据治理工程设置基本信息",
+      "projectName": "工程名称",
+      "projectNamePlaceholder": "请输入工程名称",
+      "projectDescription": "工程描述",
+      "projectDescriptionPlaceholder": "请描述工程的目标和用途",
+      "required": "*",
+      "tip": {
+        "title": "工程创建提示",
+        "content": "工程名称将用于标识您的数据治理项目，建议使用清晰、有意义的名称。描述信息可以帮助团队成员更好地理解工程的目标和范围。"
+      }
+    },
+    "template": {
+      "title": "选择工程模板",
+      "description": "选择适合的模板快速开始，或创建自定义工程",
+      "templates": {
+        "documentExtraction": {
+          "name": "文档知识抽取",
+          "description": "将企业文档转换为结构化知识库",
+          "useCase": "适用于企业知识管理、文档数字化转型"
+        },
+        "financialAnalysis": {
+          "name": "财务数据分析",
+          "description": "分析财务报表，提取关键指标",
+          "useCase": "适用于财务分析、风险评估、合规检查"
+        },
+        "customerInsights": {
+          "name": "客户洞察分析",
+          "description": "分析客户数据，挖掘商业价值",
+          "useCase": "适用于客户画像、市场分析、个性化推荐"
+        },
+        "custom": {
+          "name": "自定义工程",
+          "description": "根据业务需求自定义数据处理流程",
+          "useCase": "适用于特殊业务场景和定制化需求"
+        }
+      },
+      "supportedTypes": "支持数据类型："
+    },
+    "dataSource": {
+      "title": "配置数据源",
+      "description": "选择和配置您的数据输入源",
+      "types": {
+        "upload": {
+          "name": "文件上传",
+          "description": "直接上传本地文件"
+        },
+        "database": {
+          "name": "数据库连接",
+          "description": "连接到企业数据库"
+        },
+        "storage": {
+          "name": "云存储",
+          "description": "连接到云存储服务"
+        },
+        "api": {
+          "name": "API接口",
+          "description": "通过API获取数据"
+        }
+      },
+      "configTitle": "已选择的数据源配置",
+      "configPlaceholder": "配置 {{name}} 连接参数"
+    },
+    "teamSetup": {
+      "title": "团队设置",
+      "description": "配置工程团队成员和权限",
+      "initialTeam": "初始团队成员",
+      "ownerNote": "您将自动成为工程所有者，可以在工程创建后邀请更多成员。",
+      "projectOwner": "项目所有者",
+      "ownerPermission": "拥有工程的完全控制权",
+      "collaboration": {
+        "title": "团队协作功能",
+        "description": "工程创建后，您可以：",
+        "features": [
+          "邀请团队成员加入工程",
+          "分配不同的角色和权限",
+          "管理成员访问控制",
+          "跟踪团队活动和贡献"
+        ]
+      }
+    },
+    "review": {
+      "title": "预览确认",
+      "description": "请确认工程配置信息",
+      "basicInfo": "基本信息",
+      "projectName": "工程名称：",
+      "projectDescription": "工程描述：",
+      "selectedTemplate": "选择模板：",
+      "dataSourceConfig": "数据源配置",
+      "teamConfig": "团队配置",
+      "notSet": "无",
+      "notSelected": "未选择",
+      "noDataSource": "未配置数据源"
+    },
+    "navigation": {
+      "cancel": "取消",
+      "previous": "上一步",
+      "next": "下一步",
+      "createProject": "创建工程"
+    }
+  },
+  "dataPipeline": {
+    "title": "数据处理管道",
+    "description": "可视化数据处理流程和管道状态",
+    "stages": {
+      "extract": "数据提取",
+      "clean": "数据清洗",
+      "transform": "数据转换",
+      "validate": "数据验证",
+      "output": "结果输出"
+    },
+    "status": {
+      "pending": "等待中",
+      "running": "运行中",
+      "completed": "已完成",
+      "error": "错误"
+    },
+    "actions": {
+      "runPipeline": "运行管道",
+      "pausePipeline": "暂停管道",
+      "viewLogs": "查看日志",
+      "configure": "配置"
+    },
+    "metrics": {
+      "processedData": "处理数据量",
+      "processingTime": "处理时间",
+      "successRate": "成功率",
+      "throughput": "吞吐量"
+    }
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息",
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "update": "更新",
+    "refresh": "刷新",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "import": "导入",
+    "download": "下载",
+    "upload": "上传",
+    "preview": "预览",
+    "settings": "设置",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "finish": "完成",
+    "close": "关闭",
+    "open": "打开",
+    "select": "选择",
+    "unselect": "取消选择",
+    "selectAll": "全选",
+    "unselectAll": "取消全选",
+    "noData": "暂无数据",
+    "noResults": "无匹配结果",
+    "pageNotFound": "页面未找到",
+    "permissionDenied": "权限不足",
+    "networkError": "网络错误",
+    "unknownError": "未知错误"
+  }
+} 

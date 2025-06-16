@@ -92,6 +92,13 @@ def create_system_permissions():
         {"name": "查看任务", "code": "task.read", "resource": "task", "action": "read", "category": "task"},
         {"name": "管理任务", "code": "task.manage", "resource": "task", "action": "manage", "category": "task"},
         
+        # 数据治理权限
+        {"name": "创建数据治理工程", "code": "governance.create", "resource": "governance", "action": "create", "category": "governance"},
+        {"name": "查看数据治理工程", "code": "governance.read", "resource": "governance", "action": "read", "category": "governance"},
+        {"name": "编辑数据治理工程", "code": "governance.update", "resource": "governance", "action": "update", "category": "governance"},
+        {"name": "删除数据治理工程", "code": "governance.delete", "resource": "governance", "action": "delete", "category": "governance"},
+        {"name": "管理数据治理工程", "code": "governance.manage", "resource": "governance", "action": "manage", "category": "governance"},
+        
         # LLM配置权限
         {"name": "LLM配置管理", "code": "llm_config.manage", "resource": "llm_config", "action": "manage", "category": "llm"},
         
@@ -123,25 +130,25 @@ def create_system_roles():
             "name": "系统管理员", 
             "code": "admin", 
             "description": "系统管理员，拥有大部分管理权限",
-            "permissions": ["user.manage", "organization.manage", "dataset.manage", "library.manage", "task.manage"]
+            "permissions": ["user.manage", "organization.manage", "dataset.manage", "library.manage", "task.manage", "governance.manage"]
         },
         {
             "name": "数据管理员", 
             "code": "data_admin", 
             "description": "数据管理员，可以管理数据集和文件库",
-            "permissions": ["dataset.manage", "library.manage", "task.manage", "llm_config.manage"]
+            "permissions": ["dataset.manage", "library.manage", "task.manage", "governance.manage", "llm_config.manage"]
         },
         {
             "name": "普通用户", 
             "code": "user", 
             "description": "普通用户，可以创建和管理自己的数据",
-            "permissions": ["dataset.create", "dataset.read", "dataset.update", "library.create", "library.read", "library.update", "task.create", "task.read"]
+            "permissions": ["dataset.create", "dataset.read", "dataset.update", "library.create", "library.read", "library.update", "task.create", "task.read", "governance.create", "governance.read", "governance.update"]
         },
         {
             "name": "访客", 
             "code": "viewer", 
             "description": "只读访客，只能查看公开数据",
-            "permissions": ["dataset.read", "library.read", "task.read"]
+            "permissions": ["dataset.read", "library.read", "task.read", "governance.read"]
         },
     ]
     

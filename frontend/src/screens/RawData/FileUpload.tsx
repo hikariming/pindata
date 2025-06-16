@@ -11,7 +11,8 @@ import {
   FileTextIcon,
   FileSpreadsheetIcon,
   PresentationIcon,
-  PlayIcon
+  PlayIcon,
+  ImageIcon
 } from 'lucide-react';
 import { LibraryService } from '../../services/library.service';
 
@@ -54,6 +55,21 @@ export const FileUpload = ({ onUpload, onClose, libraryId, supportedFormats }: F
       case 'pptx':
       case 'ppt':
         return <PresentationIcon className="w-6 h-6 text-orange-500" />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+      case 'svg':
+        return <ImageIcon className="w-6 h-6 text-purple-500" />;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'wmv':
+      case 'flv':
+      case 'webm':
+        return <PlayIcon className="w-6 h-6 text-green-600" />;
       default:
         return <FileIcon className="w-6 h-6 text-gray-500" />;
     }

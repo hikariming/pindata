@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from celery import Task
+from flask import current_app
 from werkzeug.datastructures import FileStorage
 
 from app.celery_app import celery
@@ -1194,7 +1195,7 @@ def _save_generated_data(version: EnhancedDatasetVersion, original_filename: str
             object_name = f"datasets/{version.dataset_id}/{version.version}/generated/{generated_filename}"
             
             # 使用upload_file_from_path方法
-            bucket_name = 'datasets'
+            bucket_name = current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets')
             file_size = storage_service.upload_file_from_path(
                 tmp_file_path, object_name, content_type, bucket_name
             )
@@ -1212,7 +1213,7 @@ def _save_generated_data(version: EnhancedDatasetVersion, original_filename: str
                 file_type='json' if file_extension == '.jsonl' else 'csv',
                 file_size=file_size,
                 checksum=checksum,
-                minio_bucket='datasets',
+                minio_bucket=current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets'),
                 minio_object_name=uploaded_object,
                 file_metadata={
                     'original_file': original_filename,

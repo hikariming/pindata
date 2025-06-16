@@ -199,12 +199,17 @@ class LibraryService:
         file_type: str,
         file_size: int,
         minio_object_name: str,
-        minio_bucket: str = 'raw-data'
+        minio_bucket: str = None
     ) -> LibraryFile:
         """向文件库添加文件"""
         library = Library.query.filter_by(id=library_id).first()
         if not library:
             raise ValueError("文件库不存在")
+        
+        # 如果没有指定bucket，使用配置的默认raw data bucket
+        if minio_bucket is None:
+            from flask import current_app
+            minio_bucket = current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data')
         
         library_file = LibraryFile(
             filename=filename,

@@ -14,6 +14,7 @@ import {
   ChevronUpIcon,
   UserIcon,
   LogOutIcon,
+  ShieldCheckIcon,
 } from 'lucide-react';
 import { Button } from './button';
 import { LanguageSwitcher } from './language-switcher';
@@ -79,6 +80,7 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
     if (path.startsWith('/tasks')) return 'tasks';
     if (path.startsWith('/plugins')) return 'plugins';
     if (path.startsWith('/settings')) return 'settings';
+    if (path.startsWith('/governance')) return 'governance';
     if (path.startsWith('/overview')) return 'overview';
     return 'overview';
   };
@@ -132,6 +134,12 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
       path: '/plugins',
     },
     {
+      icon: <ShieldCheckIcon size={24} />,
+      label: t('navigation.governance'),
+      page: 'governance',
+      path: '/governance',
+    },
+    {
       icon: <SettingsIcon size={24} />,
       label: t('navigation.settings'),
       page: 'settings',
@@ -152,7 +160,7 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
             <h2 className={`font-medium text-base text-[#0c141c] leading-6 transition-opacity duration-300 ${
               isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}>
-              {t('appName')}
+              {t('common.appName')}
             </h2>
           </div>
 

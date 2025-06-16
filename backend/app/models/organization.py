@@ -8,8 +8,8 @@ from app.db import db
 
 
 class OrganizationStatus(enum.Enum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
 
 
 class Organization(db.Model):
@@ -23,7 +23,7 @@ class Organization(db.Model):
     path = Column(String(1000), index=True)  # 层级路径，如 /root/dept1/team1
     level = Column(Integer, default=1, index=True)
     sort_order = Column(Integer, default=0)
-    status = Column(SQLEnum(OrganizationStatus), default=OrganizationStatus.ACTIVE)
+    status = Column(SQLEnum(OrganizationStatus, native_enum=True), default=OrganizationStatus.ACTIVE)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(String(36))

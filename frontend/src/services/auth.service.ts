@@ -82,8 +82,8 @@ class AuthService {
    * 用户登录
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/api/v1/auth/login', data);
-    return response;
+    const response = await apiClient.post<{ data: LoginResponse }>('/api/v1/auth/login', data);
+    return response.data;
   }
 
   /**
@@ -98,8 +98,8 @@ class AuthService {
    * 刷新访问令牌
    */
   async refreshToken(data: RefreshTokenRequest): Promise<{ access_token: string; session_id: string }> {
-    const response = await apiClient.post<{ access_token: string; session_id: string }>('/api/v1/auth/refresh', data);
-    return response;
+    const response = await apiClient.post<{ data: { access_token: string; session_id: string } }>('/api/v1/auth/refresh', data);
+    return response.data;
   }
 
   /**
@@ -144,8 +144,8 @@ class AuthService {
    * 获取用户会话列表
    */
   async getUserSessions(): Promise<UserSession[]> {
-    const response = await apiClient.get<UserSession[]>('/api/v1/auth/sessions');
-    return response;
+    const response = await apiClient.get<{ data: UserSession[] }>('/api/v1/auth/sessions');
+    return response.data;
   }
 
   /**
@@ -431,21 +431,44 @@ class AuthService {
    * 自动刷新令牌
    */
   async autoRefreshToken(): Promise<boolean> {
-    const { refreshToken } = this.getStoredTokens();
-    
-    if (!refreshToken) {
-      return false;
-    }
-
     try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      const expiresAt = localStorage.getItem('token_expires_at');
+      
+      if (!refreshToken) {
+        return false;
+      }
+
+      // 检查 token 是否即将过期（5分钟内）
+      const isExpiringSoon = expiresAt ? this.isTokenExpiringSoon(expiresAt) : true;
+      
+      // 如果 token 还有效且未即将过期，则不需要刷新
+      if (!isExpiringSoon) {
+        return true;
+      }
+
       const response = await this.refreshToken({ refresh_token: refreshToken });
-      this.setAuthToken(response.access_token);
-      this.storeTokens(response.access_token, refreshToken);
-      return true;
+      if (response.access_token) {
+        // 计算新的过期时间（假设服务器返回的 token 有效期为 2 小时）
+        const newExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+        
+        this.storeTokens(
+          response.access_token,
+          refreshToken,
+          newExpiresAt,
+          response.session_id
+        );
+        this.setAuthToken(response.access_token);
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Auto refresh token failed:', error);
-      this.clearStoredTokens();
-      this.setAuthToken('');
+      // 只有在确认是 token 无效时才清除
+      if (error instanceof Error && error.message.includes('Token refresh failed')) {
+        this.clearStoredTokens();
+        this.setAuthToken('');
+      }
       return false;
     }
   }

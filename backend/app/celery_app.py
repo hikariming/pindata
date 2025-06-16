@@ -21,6 +21,13 @@ def make_celery(app_name=__name__):
         task_soft_time_limit=25 * 60,  # 25分钟软超时
         worker_prefetch_multiplier=1,
         worker_max_tasks_per_child=1000,
+        # 自动发现任务
+        include=[
+            'app.tasks.conversion_tasks',
+            'app.tasks.dataset_import_tasks', 
+            'app.tasks.dataset_generation_tasks'
+            # 'app.tasks.multimodal_dataset_tasks'  # 暂时移除，功能开发中
+        ]
     )
     
     return celery

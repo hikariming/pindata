@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../../../../components/ui/button';
-import { PlayIcon } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
 import { getSteps } from '../constants';

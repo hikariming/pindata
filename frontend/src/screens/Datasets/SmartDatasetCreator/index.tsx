@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
-import { ArrowLeftIcon, WandIcon } from 'lucide-react';
+import { ArrowLeft, Wand2 } from 'lucide-react';
 import { useSmartDatasetCreatorStore } from './store/useSmartDatasetCreatorStore';
 import {
   StepIndicator,
@@ -62,7 +62,7 @@ export const SmartDatasetCreator: React.FC = () => {
       <div className="mb-6">
         <Link to="/datasets">
           <Button variant="outline" className="border-[#d1dbe8] flex items-center gap-2">
-            <ArrowLeftIcon className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4" />
             {t('datasets.create.backToList')}
           </Button>
         </Link>
@@ -71,7 +71,7 @@ export const SmartDatasetCreator: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <WandIcon className="w-8 h-8 text-[#1977e5]" />
+          <Wand2 className="w-8 h-8 text-[#1977e5]" />
           <h1 className="text-2xl font-bold text-[#0c141c]">{t('smartDatasetCreator.title')}</h1>
         </div>
         <p className="text-[#4f7096] text-lg max-w-3xl">

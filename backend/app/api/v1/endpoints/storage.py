@@ -1,7 +1,7 @@
 import tempfile
 import os
 import urllib.parse
-from flask import Blueprint, request, send_file, make_response
+from flask import Blueprint, request, send_file, make_response, current_app
 from flask_restful import Api, Resource
 from app.services.storage_service import storage_service
 from app.utils.response import error_response
@@ -43,7 +43,11 @@ class StorageDownloadResource(Resource):
             logger.info(f"下载请求: 原始路径={object_path}, 解码后={object_name}")
             
             # 可能的bucket列表，按优先级排序
-            possible_buckets = ['datasets', 'raw-data', 'llama-dataset']
+            possible_buckets = [
+                current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets'),
+                current_app.config.get('MINIO_RAW_DATA_BUCKET', 'raw-data'),
+                current_app.config.get('MINIO_BUCKET_NAME', 'pindata-bucket')
+            ]
             
             downloaded_file = None
             actual_bucket = None

@@ -553,14 +553,15 @@
       "innovative": "革新的",
       "modelNotSelected": "AIモデルが選択されていません。Step3に戻って設定してください"
     },
-    "chunkSettingsOverview": {
+    "chunkSettingOverview": {
       "title": "文書チャンク設定",
+      "refresh": "更新",
       "hidePreview": "プレビューを非表示",
       "showPreview": "チャンクをプレビュー",
       "chunkSize": "チャンクサイズ",
       "overlapSize": "重複サイズ",
       "estimatedChunks": "予測チャンク数",
-      "efficiency": "チャンク効率",
+      "chunkEfficiency": "チャンク効率",
       "high": "高",
       "medium": "中",
       "low": "低",
@@ -569,8 +570,9 @@
       "enabled": "有効",
       "disabled": "無効",
       "realChunkPreview": "実際の文書チャンクプレビュー",
-      "basedOnActualFiles": "選択されたファイルの実際の内容に基づく",
-      "loadingContent": "文書内容を読み込み中...",
+      "basedOnActualContent": "選択されたファイルの実際の内容に基づく",
+      "loadingDocumentContent": "文書内容を読み込み中...",
+      "retry": "再試行",
       "chunk": "チャンク",
       "source": "ソース",
       "position": "位置",
@@ -579,13 +581,13 @@
       "overlap": "重複",
       "previewLength": "プレビュー長",
       "contentTruncated": "* 内容は表示のため切り詰められました",
-      "showingChunks": "* 選択されたファイルの実際の内容から最初の{{count}}チャンクを表示",
-      "noChunksToPreview": "プレビューできるチャンクがありません"
+      "displayFirst": "* 選択されたファイルの実際の内容から最初の{{count}}チャンクを表示",
+      "noPreviewAvailable": "プレビューできるチャンクがありません"
     },
     "promptConfigOverview": {
       "title": "プロンプト設定",
       "promptLength": "プロンプト長",
-      "estimatedTokens": "予測トークン数",
+      "estimatedToken": "予測トークン数",
       "complexity": "複雑度",
       "simple": "シンプル",
       "medium": "中程度",
@@ -593,28 +595,28 @@
       "promptPreview": "プロンプトプレビュー",
       "promptNotConfigured": "プロンプトが設定されていません。Step3に戻って設定してください"
     },
-    "processingEstimation": {
+    "processingEstimate": {
       "title": "処理予測",
       "estimatedTime": "予測時間",
       "minutes": "分",
-      "estimatedEntries": "予測エントリ数",
+      "estimatedItems": "予測項目数",
       "tokenConsumption": "トークン消費",
       "outputSize": "出力サイズ",
-      "processOverview": "処理フロー概要",
-      "documentParsing": "文書解析とチャンク化",
-      "aiProcessing": "AIモデル処理",
-      "formatOutput": "形式出力",
+      "processingFlowOverview": "処理フロー概要",
+      "documentParsingAndChunking": "文書解析とチャンク化",
+      "aiModelProcessing": "AIモデル処理",
+      "formattingOutput": "フォーマット出力",
       "datasetGeneration": "データセット生成"
     },
     "generateDataset": {
       "title": "データセット生成開始",
-      "description": "すべての設定が正しいことを確認してから、スマートデータセットの生成を開始してください",
-      "backToModify": "戻って修正",
-      "startGenerate": "データセット生成開始",
+      "confirmAllConfigs": "すべての設定が正しいことを確認してから、スマートデータセットの生成を開始してください",
+      "returnToModify": "戻って修正",
+      "startGenerating": "データセット生成開始",
       "generating": "生成中...",
-      "configIncomplete": "設定が不完全",
+      "incompleteConfig": "設定が不完全",
       "generationFailed": "データセット生成に失敗しました",
-      "retry": "生成を再試行"
+      "retryGenerating": "生成を再試行"
     }
   }
 }

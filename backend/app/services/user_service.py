@@ -5,7 +5,7 @@ from sqlalchemy import or_, and_
 from app.db import db
 from app.models import (
     User, UserStatus, Organization, Role, UserRole, UserOrganization,
-    ResourcePermission, AuditLog
+    ResourcePermission, AuditLog, UserOrgStatus
 )
 
 
@@ -212,7 +212,7 @@ class UserService:
         
         # 添加组织信息
         user_orgs = db.session.query(UserOrganization).filter_by(
-            user_id=user_id, status='ACTIVE'
+            user_id=user_id, status=UserOrgStatus.ACTIVE
         ).all()
         user_data['organizations'] = [
             {
@@ -307,11 +307,11 @@ class UserService:
         ).first()
         
         if existing:
-            if existing.status.value == 'ACTIVE':
+            if existing.status == UserOrgStatus.ACTIVE:
                 raise ValueError("用户已在该组织中")
             else:
                 # 重新激活
-                existing.status = 'ACTIVE'
+                existing.status = UserOrgStatus.ACTIVE
                 existing.position = position
                 existing.is_primary = is_primary
         else:
@@ -333,13 +333,13 @@ class UserService:
         user_org = UserOrganization.query.filter_by(
             user_id=user_id,
             organization_id=organization_id,
-            status='ACTIVE'
+            status=UserOrgStatus.ACTIVE
         ).first()
         
         if not user_org:
             raise ValueError("用户不在该组织中")
         
-        user_org.status = 'INACTIVE'
+        user_org.status = UserOrgStatus.INACTIVE
         db.session.commit()
         return True
     

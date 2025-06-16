@@ -8,8 +8,8 @@ from app.db import db
 
 
 class UserOrgStatus(enum.Enum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
 
 
 class UserOrganization(db.Model):
@@ -21,7 +21,7 @@ class UserOrganization(db.Model):
     is_primary = Column(Boolean, default=False, index=True)  # 是否主组织
     position = Column(String(100))  # 职位
     joined_at = Column(DateTime, default=datetime.utcnow)
-    status = Column(SQLEnum(UserOrgStatus), default=UserOrgStatus.ACTIVE)
+    status = Column(SQLEnum(UserOrgStatus, native_enum=True), default=UserOrgStatus.ACTIVE)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

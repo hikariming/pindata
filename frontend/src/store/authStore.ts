@@ -266,7 +266,8 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: storedUser,
             isAuthenticated: true,
-            permissions: storedUser.permissions || []
+            permissions: storedUser.permissions || [],
+            sessionId: localStorage.getItem('session_id')
           });
 
           try {
@@ -275,27 +276,44 @@ export const useAuthStore = create<AuthState>()(
           } catch (error) {
             console.warn('Failed to refresh user info on initialize:', error);
             // 如果失败，尝试刷新令牌
-            const refreshSuccess = await get().refreshToken();
-            if (refreshSuccess) {
-              try {
-                await get().getCurrentUser();
-              } catch (refreshError) {
-                console.error('Failed to get user info after token refresh:', refreshError);
+            try {
+              const refreshSuccess = await get().refreshToken();
+              if (refreshSuccess) {
+                try {
+                  await get().getCurrentUser();
+                } catch (refreshError) {
+                  console.error('Failed to get user info after token refresh:', refreshError);
+                  get().clear();
+                }
+              } else {
                 get().clear();
               }
+            } catch (refreshError) {
+              console.error('Token refresh failed during initialize:', refreshError);
+              get().clear();
             }
           }
         } else if (refreshToken) {
           // 只有refresh token，尝试获取新的access token
-          const refreshSuccess = await get().refreshToken();
-          if (refreshSuccess) {
-            try {
-              await get().getCurrentUser();
-            } catch (error) {
-              console.error('Failed to get user info after token refresh:', error);
+          try {
+            const refreshSuccess = await get().refreshToken();
+            if (refreshSuccess) {
+              try {
+                await get().getCurrentUser();
+              } catch (error) {
+                console.error('Failed to get user info after token refresh:', error);
+                get().clear();
+              }
+            } else {
               get().clear();
             }
+          } catch (error) {
+            console.error('Token refresh failed during initialize:', error);
+            get().clear();
           }
+        } else {
+          // 没有任何令牌，清理状态
+          get().clear();
         }
       },
 
@@ -333,6 +351,7 @@ export const useAuthStore = create<AuthState>()(
 
 // 自动刷新令牌的定时器
 let tokenRefreshTimer: NodeJS.Timeout | null = null;
+let tokenCheckTimer: NodeJS.Timeout | null = null;
 
 // 设置令牌自动刷新
 export const setupTokenRefresh = () => {
@@ -340,14 +359,35 @@ export const setupTokenRefresh = () => {
   if (tokenRefreshTimer) {
     clearInterval(tokenRefreshTimer);
   }
+  if (tokenCheckTimer) {
+    clearInterval(tokenCheckTimer);
+  }
 
-  // 每5分钟检查一次令牌状态
+  // 每30秒检查一次令牌状态
+  tokenCheckTimer = setInterval(async () => {
+    const { isAuthenticated } = useAuthStore.getState();
+    if (isAuthenticated) {
+      const expiresAt = localStorage.getItem('token_expires_at');
+      if (expiresAt) {
+        const expiresTime = new Date(expiresAt).getTime();
+        const now = Date.now();
+        const timeUntilExpiry = expiresTime - now;
+
+        // 如果 token 将在5分钟内过期，立即刷新
+        if (timeUntilExpiry < 5 * 60 * 1000) {
+          await useAuthStore.getState().refreshToken();
+        }
+      }
+    }
+  }, 30 * 1000); // 30秒
+
+  // 每4分钟强制刷新一次令牌（作为备份机制）
   tokenRefreshTimer = setInterval(async () => {
     const { isAuthenticated } = useAuthStore.getState();
     if (isAuthenticated) {
       await useAuthStore.getState().refreshToken();
     }
-  }, 5 * 60 * 1000); // 5分钟
+  }, 4 * 60 * 1000); // 4分钟
 };
 
 // 清理定时器
@@ -355,5 +395,9 @@ export const clearTokenRefresh = () => {
   if (tokenRefreshTimer) {
     clearInterval(tokenRefreshTimer);
     tokenRefreshTimer = null;
+  }
+  if (tokenCheckTimer) {
+    clearInterval(tokenCheckTimer);
+    tokenCheckTimer = null;
   }
 };
