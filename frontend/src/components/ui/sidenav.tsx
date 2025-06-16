@@ -160,7 +160,7 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
             <h2 className={`font-medium text-base text-[#0c141c] leading-6 transition-opacity duration-300 ${
               isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}>
-              {t('appName')}
+              {t('common.appName')}
             </h2>
           </div>
 
