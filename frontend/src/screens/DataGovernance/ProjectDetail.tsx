@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useProject } from '../../hooks/useDataGovernance';
 import {
   ArrowLeftIcon,
   SettingsIcon,
@@ -60,222 +61,15 @@ import {
   FileMetadata
 } from './types';
 
-// Mock data for project detail with enhanced structure
-const mockProject: DataGovernanceProject = {
-  id: '1',
-  name: '客户数据统一治理',
-  description: '整合来自多个业务系统的客户数据，建立统一的客户画像，提升数据质量和一致性，为业务决策提供可靠的数据基础。',
-  status: 'active',
-  owner_id: '1',
-  organization_id: '1',
-  createdAt: '2024-01-15',
-  updatedAt: '2024-06-10',
-  owner: {
-    id: '1',
-    user_id: '1',
-    username: 'zhangsan',
-    fullName: '张三',
-    email: 'zhangsan@company.com',
-    role: 'owner',
-    status: 'active',
-    joinedAt: '2024-01-15',
-  },
-  team: [
-    { id: '1', user_id: '1', username: 'zhangsan', fullName: '张三', email: 'zhangsan@company.com', role: 'owner', status: 'active', joinedAt: '2024-01-15' },
-    { id: '2', user_id: '2', username: 'lisi', fullName: '李四', email: 'lisi@company.com', role: 'admin', status: 'active', joinedAt: '2024-01-16' },
-    { id: '3', user_id: '3', username: 'wangwu', fullName: '王五', email: 'wangwu@company.com', role: 'editor', status: 'active', joinedAt: '2024-01-20' },
-    { id: '4', user_id: '4', username: 'zhaoliu', fullName: '赵六', email: 'zhaoliu@company.com', role: 'viewer', status: 'active', joinedAt: '2024-02-01' },
-  ],
-  metrics: {
-    totalDataSize: 2.5e9, // 2.5GB
-    processedFiles: 1250,
-    totalFiles: 1500,
-    dataQualityScore: 85,
-    lastProcessedAt: '2024-06-10T10:30:00Z',
-    processingProgress: 83,
-  },
-  pipeline: [
-    {
-      id: 'stage-1',
-      project_id: '1',
-      name: '数据提取',
-      type: 'extract',
-      stage_order: 1,
-      status: 'completed',
-      depends_on: [],
-      parallel_execution: false,
-      config: {},
-      inputCount: 1500,
-      outputCount: 1450,
-      error_count: 50,
-      processingTime: 120,
-      max_retries: 3,
-      retry_count: 0,
-      retry_delay: 60,
-      created_at: '2024-01-15T08:00:00Z',
-      updated_at: '2024-01-15T08:02:00Z',
-      started_at: '2024-01-15T08:00:00Z',
-      completed_at: '2024-01-15T08:02:00Z',
-    },
-    {
-      id: 'stage-2',
-      project_id: '1',
-      name: '数据清洗',
-      type: 'clean',
-      stage_order: 2,
-      status: 'running',
-      depends_on: ['stage-1'],
-      parallel_execution: false,
-      config: {},
-      inputCount: 1450,
-      outputCount: 1250,
-      error_count: 0,
-      processingTime: 180,
-      max_retries: 3,
-      retry_count: 0,
-      retry_delay: 60,
-      created_at: '2024-01-15T08:02:00Z',
-      updated_at: '2024-01-15T08:05:00Z',
-      started_at: '2024-01-15T08:02:00Z',
-    },
-  ],
-  dataSource: [
-    {
-      id: '1',
-      project_id: '1',
-      name: 'CRM数据库',
-      description: '客户关系管理系统数据库',
-      type: 'database',
-      config: { host: 'crm.company.com', database: 'customers' },
-      status: 'connected',
-      lastSyncAt: '2024-06-10T08:00:00Z',
-      sync_frequency: 'daily',
-      auto_sync_enabled: true,
-      file_count: 800,
-      total_size: 1.2e9,
-      created_at: '2024-01-15T00:00:00Z',
-      updated_at: '2024-06-10T08:00:00Z',
-    },
-    {
-      id: '2',
-      project_id: '1',
-      name: '营销文档',
-      description: '营销部门上传的客户资料文档',
-      type: 'upload',
-      config: { path: '/uploads/marketing' },
-      status: 'connected',
-      sync_frequency: 'manual',
-      auto_sync_enabled: false,
-      file_count: 700,
-      total_size: 1.3e9,
-      created_at: '2024-01-15T00:00:00Z',
-      updated_at: '2024-06-09T15:00:00Z',
-    },
-  ],
-  governedData: [
-    {
-      id: 'gov-1',
-      project_id: '1',
-      raw_data_id: 1,
-      name: '客户主数据',
-      description: '经过清洗和标准化的客户基础信息',
-      data_type: 'structured',
-      governance_status: 'completed',
-      file_size: 800000000,
-      quality_score: 95,
-      tags: ['客户', '主数据', '已验证'],
-      category: '核心数据',
-      business_domain: '客户管理',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-06-10T10:30:00Z',
-      processed_at: '2024-06-10T10:30:00Z',
-    },
-    {
-      id: 'gov-2',
-      project_id: '1',
-      raw_data_id: 2,
-      name: '交易流水数据',
-      description: '客户交易记录的标准化数据',
-      data_type: 'structured',
-      governance_status: 'processing',
-      file_size: 1200000000,
-      quality_score: 88,
-      tags: ['交易', '流水', '处理中'],
-      category: '交易数据',
-      business_domain: '业务分析',
-      created_at: '2024-01-16T10:00:00Z',
-      updated_at: '2024-06-10T11:00:00Z',
-    },
-  ],
-  knowledgeItems: [
-    {
-      id: 'knowledge-1',
-      project_id: '1',
-      governed_data_id: 'gov-1',
-      title: '客户数据字典',
-      description: '客户相关数据字段的定义和说明',
-      content: '包含客户ID、姓名、联系方式等字段的详细定义',
-      knowledge_type: 'metadata',
-      status: 'published',
-      category: '数据字典',
-      tags: ['客户', '字典', '元数据'],
-      version: '1.0',
-      visibility: 'team',
-      view_count: 125,
-      like_count: 15,
-      share_count: 8,
-      similarity_threshold: 0.8,
-      created_at: '2024-01-20T00:00:00Z',
-      updated_at: '2024-06-05T00:00:00Z',
-      published_at: '2024-01-20T00:00:00Z',
-    },
-  ],
-  qualityAssessments: [
-    {
-      id: 'qa-1',
-      project_id: '1',
-      governed_data_id: 'gov-1',
-      assessment_name: '客户数据完整性评估',
-      quality_dimension: 'completeness',
-      assessment_method: 'ai_powered',
-      status: 'completed',
-      overall_score: 95,
-      dimension_scores: {
-        completeness: 95,
-        accuracy: 92,
-        consistency: 89,
-      },
-      total_records: 100000,
-      processed_records: 100000,
-      error_records: 5000,
-      llm_model_used: 'gpt-4',
-      confidence_score: 0.92,
-      version: '1.0',
-      created_at: '2024-06-05T00:00:00Z',
-      completed_at: '2024-06-05T01:30:00Z',
-    },
-  ],
-};
 
 export const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('raw-data');
-  const [project, setProject] = useState<DataGovernanceProject>(mockProject);
-  const [loading, setLoading] = useState(false);
-  const [dataFlow, setDataFlow] = useState<DataFlow>({
-    rawDataCount: 1500,
-    governedDataCount: 1250,
-    knowledgeItemCount: 125,
-    qualityScore: 85,
-    processingProgress: 83,
-  });
-  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus[]>([
-    { stage: '数据提取', progress: 100, status: 'completed', startTime: '2024-06-10T08:00:00Z', endTime: '2024-06-10T08:02:00Z' },
-    { stage: '数据清洗', progress: 75, status: 'running', startTime: '2024-06-10T08:02:00Z' },
-    { stage: '数据验证', progress: 0, status: 'pending' },
-  ]);
+  
+  // Use the real API hook
+  const { project, loading, error, refetch } = useProject(id || '', !!id);
   const [rawDataList, setRawDataList] = useState<RawData[]>([]);
   const [rawDataStats, setRawDataStats] = useState<any>(null);
   const [selectedFileCategory, setSelectedFileCategory] = useState<FileCategory | 'all'>('all');
@@ -285,13 +79,6 @@ export const ProjectDetail: React.FC = () => {
   const [filePreview, setFilePreview] = useState<FilePreview | null>(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
 
-  useEffect(() => {
-    // 模拟数据加载
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, [id]);
 
   const formatDataSize = (bytes: number): string => {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -334,31 +121,45 @@ export const ProjectDetail: React.FC = () => {
   };
 
   const handleRunPipeline = async () => {
-    setLoading(true);
-    // 模拟API调用
-    setTimeout(() => {
-      setLoading(false);
-      // 更新处理状态
-      setProcessingStatus(prev => prev.map(stage => 
-        stage.stage === '数据验证' 
-          ? { ...stage, status: 'running', progress: 10, startTime: new Date().toISOString() }
-          : stage
-      ));
-    }, 2000);
+    // TODO: Implement pipeline run API call
+    console.log('Running pipeline for project:', id);
   };
 
   const handlePausePipeline = () => {
-    // 暂停管道处理
-    console.log('Pausing pipeline...');
+    // TODO: Implement pipeline pause API call
+    console.log('Pausing pipeline for project:', id);
   };
 
   const handleRefreshData = () => {
-    // 刷新数据
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    refetch();
   };
+
+  // Handle loading and error states
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <LoaderIcon className="animate-spin" size={24} />
+          <span className="text-lg">加载中...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircleIcon className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">加载失败</h3>
+          <p className="text-gray-600 mb-4">{error || '项目不存在'}</p>
+          <Button onClick={() => navigate('/governance')}>
+            返回项目列表
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const statusConfig = getStatusBadge(project.status);
 
@@ -489,17 +290,6 @@ export const ProjectDetail: React.FC = () => {
     return true;
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <LoaderIcon className="animate-spin" size={24} />
-          <span className="text-lg">加载中...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto p-6">
@@ -562,30 +352,32 @@ export const ProjectDetail: React.FC = () => {
           </div>
 
           {/* 实时处理状态 */}
-          <Card className="p-4 mb-6 bg-white/80 backdrop-blur-sm">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">处理进度</h3>
-            <div className="grid grid-cols-3 gap-4">
-              {processingStatus.map((stage, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    {getStatusBadge(stage.status)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{stage.stage}</span>
-                      <span>{stage.progress}%</span>
+          {project.pipeline && project.pipeline.length > 0 && (
+            <Card className="p-4 mb-6 bg-white/80 backdrop-blur-sm">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">处理进度</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {project.pipeline.map((stage, index) => (
+                  <div key={stage.id} className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      {getStatusBadge(stage.status)}
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${stage.progress}%` }}
-                      />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{stage.name}</span>
+                        <span>{Math.round((stage.outputCount || 0) / (stage.inputCount || 1) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.round((stage.outputCount || 0) / (stage.inputCount || 1) * 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* 项目指标总览 */}
@@ -595,9 +387,9 @@ export const ProjectDetail: React.FC = () => {
               <span className="text-blue-100 text-xs">数据总量</span>
               <DatabaseIcon size={14} className="text-blue-200" />
             </div>
-            <p className="text-lg font-bold">{formatDataSize(project.metrics.totalDataSize)}</p>
+            <p className="text-lg font-bold">{formatDataSize(project.metrics?.totalDataSize || 0)}</p>
             <p className="text-blue-100 text-xs">
-              {project.metrics.processedFiles}/{project.metrics.totalFiles} 文件
+              {project.metrics?.processedFiles || 0}/{project.metrics?.totalFiles || 0} 文件
             </p>
           </Card>
 
@@ -606,7 +398,7 @@ export const ProjectDetail: React.FC = () => {
               <span className="text-green-100 text-xs">数据质量</span>
               <BarChart3Icon size={14} className="text-green-200" />
             </div>
-            <p className="text-lg font-bold">{project.metrics.dataQualityScore}%</p>
+            <p className="text-lg font-bold">{project.metrics?.dataQualityScore || 0}%</p>
             <p className="text-green-100 text-xs">质量评分</p>
           </Card>
 
@@ -615,7 +407,7 @@ export const ProjectDetail: React.FC = () => {
               <span className="text-purple-100 text-xs">处理进度</span>
               <TrendingUpIcon size={14} className="text-purple-200" />
             </div>
-            <p className="text-lg font-bold">{project.metrics.processingProgress}%</p>
+            <p className="text-lg font-bold">{project.metrics?.processingProgress || 0}%</p>
             <p className="text-purple-100 text-xs">已完成</p>
           </Card>
 
@@ -624,7 +416,7 @@ export const ProjectDetail: React.FC = () => {
               <span className="text-orange-100 text-xs">团队规模</span>
               <UsersIcon size={14} className="text-orange-200" />
             </div>
-            <p className="text-lg font-bold">{project.team.length}</p>
+            <p className="text-lg font-bold">{project.team?.length || 0}</p>
             <p className="text-orange-100 text-xs">成员</p>
           </Card>
 
@@ -633,7 +425,7 @@ export const ProjectDetail: React.FC = () => {
               <span className="text-teal-100 text-xs">数据源</span>
               <GitBranchIcon size={14} className="text-teal-200" />
             </div>
-            <p className="text-lg font-bold">{project.dataSource.length}</p>
+            <p className="text-lg font-bold">{project.dataSource?.length || 0}</p>
             <p className="text-teal-100 text-xs">已连接</p>
           </Card>
 
@@ -643,10 +435,10 @@ export const ProjectDetail: React.FC = () => {
               <CalendarIcon size={14} className="text-pink-200" />
             </div>
             <p className="text-base font-bold">
-              {formatDate(project.metrics.lastProcessedAt).split(' ')[0]}
+              {project.metrics?.lastProcessedAt ? formatDate(project.metrics.lastProcessedAt).split(' ')[0] : '--'}
             </p>
             <p className="text-pink-100 text-xs">
-              {formatDate(project.metrics.lastProcessedAt).split(' ')[1]}
+              {project.metrics?.lastProcessedAt ? formatDate(project.metrics.lastProcessedAt).split(' ')[1] : '--'}
             </p>
           </Card>
         </div>

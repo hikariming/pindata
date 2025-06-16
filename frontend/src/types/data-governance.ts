@@ -8,7 +8,7 @@ export interface DataGovernanceProjectMetrics {
 }
 
 export interface ProjectTeamMember {
-  id: number;
+  id: string;
   username: string;
   fullName: string;
   email: string;

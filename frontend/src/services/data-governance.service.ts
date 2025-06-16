@@ -48,7 +48,7 @@ class DataGovernanceService {
   async getProjects(params: ProjectsQuery = {}): Promise<ProjectsResponse> {
     const response = await apiClient.get(`${this.baseUrl}/projects`, { params });
     // 处理新的API响应格式: { success: true, message: "操作成功", data: { projects: [], total: 0, limit: 50, offset: 0 } }
-    const responseData = (response as any).data;
+    const responseData = response as any;
     if (responseData.success && responseData.data) {
       return {
         projects: responseData.data.projects || [],
@@ -58,56 +58,56 @@ class DataGovernanceService {
       };
     }
     // 兼容旧格式
-    return (response as any).data.data || { projects: [], total: 0, limit: 50, offset: 0 };
+    return responseData.data || { projects: [], total: 0, limit: 50, offset: 0 };
   }
 
-  async getProject(id: number): Promise<DataGovernanceProject> {
+  async getProject(id: string | number): Promise<DataGovernanceProject> {
     const response = await apiClient.get(`${this.baseUrl}/projects/${id}`);
-    const responseData = (response as any).data;
+    const responseData = response as any;
     // 新格式处理
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
     // 兼容旧格式
-    return (response as any).data.data;
+    return responseData.data;
   }
 
   async createProject(data: CreateProjectRequest): Promise<DataGovernanceProject> {
     const response = await apiClient.post(`${this.baseUrl}/projects`, data);
-    const responseData = (response as any).data;
+    const responseData = response as any;
     // 新格式处理
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
     // 兼容旧格式
-    return (response as any).data.data;
+    return responseData.data;
   }
 
-  async updateProject(id: number, data: UpdateProjectRequest): Promise<DataGovernanceProject> {
+  async updateProject(id: string | number, data: UpdateProjectRequest): Promise<DataGovernanceProject> {
     const response = await apiClient.put(`${this.baseUrl}/projects/${id}`, data);
-    const responseData = (response as any).data;
+    const responseData = response as any;
     // 新格式处理
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
     // 兼容旧格式
-    return (response as any).data.data;
+    return responseData.data;
   }
 
-  async deleteProject(id: number): Promise<void> {
+  async deleteProject(id: string | number): Promise<void> {
     await apiClient.delete(`${this.baseUrl}/projects/${id}`);
   }
 
   async getStats(organizationId?: number): Promise<ProjectStats> {
     const params = organizationId ? { organization_id: organizationId } : {};
     const response = await apiClient.get(`${this.baseUrl}/stats`, { params });
-    const responseData = (response as any).data;
+    const responseData = response as any;
     // 新格式处理
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
     // 兼容旧格式
-    return (response as any).data.data;
+    return responseData.data;
   }
 }
 

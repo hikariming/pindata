@@ -14,7 +14,7 @@ import { DatasetDetailScreen } from "./screens/Datasets/DatasetDetail";
 import { CreateDataset } from "./screens/Datasets/CreateDataset";
 import { SmartDatasetCreator } from "./screens/Datasets/SmartDatasetCreator";
 import { DatasetTasks } from "./screens/Datasets/DatasetTasks";
-import { DataGovernanceProjects, ProjectDetail } from "./screens/DataGovernance";
+import { DataGovernanceProjects, ProjectDetail, CreateProject } from "./screens/DataGovernance";
 import { Login, Register } from "./screens/Auth";
 import { AuthProvider, ProtectedRoute } from "./components/auth";
 
@@ -64,6 +64,7 @@ export const App = (): JSX.Element => {
           {/* 数据治理工程路由 */}
           <Route path="governance">
             <Route index element={<DataGovernanceProjects />} />
+            <Route path="create" element={<CreateProject />} />
             <Route path="projects" element={<DataGovernanceProjects />} />
             <Route path="projects/:id" element={<ProjectDetail />} />
             <Route path=":id" element={<ProjectDetail />} />

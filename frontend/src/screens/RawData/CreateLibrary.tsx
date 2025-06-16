@@ -275,7 +275,7 @@ export const CreateLibrary = ({ onBack, onSuccess }: CreateLibraryProps): JSX.El
             ) : (
               <>
                 <BrainIcon className="w-4 h-4 mr-2" />
-                {t('rawData.createLibrary')}
+                {t('rawData.createLibrary.create')}
               </>
             )}
           </Button>

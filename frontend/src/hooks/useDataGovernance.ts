@@ -69,7 +69,7 @@ export function useProject(id: number | string, enabled = true) {
     setError(null);
     
     try {
-      const projectData = await dataGovernanceService.getProject(Number(id));
+      const projectData = await dataGovernanceService.getProject(String(id));
       setProject(projectData);
     } catch (err: any) {
       setError(err.message || '获取项目详情失败');
@@ -125,7 +125,7 @@ export function useUpdateProject() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateProject = useCallback(async (id: number, data: UpdateProjectRequest): Promise<DataGovernanceProject | null> => {
+  const updateProject = useCallback(async (id: string | number, data: UpdateProjectRequest): Promise<DataGovernanceProject | null> => {
     setLoading(true);
     setError(null);
     
@@ -151,7 +151,7 @@ export function useDeleteProject() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteProject = useCallback(async (id: number): Promise<boolean> => {
+  const deleteProject = useCallback(async (id: string | number): Promise<boolean> => {
     setLoading(true);
     setError(null);
     

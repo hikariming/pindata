@@ -24,7 +24,6 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { Select } from '../../components/ui/select';
 import { DataGovernanceProject } from '../../types/data-governance';
 import { useProjects, useProjectStats } from '../../hooks/useDataGovernance';
 
@@ -53,6 +52,7 @@ export const DataGovernanceProjects: React.FC = () => {
     limit: 50,
     offset: 0
   });
+
 
   // Fetch project stats
   const { stats, loading: statsLoading, error: statsError } = useProjectStats();
@@ -104,7 +104,8 @@ export const DataGovernanceProjects: React.FC = () => {
     total,
     loading: projectsLoading,
     error: projectsError,
-    displayProjectsLength: displayProjects.length
+    displayProjectsLength: displayProjects.length,
+    firstProject: displayProjects[0]
   });
 
   return (
@@ -129,7 +130,7 @@ export const DataGovernanceProjects: React.FC = () => {
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg"
             >
               <PlusIcon size={16} className="mr-2" />
-              创建工程
+              创建项目
             </Button>
           </div>
 
@@ -208,24 +209,26 @@ export const DataGovernanceProjects: React.FC = () => {
                 className="pl-10"
               />
             </div>
-            <Select
+            <select
               value={statusFilter}
-              onValueChange={setStatusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">全部状态</option>
               <option value="active">进行中</option>
               <option value="draft">草稿</option>
               <option value="completed">已完成</option>
               <option value="archived">已归档</option>
-            </Select>
-            <Select
+            </select>
+            <select
               value={sortBy}
-              onValueChange={setSortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="updated">最近更新</option>
               <option value="created">创建时间</option>
               <option value="name">名称</option>
-            </Select>
+            </select>
           </div>
         </div>
 
@@ -263,7 +266,7 @@ export const DataGovernanceProjects: React.FC = () => {
             {displayProjects.map((project) => (
             <Card 
               key={project.id} 
-              className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm border border-gray-200/50"
+              className="group p-6 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 backdrop-blur-sm border border-gray-200/50"
               onClick={() => navigate(`/governance/projects/${project.id}`)}
             >
               <div className="flex items-start justify-between mb-4">
@@ -383,7 +386,7 @@ export const DataGovernanceProjects: React.FC = () => {
                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
               >
                 <PlusIcon size={16} className="mr-2" />
-                创建工程
+                创建项目
               </Button>
             )}
           </div>
