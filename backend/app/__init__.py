@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flasgger import Swagger
 import logging
+from sqlalchemy import text
 
 from app.db import db, init_database
 from app.api.v1 import api_v1
@@ -69,51 +70,48 @@ def create_app(config_name='development'):
     from app.api.v1.endpoints.tasks import tasks_bp
     app.register_blueprint(tasks_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
-    # 初始化数据库（包括自动创建数据库和表）
+    # 初始化数据库
+    from app.db import ensure_database_exists
+    from app.utils.db_utils import is_new_database, stamp_db_as_latest
+    from app.db_migrations import check_and_migrate
+
     try:
-        if init_database(app):
-            logger.info("数据库初始化成功")
-        else:
-            logger.error("数据库初始化失败，但应用将继续启动")
-    except Exception as e:
-        logger.error(f"数据库初始化异常: {e}")
-        # 作为备用方案，尝试传统的表创建方式
-        try:
-            with app.app_context():
-                db.create_all()
-                logger.info("使用备用方案创建数据库表成功")
-        except Exception as fallback_error:
-            logger.error(f"备用方案也失败: {fallback_error}")
-    
-    # 数据库健康检查和自动修复
-    try:
-        from app.utils.database_health import check_and_fix_database_on_startup
+        database_url = app.config['SQLALCHEMY_DATABASE_URI']
         
-        # 从配置中获取是否启用自动修复
-        auto_fix = app.config.get('AUTO_FIX_DATABASE', True)
-        
+        # 1. 确保数据库本身存在 (例如 postgresql 里的 database)
+        if not ensure_database_exists(database_url):
+            logger.warning("无法确认数据库存在，应用将继续尝试启动...")
+
         with app.app_context():
-            db_healthy = check_and_fix_database_on_startup(db.engine, auto_fix)
-            if not db_healthy:
-                logger.warning("数据库健康检查发现问题，请查看日志并考虑手动修复")
+            # 2. 判断是否为全新安装
+            if is_new_database(db.engine):
+                logger.info("检测到全新数据库，开始初始化...")
+                try:
+                    # 创建所有表
+                    db.create_all()
+                    logger.info("✅ 成功创建所有数据库表")
+                    
+                    # 将数据库标记为最新，避免执行旧迁移
+                    if stamp_db_as_latest(app):
+                        logger.info("✅ 成功将数据库标记为最新版本")
+                    else:
+                        logger.error("❌ 标记数据库为最新版本失败")
+
+                    logger.info("🎉 全新数据库初始化完成")
+
+                except Exception as e:
+                    logger.error(f"❌ 初始化全新数据库时发生错误: {e}", exc_info=True)
             else:
-                logger.info("数据库健康检查通过")
+                logger.info("检测到现有数据库，开始检查迁移...")
+                # 3. 对现有数据库执行迁移检查
+                try:
+                    auto_migrate = app.config.get('AUTO_MIGRATE', True)
+                    if not check_and_migrate(database_url, auto_migrate):
+                        logger.warning("数据库迁移未完全成功，但应用将继续启动")
+                except Exception as e:
+                    logger.error(f"数据库迁移检查失败: {e}", exc_info=True)
+
     except Exception as e:
-        logger.error(f"数据库健康检查失败: {e}")
-    
-    # 数据库迁移检查和自动执行
-    try:
-        from app.db_migrations import check_and_migrate
-        
-        # 从配置中获取是否启用自动迁移
-        auto_migrate = app.config.get('AUTO_MIGRATE', True)
-        database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
-        
-        with app.app_context():
-            migration_success = check_and_migrate(database_url, auto_migrate)
-            if not migration_success and auto_migrate:
-                logger.warning("数据库迁移未完全成功，但应用将继续启动")
-    except Exception as e:
-        logger.error(f"数据库迁移检查失败: {e}")
-    
+        logger.error(f"数据库设置过程中发生严重错误: {e}", exc_info=True)
+
     return app 

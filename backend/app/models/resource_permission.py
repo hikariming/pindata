@@ -66,5 +66,5 @@ class ResourcePermission(db.Model):
     # 索引和约束
     __table_args__ = (
         UniqueConstraint('user_id', 'resource_type', 'resource_id', name='uk_user_resource'),
-        db.Index('idx_resource', 'resource_type', 'resource_id'),
+        db.Index('resource_permissions_idx_resource', 'resource_type', 'resource_id'),
     )

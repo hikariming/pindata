@@ -65,5 +65,5 @@ class AuditLog(db.Model):
     
     # 索引
     __table_args__ = (
-        db.Index('idx_resource', 'resource_type', 'resource_id'),
+        db.Index('audit_logs_idx_resource', 'resource_type', 'resource_id'),
     )
