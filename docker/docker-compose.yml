@@ -222,7 +222,7 @@ services:
     restart: unless-stopped
     networks:
       - pindata_network
-    command: ["sh", "./start_celery_threads.sh"]
+    command: ["celery", "-A", "celery_worker.celery", "worker", "--loglevel=info", "--pool=threads", "--concurrency=4", "-n", "worker@%h"]
 
   # PinData Frontend 服务
   pindata-frontend:
