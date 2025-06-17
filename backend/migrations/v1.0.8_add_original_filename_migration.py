@@ -1,133 +1,76 @@
+#!/usr/bin/env python3
 """
-Migration: Add original_filename column to raw_data table
-Version: v1.0.8
-Date: 2025-06-15
+v1.0.8 为raw_data表添加original_filename字段
+
+这个迁移为raw_data表添加original_filename字段，
+用于存储文件的原始文件名。
 """
 
-import psycopg2
-import os
-import sys
+from sqlalchemy import text
+from datetime import datetime
 
-# Add the parent directory to the path to import config
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.config import Config
+MIGRATION_VERSION = "v1.0.8"
+MIGRATION_DESCRIPTION = "为raw_data表添加original_filename字段"
+MIGRATION_AUTHOR = "系统"
+MIGRATION_DATE = datetime.now().isoformat()
 
-def migrate_up():
-    """Add original_filename column to raw_data table"""
+def up(conn):
+    """添加original_filename字段"""
+    print(f"执行迁移: {MIGRATION_DESCRIPTION}")
     
-    # Parse database URL
-    db_url = Config.SQLALCHEMY_DATABASE_URI
+    # 检查字段是否已存在
+    result = conn.execute(text("""
+        SELECT COUNT(*) 
+        FROM information_schema.columns 
+        WHERE table_name = 'raw_data' 
+        AND column_name = 'original_filename'
+    """))
     
-    # Extract connection parameters from URL
-    if db_url.startswith('postgresql://'):
-        db_url = db_url.replace('postgresql://', '')
-        
-    # Split user:password@host:port/database
-    auth_host, database = db_url.split('/')
-    user_pass, host_port = auth_host.split('@')
-    user, password = user_pass.split(':')
-    host, port = host_port.split(':') if ':' in host_port else (host_port, '5432')
+    column_exists = result.fetchone()[0] > 0
     
-    # Connect to database
-    conn = psycopg2.connect(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=password
-    )
-    
-    cur = conn.cursor()
-    
-    try:
-        # Check if column already exists
-        cur.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='raw_data' AND column_name='original_filename'
-        """)
-        
-        if not cur.fetchone():
-            # Add original_filename column
-            print("Adding original_filename column to raw_data table...")
-            cur.execute("""
-                ALTER TABLE raw_data 
-                ADD COLUMN original_filename VARCHAR(255)
-            """)
-            print("Successfully added original_filename column")
-        else:
-            print("original_filename column already exists")
-        
-        conn.commit()
-        
-    except Exception as e:
-        conn.rollback()
-        print(f"Error during migration: {e}")
-        raise
-    finally:
-        cur.close()
-        conn.close()
-
-def migrate_down():
-    """Remove original_filename column from raw_data table"""
-    
-    # Parse database URL
-    db_url = Config.SQLALCHEMY_DATABASE_URI
-    
-    # Extract connection parameters from URL
-    if db_url.startswith('postgresql://'):
-        db_url = db_url.replace('postgresql://', '')
-        
-    # Split user:password@host:port/database
-    auth_host, database = db_url.split('/')
-    user_pass, host_port = auth_host.split('@')
-    user, password = user_pass.split(':')
-    host, port = host_port.split(':') if ':' in host_port else (host_port, '5432')
-    
-    # Connect to database
-    conn = psycopg2.connect(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=password
-    )
-    
-    cur = conn.cursor()
-    
-    try:
-        # Check if column exists
-        cur.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='raw_data' AND column_name='original_filename'
-        """)
-        
-        if cur.fetchone():
-            # Remove original_filename column
-            print("Removing original_filename column from raw_data table...")
-            cur.execute("""
-                ALTER TABLE raw_data 
-                DROP COLUMN original_filename
-            """)
-            print("Successfully removed original_filename column")
-        else:
-            print("original_filename column doesn't exist")
-        
-        conn.commit()
-        
-    except Exception as e:
-        conn.rollback()
-        print(f"Error during rollback: {e}")
-        raise
-    finally:
-        cur.close()
-        conn.close()
-
-if __name__ == "__main__":
-    import sys
-    
-    if len(sys.argv) > 1 and sys.argv[1] == 'down':
-        migrate_down()
+    if not column_exists:
+        print("为raw_data表添加original_filename字段...")
+        conn.execute(text("""
+            ALTER TABLE raw_data 
+            ADD COLUMN original_filename VARCHAR(255)
+        """))
+        print("✅ original_filename字段添加成功")
     else:
-        migrate_up()
+        print("ℹ️  original_filename字段已存在，跳过添加")
+    
+    print("✅ 迁移执行完成")
+
+def down(conn):
+    """移除original_filename字段"""
+    print(f"回滚迁移: {MIGRATION_DESCRIPTION}")
+    
+    # 检查字段是否存在
+    result = conn.execute(text("""
+        SELECT COUNT(*) 
+        FROM information_schema.columns 
+        WHERE table_name = 'raw_data' 
+        AND column_name = 'original_filename'
+    """))
+    
+    column_exists = result.fetchone()[0] > 0
+    
+    if column_exists:
+        print("从raw_data表移除original_filename字段...")
+        conn.execute(text("""
+            ALTER TABLE raw_data 
+            DROP COLUMN original_filename
+        """))
+        print("✅ original_filename字段移除成功")
+    else:
+        print("ℹ️  original_filename字段不存在，跳过移除")
+    
+    print("✅ 迁移回滚完成")
+
+def get_migration_info():
+    """获取迁移信息"""
+    return {
+        'version': MIGRATION_VERSION,
+        'description': MIGRATION_DESCRIPTION,
+        'author': MIGRATION_AUTHOR,
+        'date': MIGRATION_DATE
+    }

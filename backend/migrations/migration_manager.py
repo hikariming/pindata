@@ -78,6 +78,39 @@ class MigrationManager:
             print(f"获取当前版本失败: {e}")
             return None
     
+    def get_latest_available_version(self) -> Optional[str]:
+        """获取最新可用版本（按版本号大小，不是执行时间）"""
+        try:
+            with self.engine.connect() as conn:
+                result = conn.execute(text(f"""
+                    SELECT version FROM {self.migrations_table} 
+                    WHERE status = 'SUCCESS' 
+                """))
+                executed_versions = [row[0] for row in result.fetchall()]
+                
+                if not executed_versions:
+                    return None
+                
+                # 按版本号排序，获取最新版本
+                sorted_versions = sorted(executed_versions, key=self._parse_version, reverse=True)
+                return sorted_versions[0]
+                
+        except ProgrammingError:
+            return None
+        except Exception as e:
+            print(f"获取最新可用版本失败: {e}")
+            return None
+    
+    def _parse_version(self, version: str) -> tuple:
+        """解析版本号为可比较的元组"""
+        try:
+            # 移除'v'前缀并拆分为数字
+            version_parts = version.lstrip('v').split('.')
+            return tuple(int(part) for part in version_parts)
+        except:
+            # 如果解析失败，返回0，这样排序时会排在最前面
+            return (0, 0, 0)
+    
     def scan_migration_files(self) -> List[Dict[str, Any]]:
         """扫描迁移文件"""
         migrations = []
