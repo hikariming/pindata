@@ -1,17 +1,17 @@
 #!/bin/bash
 
-if [ "$(id -u)" -eq 0 ]; then
-  echo "❌ 请不要使用 sudo 或以 root 用户身份运行此脚本。"
-  echo "   Docker 登录凭证与您的普通用户绑定。"
-  echo "   请直接运行 ./build_and_push.sh"
-  exit 1
-fi
+# if [ "$(id -u)" -eq 0 ]; then
+#   echo "❌ 请不要使用 sudo 或以 root 用户身份运行此脚本。"
+#   echo "   Docker 登录凭证与您的普通用户绑定。"
+#   echo "   请直接运行 ./build_and_push.sh"
+#   exit 1
+# fi
 
 # 配置变量 - 请修改为你的Docker Hub用户名
 DOCKERHUB_USERNAME="rqlove"
 BACKEND_IMAGE_NAME="pindata-api"
 FRONTEND_IMAGE_NAME="pindata-frontend"
-VERSION="v0.0.6"  # 你可以修改版本号
+VERSION="v0.0.6.2"  # 你可以修改版本号
 
 echo "=== 开始构建和推送Docker镜像 ==="
 echo "Docker Hub用户名: $DOCKERHUB_USERNAME"

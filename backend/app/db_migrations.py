@@ -39,6 +39,10 @@ def check_and_migrate(database_url: str, auto_migrate: bool = True) -> bool:
         logger.info(f"待执行迁移数量: {len(pending_migrations)}")
         
         if not pending_migrations:
+            # 使用最新可用版本替代最后执行的版本
+            latest_version = manager.get_latest_available_version()
+            if latest_version:
+                logger.info(f"当前数据库版本: {latest_version}")
             logger.info("✅ 数据库已是最新版本")
             return True
         
@@ -150,7 +154,12 @@ def force_migrate_to_latest():
                 print(f"  - {migration['version']}: {migration['filename']}")
         
         if not pending_migrations:
-            print("✅ 数据库已是最新版本！")
+            # 显示真正的最新版本
+            latest_version = manager.get_latest_available_version()
+            if latest_version:
+                print(f"✅ 数据库已是最新版本！当前版本: {latest_version}")
+            else:
+                print("✅ 数据库已是最新版本！")
             return True
         
         # 执行迁移
@@ -158,7 +167,7 @@ def force_migrate_to_latest():
         success = manager.migrate()
         
         if success:
-            new_version = manager.get_current_schema_version()
+            new_version = manager.get_latest_available_version()
             print(f"✅ 迁移执行成功！新版本: {new_version}")
         else:
             print("❌ 迁移执行失败！")

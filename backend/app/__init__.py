@@ -85,6 +85,22 @@ def create_app(config_name='development'):
         except Exception as fallback_error:
             logger.error(f"备用方案也失败: {fallback_error}")
     
+    # 数据库健康检查和自动修复
+    try:
+        from app.utils.database_health import check_and_fix_database_on_startup
+        
+        # 从配置中获取是否启用自动修复
+        auto_fix = app.config.get('AUTO_FIX_DATABASE', True)
+        
+        with app.app_context():
+            db_healthy = check_and_fix_database_on_startup(db.engine, auto_fix)
+            if not db_healthy:
+                logger.warning("数据库健康检查发现问题，请查看日志并考虑手动修复")
+            else:
+                logger.info("数据库健康检查通过")
+    except Exception as e:
+        logger.error(f"数据库健康检查失败: {e}")
+    
     # 数据库迁移检查和自动执行
     try:
         from app.db_migrations import check_and_migrate
