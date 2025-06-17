@@ -8,6 +8,7 @@
 # fi
 
 # 配置变量 - 请修改为你的Docker Hub用户名
+# win下 需要先 dos2unix build_and_push.sh
 DOCKERHUB_USERNAME="rqlove"
 BACKEND_IMAGE_NAME="pindata-api"
 FRONTEND_IMAGE_NAME="pindata-frontend"
