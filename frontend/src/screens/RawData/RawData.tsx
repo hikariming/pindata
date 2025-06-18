@@ -567,30 +567,6 @@ export const RawData = (): JSX.Element => {
             </div>
           </div>
         </Card>
-        
-        {/* 文件分类统计 */}
-        <Card className="border-[#d1dbe8] bg-white p-4 col-span-full">
-          <div className="mb-3">
-            <h3 className="text-sm font-medium text-[#0c141c] mb-2">数据源类型分布</h3>
-            <div className="grid grid-cols-5 gap-3">
-              {['document', 'image', 'video', 'database', 'api'].map(category => (
-                <div key={category} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
-                  {getCategoryIcon(category)}
-                  <div>
-                    <div className="text-xs text-gray-600">{getCategoryLabel(category)}</div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {libraries.filter(lib => 
-                        // 这里需要根据实际的库分类逻辑来过滤
-                        // 暂时显示为0，实际应该从后端API获取分类统计
-                        false
-                      ).length}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* 数据库列表 */}
