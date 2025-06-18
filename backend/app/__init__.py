@@ -119,7 +119,6 @@ def create_app(config_name='default'):
     except Exception as e:
         logger.error(f"数据库设置过程中发生严重错误: {e}", exc_info=True)
 
-    # Update Celery config
-    celery.conf.update(app.config)
+    # Celery配置已在celery_app.py中完成，无需重复配置
 
     return app 

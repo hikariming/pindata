@@ -3,24 +3,32 @@ from config.config import Config
 
 def make_celery(app_name=__name__):
     """创建并配置Celery实例"""
-    celery = Celery(
-        app_name,
-        backend=Config.CELERY_RESULT_BACKEND,
-        broker=Config.CELERY_BROKER_URL
-    )
+    celery = Celery(app_name)
     
-    # 配置Celery
+    # 使用新的配置格式
     celery.conf.update(
-        task_serializer='json',
-        accept_content=['json'],
-        result_serializer='json',
-        timezone='UTC',
-        enable_utc=True,
+        # Broker 和 Backend 配置
+        broker_url=Config.CELERY_BROKER_URL,
+        result_backend=Config.CELERY_RESULT_BACKEND,
+        
+        # 序列化配置
+        task_serializer=getattr(Config, 'CELERY_TASK_SERIALIZER', 'json'),
+        accept_content=getattr(Config, 'CELERY_ACCEPT_CONTENT', ['json']),
+        result_serializer=getattr(Config, 'CELERY_RESULT_SERIALIZER', 'json'),
+        
+        # 时区配置
+        timezone=getattr(Config, 'CELERY_TIMEZONE', 'UTC'),
+        enable_utc=getattr(Config, 'CELERY_ENABLE_UTC', True),
+        
+        # 任务配置
         task_track_started=True,
         task_time_limit=30 * 60,  # 30分钟超时
         task_soft_time_limit=25 * 60,  # 25分钟软超时
+        
+        # Worker 配置
         worker_prefetch_multiplier=1,
         worker_max_tasks_per_child=1000,
+        
         # 自动发现任务
         include=[
             'app.tasks.conversion_tasks',

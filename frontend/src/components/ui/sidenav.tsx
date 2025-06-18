@@ -133,12 +133,12 @@ export const Sidenav = ({ onCollapsedChange }: SidenavProps): JSX.Element => {
       page: 'plugins',
       path: '/plugins',
     },
-    // {
-    //   icon: <ShieldCheckIcon size={24} />,
-    //   label: t('navigation.governance'),
-    //   page: 'governance',
-    //   path: '/governance',
-    // },
+    {
+      icon: <ShieldCheckIcon size={24} />,
+      label: t('navigation.governance'),
+      page: 'governance',
+      path: '/governance',
+    },
     {
       icon: <SettingsIcon size={24} />,
       label: t('navigation.settings'),
