@@ -4,6 +4,10 @@ from functools import wraps
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
 from app.utils.response import success_response, error_response
+from app.models import User
+from app.models.role import Role
+from app.models.user_role import UserRole
+from app.db import db
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -99,15 +103,20 @@ def register():
                 return error_response(f"{field}不能为空"), 400
         
         # 检查是否是第一个用户
-        from app.models import User
         user_count = User.query.count()
         is_first_user = user_count == 0
         
         # 创建用户
         user = UserService.create_user(data)
         
-        # 如果是第一个用户，自动登录
+        # 如果是第一个用户，自动登录并分配管理员角色
         if is_first_user:
+            admin_role = Role.query.filter_by(code='admin').first()
+            if admin_role:
+                user_role = UserRole(user_id=user['id'], role_id=admin_role.id)
+                db.session.add(user_role)
+                db.session.commit()
+
             # 自动登录第一个用户
             auth_user = AuthService.authenticate(data['username'], data['password'])
             if auth_user:
@@ -243,7 +252,6 @@ def change_password():
             return error_response("旧密码和新密码不能为空"), 400
         
         # 验证旧密码
-        from app.models import User
         from werkzeug.security import check_password_hash
         
         user = User.query.get(g.user_id)

@@ -19,6 +19,29 @@
     "refresh": "刷新",
     "autoRefreshStatus": "每10秒自动刷新中"
   },
+  "filters": {
+    "searchPlaceholder": "搜索任务名称、库或数据集...",
+    "allStatuses": "所有状态",
+    "allTypes": "所有类型",
+    "typeLabels": {
+      "fileConversion": "文件转换",
+      "datasetGeneration": "数据集生成",
+      "dataDistillation": "数据蒸馏",
+      "batchProcessing": "批量处理",
+      "modelTraining": "模型训练",
+      "dataPreprocessing": "数据预处理"
+    }
+  },
+  "table": {
+    "taskInfo": "任务信息",
+    "type": "类型",
+    "status": "状态",
+    "progress": "进度",
+    "priority": "优先级",
+    "duration": "持续时间",
+    "creator": "创建者",
+    "actions": "操作"
+  },
   "status": {
     "pending": "等待中",
     "running": "运行中",
@@ -26,5 +49,68 @@
     "failed": "失败",
     "cancelled": "已取消",
     "unknown": "未知"
+  },
+  "priority": {
+    "low": "低",
+    "medium": "中",
+    "high": "高",
+    "urgent": "紧急"
+  },
+  "duration": {
+    "minutes": "{{count}} 分钟",
+    "hoursMinutes": "{{hours}} 小时 {{minutes}} 分钟"
+  },
+  "progress": {
+    "processed": "已处理",
+    "processing": "处理中",
+    "currentItem": "当前: {{item}}",
+    "estimatedRemaining": "预计剩余: {{time}}",
+    "errors": "错误: {{count}}",
+    "warnings": "警告: {{count}}",
+    "aiProcessing": "AI 处理中..."
+  },
+  "operations": {
+    "viewDetails": "查看详情",
+    "pauseTask": "暂停任务",
+    "resumeTask": "恢复任务",
+    "retryTask": "重试任务",
+    "cancelTask": "取消任务",
+    "deleteTask": "删除任务",
+    "downloadResult": "下载结果"
+  },
+  "messages": {
+    "noTasks": "暂无任务",
+    "noMatchingTasks": "未找到匹配的任务",
+    "loading": "正在加载任务数据...",
+    "deletionSuccess": "成功删除 {{count}} 个任务{{failed}}",
+    "cancellationSuccess": "成功取消 {{count}} 个任务{{failed}}",
+    "operationSuccess": "{{operation}} 任务成功",
+    "operationFailed": "{{operation}} 任务失败"
+  },
+  "pagination": {
+    "showing": "显示 {{start}} - {{end}} / {{total}} 条",
+    "previous": "上一页",
+    "next": "下一页",
+    "page": "第 {{current}} / {{total}} 页"
+  },
+  "details": {
+    "title": "任务详情",
+    "basicInfo": "基本信息",
+    "progressInfo": "进度信息",
+    "taskLogs": "任务日志",
+    "taskName": "任务名称",
+    "taskType": "任务类型",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "creator": "创建者",
+    "priority": "优先级",
+    "overallProgress": "总体进度",
+    "processedItems": "已处理项",
+    "totalItems": "总项目",
+    "errorCount": "错误数",
+    "warningCount": "警告数",
+    "realTimeUpdate": "实时更新中",
+    "taskExecuting": "任务执行中,日志将自动更新...",
+    "close": "关闭"
   }
 }

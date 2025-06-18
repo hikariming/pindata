@@ -30,7 +30,62 @@
     "title": "创建数据集",
     "description": "数据集描述",
     "backToList": "返回数据集列表",
+    "subtitle": "选择数据集的创建方式，并录入相关信息。",
+    "creationFailed": "创建失败",
+    "selectMethod": "选择创建方式",
+    "createEmpty": "创建空数据集",
+    "createEmptyDesc": "创建一个新的空数据集目录，后续可以上传和管理数据文件。",
+    "importHuggingface": "从 Hugging Face 导入",
+    "importHuggingfaceDesc": "从 Hugging Face Hub 导入现有的数据集，支持 URL 或数据集路径。",
+    "importModelscope": "从 ModelScope 导入",
+    "importModelscopeDesc": "从魔搭社区导入面向中文优化的数据集，专注于中文AI应用场景。",
+    "importInfo": "导入信息",
+    "datasetUrl": "数据集URL或路径",
+    "required": "必填",
+    "urlPlaceholder": "例如: squad 或 https://huggingface.co/datasets/squad",
+    "modelscopeUrlPlaceholder": "例如: open-r1/Mixture-of-Thoughts 或完整URL",
+    "urlHint": "支持数据集名称 (例如 open-r1/Mixture-of-Thoughts) 或完整URL",
+    "modelscopeUrlHint": "支持路径格式 (例如 open-r1/Mixture-of-Thoughts) 或完整URL，系统将自动获取数据集信息",
+    "visitHuggingface": "访问 Hugging Face",
+    "visitModelscope": "访问魔搭社区",
+    "basicInfo": "基本信息",
+    "datasetName": "数据集名称",
+    "datasetNamePlaceholder": "输入数据集名称...",
+    "owner": "所有者",
+    "ownerPlaceholder": "输入所有者名称或组织名称...",
+    "ownerHint": "所有者和数据集名称的组合必须唯一",
+    "license": "许可证",
+    "taskType": "任务类型",
+    "tags": "标签",
+    "tagsPlaceholder": "使用逗号分隔标签, 例如 nlp, japanese, qa...",
+    "descriptionPlaceholder": "描述数据集的内容、用途和特点...",
+    "createExplanation": "创建说明",
+    "importExplanation": "导入说明",
+    "emptyDatasetSteps": [
+      "• 系统将创建一个新的空数据集目录",
+      "• 您可以稍后从文件管理界面上传数据文件",
+      "• 支持多种格式: JSON, CSV, Parquet, TXT等"
+    ],
+    "huggingfaceSteps": [
+      "• 系统将从Hugging Face Hub下载指定的数据集",
+      "• 数据集信息（名称、描述等）将自动从源获取",
+      "• 导入过程可能需要几分钟，具体取决于数据集的大小"
+    ],
+    "modelscopeSteps": [
+      "• 系统将从魔搭社区下载指定的数据集",
+      "• 数据集信息（名称、描述等）将自动从源获取",
+      "• 导入过程可能需要几分钟，具体取决于数据集的大小"
+    ],
+    "reselect": "重新选择",
     "creating": "创建中...",
-    "importing": "导入中..."
+    "importing": "导入中...",
+    "success": {
+      "title": "数据集创建成功！",
+      "redirecting": "正在重定向到数据集列表...",
+      "importStarted": "导入任务已开始！",
+      "importMessage": "正在从 {{source}} 导入数据集。您可以在任务管理页面查看进度。",
+      "viewTaskProgress": "查看任务进度",
+      "backToDatasetList": "返回数据集列表"
+    }
   }
 }
