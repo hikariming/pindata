@@ -198,21 +198,13 @@ def logout_all():
 
 @auth_bp.route('/me', methods=['GET'])
 @login_required
-def get_current_user():
+def get_me():
     """获取当前用户信息"""
-    try:
-        user = UserService.get_user_by_id(g.user_id)
-        if not user:
-            return error_response("用户不存在"), 404
-        
-        # 获取用户权限
-        permissions = AuthService.get_user_permissions(g.user_id)
-        user['permissions'] = permissions
-        
-        return success_response(user)
-        
-    except Exception as e:
-        return error_response(f"获取用户信息失败: {str(e)}"), 500
+    service = UserService(db.session)
+    user_dto = service.get_user_by_id(g.user_id, include_organizations=True, include_roles=True)
+    if not user_dto:
+        return error_response("用户不存在", 404)
+    return success_response(user_dto)
 
 
 @auth_bp.route('/me', methods=['PUT'])

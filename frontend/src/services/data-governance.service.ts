@@ -2,7 +2,7 @@ import { apiClient } from '../lib/api-client';
 import { DataGovernanceProject } from '../types/data-governance';
 
 export interface ProjectsQuery {
-  organization_id?: number;
+  organization_id?: string;
   status?: string;
   search?: string;
   sort_by?: string;
@@ -20,7 +20,7 @@ export interface ProjectsResponse {
 export interface CreateProjectRequest {
   name: string;
   description: string;
-  organization_id: number;
+  organization_id: string;
   config?: Record<string, any>;
 }
 
@@ -98,7 +98,7 @@ class DataGovernanceService {
     await apiClient.delete(`${this.baseUrl}/projects/${id}`);
   }
 
-  async getStats(organizationId?: number): Promise<ProjectStats> {
+  async getStats(organizationId?: string): Promise<ProjectStats> {
     const params = organizationId ? { organization_id: organizationId } : {};
     const response = await apiClient.get(`${this.baseUrl}/stats`, { params });
     const responseData = response as any;

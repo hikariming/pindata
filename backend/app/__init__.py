@@ -72,7 +72,7 @@ def create_app(config_name='default'):
     app.register_blueprint(tasks_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
     # 注册CLI命令
-    from app.core.initialization import register_commands
+    from app.core.initialization import register_commands, ensure_default_organization
     register_commands(app)
 
     @app.before_request
@@ -102,6 +102,9 @@ def create_app(config_name='default'):
                     else:
                         logger.error("❌ 标记数据库为最新版本失败")
 
+                    # 确保默认组织存在
+                    ensure_default_organization()
+
                     logger.info("🎉 全新数据库初始化完成")
 
                 except Exception as e:
@@ -113,6 +116,10 @@ def create_app(config_name='default'):
                     auto_migrate = app.config.get('AUTO_MIGRATE', True)
                     if not check_and_migrate(database_url, auto_migrate):
                         logger.warning("数据库迁移未完全成功，但应用将继续启动")
+                    
+                    # 确保默认组织存在
+                    ensure_default_organization()
+                    
                 except Exception as e:
                     logger.error(f"数据库迁移检查失败: {e}", exc_info=True)
 

@@ -11,6 +11,7 @@ import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useCreateProject } from '../../hooks/useDataGovernance';
+import { useAuthStore } from '../../store/authStore';
 
 export const CreateProject: React.FC = () => {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ export const CreateProject: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { createProject, loading, error } = useCreateProject();
+  const user = useAuthStore(state => state.user);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -50,9 +52,28 @@ export const CreateProject: React.FC = () => {
     }
 
     try {
+      // 调试信息：打印用户和组织数据
+      console.log('User data:', user);
+      console.log('User organizations:', user?.organizations);
+      
+      // 处理可能的数据结构：直接的User对象或者包装在response中的数据
+      const userData = (user as any)?.data || user;
+      const organizations = userData?.organizations || user?.organizations;
+      console.log('Processed user data:', userData);
+      console.log('Processed organizations:', organizations);
+      
+      const primaryOrg = organizations?.find((org: any) => org.is_primary) || organizations?.[0];
+      console.log('Found primary org:', primaryOrg);
+
+      if (!primaryOrg) {
+        setFormErrors(prev => ({ ...prev, general: '没有找到可用的组织，无法创建项目' }));
+        return;
+      }
+      
       const result = await createProject({
         name: formData.name.trim(),
         description: formData.description.trim(),
+        organization_id: primaryOrg.id,
       });
       
       if (result) {
@@ -148,6 +169,14 @@ export const CreateProject: React.FC = () => {
                 </p>
               )}
             </div>
+            
+            {/* General Form Error */}
+            {formErrors.general && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <AlertCircleIcon size={14} />
+                {formErrors.general}
+              </p>
+            )}
 
             {/* Error Message */}
             {error && (

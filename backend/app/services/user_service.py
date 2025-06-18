@@ -12,6 +12,14 @@ from app.models import (
 class UserService:
     """用户管理服务"""
     
+    def __init__(self, db_session=None):
+        """初始化用户服务
+        
+        Args:
+            db_session: 数据库会话，如果不提供则使用db.session
+        """
+        self.db_session = db_session or db.session
+    
     @staticmethod
     def create_user(data: Dict) -> Dict:
         """创建用户"""
@@ -73,15 +81,16 @@ class UserService:
                 position=data.get('position')
             )
             db.session.add(user_org)
-        elif is_first_user:
-            # 第一个用户自动加入默认组织
+        else:
+            # 所有用户都自动加入默认组织（如果没有指定其他组织）
             root_org = Organization.query.filter_by(code='root').first()
             if root_org:
+                position = '超级管理员' if is_first_user else '普通用户'
                 user_org = UserOrganization(
                     user_id=user.id,
                     organization_id=root_org.id,
                     is_primary=True,
-                    position='超级管理员'
+                    position=position
                 )
                 db.session.add(user_org)
         
@@ -224,6 +233,56 @@ class UserService:
             }
             for uo in user_orgs
         ]
+        
+        return user_data
+    
+    def get_user_by_id(self, user_id: str, include_organizations=False, include_roles=False) -> Optional[Dict]:
+        """根据ID获取用户详情（实例方法版本）
+        
+        Args:
+            user_id: 用户ID
+            include_organizations: 是否包含组织信息
+            include_roles: 是否包含角色信息
+        
+        Returns:
+            用户信息字典或None
+        """
+        user = User.query.get(user_id)
+        if not user:
+            return None
+        
+        user_data = user.to_dict()
+        
+        if include_roles:
+            # 添加角色信息
+            user_roles = self.db_session.query(UserRole).filter_by(
+                user_id=user_id, status='ACTIVE'
+            ).all()
+            user_data['roles'] = [
+                {
+                    'id': ur.role.id,
+                    'name': ur.role.name,
+                    'code': ur.role.code,
+                    'organization_id': ur.organization_id
+                }
+                for ur in user_roles
+            ]
+        
+        if include_organizations:
+            # 添加组织信息
+            user_orgs = self.db_session.query(UserOrganization).filter_by(
+                user_id=user_id, status=UserOrgStatus.ACTIVE
+            ).all()
+            user_data['organizations'] = [
+                {
+                    'id': uo.organization.id,
+                    'name': uo.organization.name,
+                    'code': uo.organization.code,
+                    'is_primary': uo.is_primary,
+                    'position': uo.position
+                }
+                for uo in user_orgs
+            ]
         
         return user_data
     

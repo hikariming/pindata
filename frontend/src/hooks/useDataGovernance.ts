@@ -173,7 +173,7 @@ export function useDeleteProject() {
   };
 }
 
-export function useProjectStats(organizationId?: number, enabled = true) {
+export function useProjectStats(organizationId?: string, enabled = true) {
   const [stats, setStats] = useState<ProjectStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -1,9 +1,10 @@
 import click
 from flask.cli import with_appcontext
 from app.db import db
-from app.models import Permission, Role, RolePermission, User, UserRole
+from app.models import Permission, Role, RolePermission, User, UserRole, Organization
 from sqlalchemy.exc import IntegrityError
 import logging
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -43,13 +44,82 @@ ROLES = [
     {'code': 'viewer', 'name': '访客', 'description': '只读访客，只能查看公开数据'},
 ]
 
+def ensure_default_organization():
+    """确保默认组织存在"""
+    try:
+        # 检查是否已存在默认组织
+        default_org = Organization.query.filter_by(code='root').first()
+        
+        if not default_org:
+            logger.info("创建默认组织...")
+            default_org = Organization(
+                id=str(uuid.uuid4()),
+                name="系统默认组织",
+                code="root", 
+                description="系统默认根组织，用于未指定组织的用户和项目",
+                path="/root",
+                level=1,
+                sort_order=0
+            )
+            db.session.add(default_org)
+            db.session.commit()
+            logger.info("✅ 默认组织创建成功")
+        else:
+            logger.info("✅ 默认组织已存在")
+        
+        # 确保所有用户都加入了组织
+        _ensure_users_in_organization(default_org)
+            
+        return default_org
+        
+    except Exception as e:
+        logger.error(f"❌ 创建默认组织失败: {e}", exc_info=True)
+        db.session.rollback()
+        return None
+
+
+def _ensure_users_in_organization(default_org):
+    """确保所有用户都加入了组织"""
+    try:
+        from app.models.user_organization import UserOrganization
+        
+        # 查找没有组织关联的用户
+        users_without_org = db.session.query(User).outerjoin(
+            UserOrganization, User.id == UserOrganization.user_id
+        ).filter(UserOrganization.user_id == None).all()
+        
+        if users_without_org:
+            logger.info(f"发现 {len(users_without_org)} 个用户没有组织关联，正在添加到默认组织...")
+            
+            for user in users_without_org:
+                user_org = UserOrganization(
+                    user_id=user.id,
+                    organization_id=default_org.id,
+                    is_primary=True,
+                    position='普通用户'
+                )
+                db.session.add(user_org)
+                logger.info(f"将用户 {user.username} 加入默认组织")
+            
+            db.session.commit()
+            logger.info("✅ 所有用户已加入默认组织")
+        else:
+            logger.info("✅ 所有用户都已有组织关联")
+            
+    except Exception as e:
+        logger.error(f"❌ 确保用户组织关联失败: {e}", exc_info=True)
+        db.session.rollback()
+
 @click.command('init-db')
 @with_appcontext
 def init_db_command():
     """Initializes the database with necessary roles and permissions."""
     logger.info("Starting database initialization...")
     try:
-        # Check if initialization is needed
+        # 1. 确保默认组织存在
+        ensure_default_organization()
+        
+        # 2. Check if initialization is needed
         if Permission.query.filter_by(code='system.manage').first():
             logger.info("Permissions already exist. Skipping role/permission creation.")
         else:
@@ -78,7 +148,7 @@ def init_db_command():
             db.session.commit()
             logger.info("Database roles and permissions initialized successfully.")
 
-        # Fix users without roles
+        # 3. Fix users without roles
         logger.info("Checking for users without roles...")
         admin_role = Role.query.filter_by(code='admin').first()
         if not admin_role:

@@ -121,16 +121,17 @@ class AuthService {
    * 获取当前用户信息
    */
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<User>('/api/v1/auth/me');
-    return response;
+    const response = await apiClient.get<{data: User, message: string, success: boolean}>('/api/v1/auth/me');
+    // 从API响应中提取实际的用户数据
+    return response.data;
   }
 
   /**
    * 更新当前用户信息
    */
   async updateCurrentUser(data: Partial<User>): Promise<User> {
-    const response = await apiClient.put<User>('/api/v1/auth/me', data);
-    return response;
+    const response = await apiClient.put<{data: User, message: string, success: boolean}>('/api/v1/auth/me', data);
+    return response.data;
   }
 
   /**
