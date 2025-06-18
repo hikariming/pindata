@@ -4,6 +4,12 @@
 echo "start backend..."
 cd backend
 source venv/bin/activate
+
+# Initialize database and permissions
+echo "Initializing database..."
+flask init-db
+
+echo "Starting backend server..."
 python run.py &
 BACKEND_PID=$!
 

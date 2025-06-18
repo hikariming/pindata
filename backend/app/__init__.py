@@ -4,6 +4,8 @@ from flask_jwt_extended import JWTManager
 from flasgger import Swagger
 import logging
 from sqlalchemy import text
+import time
+from flask import g
 
 from app.db import db, init_database
 from app.api.v1 import api_v1
@@ -18,7 +20,11 @@ from app.api.v1.endpoints.users import users_bp
 from app.api.v1.endpoints.organizations import organizations_bp
 from app.api.v1.endpoints.roles import roles_bp
 from app.api.v1.endpoints.data_governance import data_governance_bp
-from config.config import config
+from config.config import config, get_config
+from app.db import ensure_database_exists
+from app.utils.db_utils import is_new_database, stamp_db_as_latest
+from app.db_migrations import check_and_migrate
+from .celery_app import celery
 
 # 配置日志
 logging.basicConfig(
@@ -27,20 +33,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def create_app(config_name='development'):
+def create_app(config_name='default'):
     """应用工厂函数"""
     app = Flask(__name__)
     
     # 加载配置
-    app.config.from_object(config[config_name])
+    config = get_config(config_name)
+    app.config.from_object(config)
     
     # 初始化扩展
     db.init_app(app)
-    CORS(app, 
-         origins=["*"],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
-         supports_credentials=True)
+    CORS(app, supports_credentials=True)
     JWTManager(app)
     
     # 初始化Swagger
@@ -60,21 +63,23 @@ def create_app(config_name='development'):
     app.register_blueprint(conversion_jobs_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(storage_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     app.register_blueprint(health_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
-    app.register_blueprint(auth_bp, url_prefix=f"{app.config.get('API_PREFIX', '/api/v1')}/auth")
-    app.register_blueprint(users_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
-    app.register_blueprint(organizations_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
-    app.register_blueprint(roles_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
-    app.register_blueprint(data_governance_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
+    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
+    app.register_blueprint(users_bp, url_prefix='/api/v1/users')
+    app.register_blueprint(data_governance_bp, url_prefix='/api/v1')
     
     # 注册任务状态查询蓝图
     from app.api.v1.endpoints.tasks import tasks_bp
     app.register_blueprint(tasks_bp, url_prefix=app.config.get('API_PREFIX', '/api/v1'))
     
-    # 初始化数据库
-    from app.db import ensure_database_exists
-    from app.utils.db_utils import is_new_database, stamp_db_as_latest
-    from app.db_migrations import check_and_migrate
+    # 注册CLI命令
+    from app.core.initialization import register_commands
+    register_commands(app)
 
+    @app.before_request
+    def before_request():
+        g.request_start_time = time.time()
+    
+    # 初始化数据库
     try:
         database_url = app.config['SQLALCHEMY_DATABASE_URI']
         
@@ -113,5 +118,8 @@ def create_app(config_name='development'):
 
     except Exception as e:
         logger.error(f"数据库设置过程中发生严重错误: {e}", exc_info=True)
+
+    # Update Celery config
+    celery.conf.update(app.config)
 
     return app 
