@@ -387,16 +387,16 @@ export interface RawData {
 
 // 文件预览接口
 export interface FilePreview {
-  type: 'text' | 'image' | 'video' | 'pdf';
+  type: 'text' | 'image' | 'video' | 'none';
   content?: string;
+  thumbnail_url?: string;
   extracted_text?: string;
-  word_count?: number;
   width?: number;
   height?: number;
   color_mode?: string;
-  thumbnail_path?: string;
-  thumbnail_url?: string;
-  file_size?: number;
+  duration?: number;
+  page_count?: number;
+  word_count?: number;
 }
 
 // 文件元数据接口
@@ -428,14 +428,53 @@ export interface FileMetadata {
 // 原始数据统计接口
 export interface RawDataStats {
   total_files: number;
+  total_data_sources: number;
   by_category: Record<FileCategory, number>;
   by_status: Record<string, number>;
   total_size: number;
 }
 
+// 数据源信息接口
+export interface DataSourceInfo {
+  id: string;
+  name: string;
+  description?: string;
+  source_type: string;
+  status: string;
+  config: Record<string, any>;
+  file_count: number;
+  total_size: number;
+  created_at: string;
+  last_sync_at?: string;
+  library_info?: LibraryInfo;
+}
+
+// Library信息接口
+export interface LibraryInfo {
+  id: string;
+  name: string;
+  description?: string;
+  data_type: string;
+  tags: string[];
+  file_count: number;
+  total_size: string;
+  processed_count: number;
+  processing_count: number;
+  pending_count: number;
+  md_count: number;
+  created_at: string;
+  last_updated?: string;
+}
+
+// 增强的原始数据接口
+export interface EnhancedRawData extends RawData {
+  data_source_info?: DataSourceInfo;
+}
+
 // 原始数据列表响应接口
 export interface RawDataListResponse {
-  raw_data: RawData[];
+  raw_data: EnhancedRawData[];
+  data_sources: DataSourceInfo[];
   total: number;
   page: number;
   per_page: number;

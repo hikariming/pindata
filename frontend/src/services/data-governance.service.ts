@@ -109,6 +109,62 @@ class DataGovernanceService {
     // 兼容旧格式
     return responseData.data;
   }
+
+  async getProjectById(id: string): Promise<DataGovernanceProject> {
+    const response = await apiClient.get(`${this.baseUrl}/projects/${id}`) as any;
+    return response.data;
+  }
+
+  // 获取项目原始数据
+  async getProjectRawData(projectId: string, params?: {
+    page?: number;
+    per_page?: number;
+    file_category?: string;
+    search?: string;
+  }): Promise<{
+    raw_data: any[];
+    total: number;
+    page: number;
+    per_page: number;
+    pages: number;
+    stats: any;
+  }> {
+    const response = await apiClient.get(`${this.baseUrl}/projects/${projectId}/raw-data`, { params }) as any;
+    return response.data;
+  }
+
+  // 添加Library到项目
+  async addLibrariesToProject(projectId: string, libraryIds: string[]): Promise<{
+    added_count: number;
+    errors: string[];
+  }> {
+    const response = await apiClient.post(`${this.baseUrl}/projects/${projectId}/libraries`, {
+      library_ids: libraryIds
+    }) as any;
+    return response.data;
+  }
+
+  // 从项目移除原始数据
+  async removeRawDataFromProject(projectId: string, rawDataId: number): Promise<void> {
+    await apiClient.delete(`${this.baseUrl}/projects/${projectId}/raw-data/${rawDataId}`);
+  }
+
+  // 获取原始数据预览
+  async getRawDataPreview(projectId: string, rawDataId: number): Promise<{
+    type: 'text' | 'image' | 'video' | 'none';
+    content?: string;
+    thumbnail_url?: string;
+    extracted_text?: string;
+    width?: number;
+    height?: number;
+    color_mode?: string;
+    duration?: number;
+    page_count?: number;
+    word_count?: number;
+  }> {
+    const response = await apiClient.get(`${this.baseUrl}/projects/${projectId}/raw-data/${rawDataId}/preview`) as any;
+    return response.data;
+  }
 }
 
 export const dataGovernanceService = new DataGovernanceService();

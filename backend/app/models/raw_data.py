@@ -167,6 +167,7 @@ class RawData(db.Model):
             return 'none'
     
     def to_dict(self):
+        """转换为字典格式"""
         return {
             'id': self.id,
             'filename': self.filename,
@@ -174,43 +175,68 @@ class RawData(db.Model):
             'file_type': self.file_type.value if self.file_type else None,
             'file_category': self.file_category,
             'file_category_display': self.file_category_display,
-            'file_size': self.file_size,
+            'file_size': self.file_size or 0,
             'minio_object_name': self.minio_object_name,
             'dataset_id': self.dataset_id,
             'data_source_id': self.data_source_id,
             'data_source_config_id': self.data_source_config_id,
             'library_file_id': self.library_file_id,
+            
+            # 文件基础信息
             'checksum': self.checksum,
             'mime_type': self.mime_type,
             'encoding': self.encoding,
-            'processing_status': self.processing_status.value if self.processing_status else None,
+            
+            # 处理状态
+            'processing_status': self.processing_status.value if self.processing_status else 'pending',
             'processing_error': self.processing_error,
-            'processing_progress': self.processing_progress,
+            'processing_progress': self.processing_progress or 0,
+            
+            # 文件元数据
             'file_metadata': self.file_metadata,
             'extraction_metadata': self.extraction_metadata,
+            
+            # 预览和内容
             'preview_content': self.preview_content,
             'thumbnail_path': self.thumbnail_path,
             'sample_data': self.sample_data,
             'extracted_text': self.extracted_text,
+            
+            # 文档特定字段
             'page_count': self.page_count,
             'word_count': self.word_count,
+            
+            # 图片特定字段
             'image_width': self.image_width,
             'image_height': self.image_height,
             'color_mode': self.color_mode,
+            
+            # 视频特定字段
             'duration': self.duration,
             'video_width': self.video_width,
             'video_height': self.video_height,
             'frame_rate': self.frame_rate,
             'video_codec': self.video_codec,
             'audio_codec': self.audio_codec,
+            
+            # 数据库和API数据源特定字段
             'record_count': self.record_count,
             'schema_info': self.schema_info,
             'api_response_time': self.api_response_time,
             'data_source_metadata': self.data_source_metadata,
-            'content_quality_score': self.content_quality_score,
-            'extraction_confidence': self.extraction_confidence,
-            'is_supported_preview': self.is_supported_preview,
-            'preview_type': self.preview_type,
+            
+            # 质量和置信度
+            'content_quality_score': self.content_quality_score or 0,
+            'extraction_confidence': self.extraction_confidence or 0,
+            
+            # 预览支持
+            'is_supported_preview': self.preview_content is not None or 
+                                   self.thumbnail_path is not None or
+                                   self.extracted_text is not None,
+            'preview_type': 'text' if self.extracted_text else 
+                          'image' if self.thumbnail_path else 'none',
+            
+            # 时间戳
             'upload_at': self.upload_at.isoformat() if self.upload_at else None,
             'processed_at': self.processed_at.isoformat() if self.processed_at else None,
         } 
