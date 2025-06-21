@@ -49,7 +49,6 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({ projectId }) => {
   const [loading, setLoading] = useState(false);
   const [addingDataSources, setAddingDataSources] = useState<Set<string>>(new Set());
   const [expandedDataSources, setExpandedDataSources] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'overview' | 'sources' | 'files'>('overview');
 
   // 获取数据源类型图标
   const getDataSourceTypeIcon = (sourceType: string) => {
@@ -148,9 +147,19 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({ projectId }) => {
         params
       );
       
-      setProjectRawData(response.raw_data || []);
-      setProjectDataSources(response.data_sources || []);
-      setRawDataStats(response.stats || { total_files: 0, total_data_sources: 0, by_category: {}, by_status: {}, total_size: 0 });
+      const responseData = (response as any).data || response;
+      
+      setProjectRawData(responseData.raw_data || []);
+      setProjectDataSources(responseData.data_sources || []);
+      
+      const stats = responseData.stats;
+      if (stats) {
+        // API可能返回字符串格式的 total_size，需要转换为数字
+        stats.total_size = typeof stats.total_size === 'string' ? parseInt(stats.total_size, 10) : stats.total_size;
+        setRawDataStats(stats);
+      } else {
+        setRawDataStats({ total_files: 0, total_data_sources: 0, by_category: {}, by_status: {}, total_size: 0 });
+      }
     } catch (error) {
       console.error('获取项目原始数据列表失败:', error);
       setProjectRawData([]);
@@ -294,189 +303,164 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({ projectId }) => {
           管理项目中的数据源，支持文件库、数据库、API等多种数据治理形态。
         </p>
         
-        {/* 标签页导航 */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'overview'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              概览统计
-            </button>
-            <button
-              onClick={() => setActiveTab('sources')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'sources'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              数据源 ({rawDataStats?.total_data_sources || 0})
-            </button>
-            <button
-              onClick={() => setActiveTab('files')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'files'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              文件列表 ({rawDataStats?.total_files || 0})
-            </button>
-          </nav>
+        {/* 概览统计 */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">概览统计</h3>
+          {rawDataStats && (
+            <div>
+              {/* 统计卡片 */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <DocumentIcon className="h-8 w-8 text-gray-400" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-500">总文件数</p>
+                      <p className="text-2xl font-semibold text-gray-900">{rawDataStats.total_files}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <DatabaseIcon className="h-8 w-8 text-blue-400" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-blue-700">数据源数</p>
+                      <p className="text-2xl font-semibold text-blue-900">{rawDataStats.total_data_sources}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <PhotoIcon className="h-8 w-8 text-green-400" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-700">已完成</p>
+                      <p className="text-2xl font-semibold text-green-900">{rawDataStats.by_status?.completed || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <Server className="h-8 w-8 text-purple-400" />
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-purple-700">总大小</p>
+                      <p className="text-2xl font-semibold text-purple-900">{formatFileSize(rawDataStats.total_size)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 分类统计 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">按文件类型分布</h4>
+                  <div className="space-y-2">
+                    {Object.entries(rawDataStats.by_category || {}).map(([category, count]) => (
+                      <div key={category} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {category === 'document' && <DocumentTextIcon className="h-4 w-4 text-blue-500" />}
+                          {category === 'image' && <PhotoIcon className="h-4 w-4 text-green-500" />}
+                          {category === 'video' && <VideoCameraIcon className="h-4 w-4 text-purple-500" />}
+                          {category === 'database' && <TableCellsIcon className="h-4 w-4 text-yellow-500" />}
+                          {category === 'api' && <LinkIcon className="h-4 w-4 text-indigo-500" />}
+                          <span className="text-sm text-gray-700 capitalize">{category}</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">按处理状态分布</h4>
+                  <div className="space-y-2">
+                    {Object.entries(rawDataStats.by_status || {}).map(([status, count]) => (
+                      <div key={status} className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700 capitalize">{status}</span>
+                        <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* 标签页内容 */}
-        {activeTab === 'overview' && rawDataStats && (
-          <div>
-            {/* 统计卡片 */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center">
-                  <DocumentIcon className="h-8 w-8 text-gray-400" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">总文件数</p>
-                    <p className="text-2xl font-semibold text-gray-900">{rawDataStats.total_files}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 rounded-lg p-4">
-                <div className="flex items-center">
-                  <DatabaseIcon className="h-8 w-8 text-blue-400" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-blue-700">数据源数</p>
-                    <p className="text-2xl font-semibold text-blue-900">{rawDataStats.total_data_sources}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-green-50 rounded-lg p-4">
-                <div className="flex items-center">
-                  <PhotoIcon className="h-8 w-8 text-green-400" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-700">已完成</p>
-                    <p className="text-2xl font-semibold text-green-900">{rawDataStats.by_status?.completed || 0}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-purple-50 rounded-lg p-4">
-                <div className="flex items-center">
-                  <Server className="h-8 w-8 text-purple-400" />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-purple-700">总大小</p>
-                    <p className="text-2xl font-semibold text-purple-900">{formatFileSize(rawDataStats.total_size)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* 分类统计 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">按文件类型分布</h4>
-                <div className="space-y-2">
-                  {Object.entries(rawDataStats.by_category || {}).map(([category, count]) => (
-                    <div key={category} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        {category === 'document' && <DocumentTextIcon className="h-4 w-4 text-blue-500" />}
-                        {category === 'image' && <PhotoIcon className="h-4 w-4 text-green-500" />}
-                        {category === 'video' && <VideoCameraIcon className="h-4 w-4 text-purple-500" />}
-                        {category === 'database' && <TableCellsIcon className="h-4 w-4 text-yellow-500" />}
-                        {category === 'api' && <LinkIcon className="h-4 w-4 text-indigo-500" />}
-                        <span className="text-sm text-gray-700 capitalize">{category}</span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">{count as number}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">按处理状态分布</h4>
-                <div className="space-y-2">
-                  {Object.entries(rawDataStats.by_status || {}).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700 capitalize">{status}</span>
-                      <span className="text-sm font-medium text-gray-900">{count as number}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'sources' && (
+        {/* 数据源 */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">数据源 ({rawDataStats?.total_data_sources || 0})</h3>
           <div>
             {projectDataSources.length > 0 ? (
               <div className="space-y-4">
-                {projectDataSources.map((dataSource) => (
-                  <div key={dataSource.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-1">
-                        {getDataSourceTypeIcon(dataSource.source_type)}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="text-sm font-medium text-gray-900">{dataSource.name}</h4>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {dataSource.source_type}
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            getDataSourceStatusDisplay(dataSource.status).color === 'green' ? 'bg-green-100 text-green-800' :
-                            getDataSourceStatusDisplay(dataSource.status).color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                            getDataSourceStatusDisplay(dataSource.status).color === 'red' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {getDataSourceStatusDisplay(dataSource.status).text}
-                          </span>
+                {projectDataSources.map((dataSource) => {
+                  const completedFileCount = projectRawData.filter(
+                    file => file.data_source_id === dataSource.id && file.processing_status === FileProcessingStatus.COMPLETED
+                  ).length;
+                  
+                  return (
+                    <div key={dataSource.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {getDataSourceTypeIcon(dataSource.source_type)}
                         </div>
                         
-                        <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{dataSource.file_count} 个文件</span>
-                          <span>{formatFileSize(dataSource.total_size)}</span>
-                          <span>{new Date(dataSource.created_at).toLocaleDateString()}</span>
-                        </div>
-                        
-                        {dataSource.description && (
-                          <p className="mt-1 text-xs text-gray-500">{dataSource.description}</p>
-                        )}
-                        
-                        {/* Library信息展示 */}
-                        {dataSource.library_info && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <DatabaseIcon className="h-4 w-4 text-blue-500" />
-                              <span className="text-sm font-medium text-blue-700">
-                                文件库: {dataSource.library_info.name}
-                              </span>
-                            </div>
-                            <div className="mt-1 text-xs text-blue-600">
-                              {dataSource.library_info.data_type} • {dataSource.library_info.total_size} • 
-                              已处理: {dataSource.library_info.processed_count}/{dataSource.library_info.file_count}
-                            </div>
-                            {dataSource.library_info.tags.length > 0 && (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {dataSource.library_info.tags.map((tag, index) => (
-                                  <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-sm font-medium text-gray-900">{dataSource.name}</h4>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {dataSource.source_type}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              getDataSourceStatusDisplay(dataSource.status).color === 'green' ? 'bg-green-100 text-green-800' :
+                              getDataSourceStatusDisplay(dataSource.status).color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                              getDataSourceStatusDisplay(dataSource.status).color === 'red' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {getDataSourceStatusDisplay(dataSource.status).text}
+                            </span>
                           </div>
-                        )}
+                          
+                          <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                            <span>{dataSource.file_count} 个文件</span>
+                            <span>{formatFileSize(dataSource.total_size)}</span>
+                            <span>{new Date(dataSource.created_at).toLocaleDateString()}</span>
+                          </div>
+                          
+                          {dataSource.description && (
+                            <p className="mt-1 text-xs text-gray-500">{dataSource.description}</p>
+                          )}
+                          
+                          {/* Library信息展示 */}
+                          {dataSource.library_info && (
+                            <div className="mt-2 p-2 bg-blue-50 rounded-md">
+                              <div className="flex items-center space-x-2">
+                                <DatabaseIcon className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-medium text-blue-700">
+                                  文件库: {dataSource.library_info.name}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-xs text-blue-600">
+                                {dataSource.library_info.data_type} • {dataSource.library_info.total_size} • 
+                                已处理: {completedFileCount}/{dataSource.library_info.file_count}
+                              </div>
+                              {dataSource.library_info.tags.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {dataSource.library_info.tags.map((tag, index) => (
+                                    <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -488,9 +472,11 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({ projectId }) => {
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        {activeTab === 'files' && (
+        {/* 文件列表 */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">文件列表 ({rawDataStats?.total_files || 0})</h3>
           <div>
             {/* 搜索和筛选 */}
             <div className="flex items-center space-x-4 mb-6">
@@ -595,7 +581,7 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({ projectId }) => {
               )}
             </div>
           </div>
-        )}
+        </div>
       </Card>
 
       {/* 添加数据源模态框 */}

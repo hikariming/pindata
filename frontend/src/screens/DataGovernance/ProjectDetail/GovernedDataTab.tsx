@@ -1,15 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { RefreshCwIcon, CheckCircleIcon, FileTextIcon, PauseIcon } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { DataGovernanceProject, GovernedData } from '../types';
+import { apiClient } from '../../../lib/api-client';
 
 interface GovernedDataTabProps {
   project: DataGovernanceProject;
 }
 
 export const GovernedDataTab: React.FC<GovernedDataTabProps> = ({ project }) => {
+  const [governedData, setGovernedData] = useState<GovernedData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGovernedData = async () => {
+      if (!project.id) return;
+      setLoading(true);
+      try {
+        const response = await apiClient.get<{ governed_data: GovernedData[] }>(
+          `/api/v1/governance/projects/${project.id}/governed-data`
+        );
+        const responseData = (response as any).data || response;
+        setGovernedData(responseData.governed_data || []);
+      } catch (error) {
+        console.error('Failed to fetch governed data:', error);
+        setGovernedData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGovernedData();
+  }, [project.id]);
+
   const formatDataSize = (bytes: number): string => {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     if (bytes === 0) return '0 B';
@@ -48,37 +73,26 @@ export const GovernedDataTab: React.FC<GovernedDataTabProps> = ({ project }) => 
     );
   };
 
-  // 模拟数据，实际应该从props或API获取
-  const governedData: GovernedData[] = [
-    {
-      id: '1',
-      project_id: project.id,
-      name: '客户信息清洗数据',
-      description: '经过数据清洗和标准化的客户基础信息',
-      governance_status: 'completed',
-      quality_score: 95,
-      data_type: 'structured',
-      file_size: 1048576,
-      tags: ['客户', '标准化', '清洗'],
-      processed_at: '2024-06-10T10:30:00Z',
-      created_at: '2024-06-10T08:00:00Z',
-      updated_at: '2024-06-10T10:30:00Z'
-    },
-    {
-      id: '2',
-      project_id: project.id,
-      name: '产品销售分析数据',
-      description: '整合的产品销售数据，包含销量、价格、渠道等信息',
-      governance_status: 'processing',
-      quality_score: 88,
-      data_type: 'structured',
-      file_size: 2097152,
-      tags: ['销售', '产品', '分析'],
-      processed_at: '2024-06-09T15:20:00Z',
-      created_at: '2024-06-09T14:00:00Z',
-      updated_at: '2024-06-09T15:20:00Z'
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <RefreshCwIcon className="animate-spin h-8 w-8 text-gray-500" />
+        <p className="ml-2">正在加载治理数据...</p>
+      </div>
+    );
+  }
+
+  if (governedData.length === 0) {
+    return (
+      <Card className="p-6 text-center">
+        <FileTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">暂无治理后的数据</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          处理完成的文档、数据表等会在这里显示。
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -97,10 +111,13 @@ export const GovernedDataTab: React.FC<GovernedDataTabProps> = ({ project }) => 
           {governedData.map((data) => (
             <Card key={data.id} className="p-4 border border-gray-200 hover:border-blue-300 transition-colors">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900">{data.name}</h4>
+                <div className="flex items-center">
+                  <FileTextIcon className="h-6 w-6 text-gray-700 mr-2 flex-shrink-0" />
+                  <h4 className="font-medium text-gray-900 truncate" title={data.name}>{data.name}</h4>
+                </div>
                 {getStatusBadge(data.governance_status)}
               </div>
-              <p className="text-sm text-gray-600 mb-3">{data.description}</p>
+              <p className="text-sm text-gray-600 mb-3 h-10 overflow-hidden">{data.description}</p>
               
               <div className="mb-3">
                 <div className="flex items-center justify-between text-sm mb-1">
