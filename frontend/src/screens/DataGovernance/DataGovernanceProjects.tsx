@@ -287,41 +287,6 @@ export const DataGovernanceProjects: React.FC = () => {
                 {getStatusBadge(project.status)}
               </div>
 
-              {/* 项目指标 */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-gray-50/80 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <BarChart3Icon size={14} className="text-blue-500" />
-                    <span className="text-xs text-gray-600">数据质量</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
-                        style={{ width: `${project.metrics.dataQualityScore}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{project.metrics.dataQualityScore}%</span>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50/80 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingUpIcon size={14} className="text-green-500" />
-                    <span className="text-xs text-gray-600">处理进度</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full"
-                        style={{ width: `${project.metrics.processingProgress}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{project.metrics.processingProgress}%</span>
-                  </div>
-                </div>
-              </div>
-
               {/* 统计信息 */}
               <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                 <div className="flex items-center gap-4">
