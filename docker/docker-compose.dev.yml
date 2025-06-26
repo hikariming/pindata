@@ -1,7 +1,7 @@
 version: '3.8'
 
 # 开发环境 Docker Compose 配置
-# 使用方法: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# 使用方法: docker compose -f docker compose.yml -f docker compose.dev.yml up
 
 services:
   # 开发环境前端服务 - 支持热重载

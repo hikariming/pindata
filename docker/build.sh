@@ -137,4 +137,4 @@ if [ "$build_frontend" = true ]; then
 fi
 
 echo -e "${GREEN}使用以下命令启动服务:${NC}"
-echo -e "  cd docker && docker-compose up -d" 
+echo -e "  cd docker && docker compose up -d" 

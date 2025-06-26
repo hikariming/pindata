@@ -24,7 +24,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # 检查 Docker Compose 是否安装
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     echo -e "${RED}❌ Docker Compose 未安装，请先安装 Docker Compose${NC}"
     exit 1
 fi
@@ -36,19 +36,19 @@ mkdir -p postgres redis
 
 # 停止现有服务（如果存在）
 echo -e "${YELLOW}🛑 停止现有服务...${NC}"
-docker-compose down 2>/dev/null || true
+docker compose down 2>/dev/null || true
 
 # 拉取最新镜像
 echo -e "${YELLOW}📥 拉取基础镜像...${NC}"
-docker-compose pull db redis minio
+docker compose pull db redis minio
 
 # 构建 PinData 镜像
 echo -e "${YELLOW}🔨 构建 PinData 镜像...${NC}"
-docker-compose build pindata-api pindata-frontend
+docker compose build pindata-api pindata-frontend
 
 # 启动所有服务
 echo -e "${YELLOW}🚀 启动所有服务...${NC}"
-docker-compose up -d
+docker compose up -d
 
 # 等待服务启动
 echo -e "${YELLOW}⏳ 等待服务启动...${NC}"
@@ -56,7 +56,7 @@ sleep 10
 
 # 检查服务状态
 echo -e "${GREEN}📊 检查服务状态:${NC}"
-docker-compose ps
+docker compose ps
 
 # 显示访问信息
 echo -e "${BLUE}"
@@ -79,8 +79,8 @@ echo "  • PostgreSQL 用户: postgres"
 echo "  • PostgreSQL 密码: password"
 
 echo -e "${YELLOW}💡 常用命令:${NC}"
-echo "  • 查看日志:        docker-compose logs -f"
-echo "  • 停止服务:        docker-compose down"
-echo "  • 重启服务:        docker-compose restart"
+echo "  • 查看日志:        docker compose logs -f"
+echo "  • 停止服务:        docker compose down"
+echo "  • 重启服务:        docker compose restart"
 
 echo -e "${GREEN}✨ 部署完成！请检查上述服务是否正常运行。${NC}" 

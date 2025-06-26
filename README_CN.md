@@ -118,7 +118,7 @@ cd pindata
 
 # 启动所有服务
 cd docker
-docker-compose up -d
+docker compose up -d
 
 # 访问应用
 open http://localhost:3000

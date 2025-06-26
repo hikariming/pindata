@@ -42,5 +42,5 @@ RUN chmod +x start_celery_threads.sh start_celery.sh
 # 暴露端口
 EXPOSE 8897
 
-# 默认启动命令（将被 docker-compose 覆盖）
+# 默认启动命令（将被 docker compose 覆盖）
 CMD ["python", "run.py"] 

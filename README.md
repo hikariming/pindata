@@ -108,7 +108,7 @@ graph TD
 ## 🚀 Quick Start
 
 ### Prerequisites
-- 🐳 Docker 20.10+ and Docker Compose 1.29+
+- 🐳 Docker Engine 20.10+ (The `docker compose` command is included automatically)
 - 💾 4GB+ available RAM
 - 📁 2GB+ available disk space
 
@@ -120,7 +120,7 @@ git clone https://github.com/hikariming/pindata.git
 cd pindata
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Access the application
 open http://localhost:3000

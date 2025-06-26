@@ -49,31 +49,31 @@ cd docker
 
 ```bash
 # 启动所有服务
-docker-compose up -d
+docker compose up -d
 
 # 查看服务状态
-docker-compose ps
+docker compose ps
 
 # 查看日志
-docker-compose logs -f pindata-api
-docker-compose logs -f pindata-celery
+docker compose logs -f pindata-api
+docker compose logs -f pindata-celery
 ```
 
 ### 3. 停止服务
 
 ```bash
 # 停止所有服务
-docker-compose down
+docker compose down
 
 # 停止服务并删除数据卷（谨慎使用）
-docker-compose down -v
+docker compose down -v
 ```
 
 ## 🔧 配置说明
 
 ### 环境变量
 
-主要环境变量配置在 `docker-compose.yml` 中：
+主要环境变量配置在 `docker compose.yml` 中：
 
 - `DATABASE_URL`: PostgreSQL 连接字符串
 - `REDIS_URL`: Redis 连接字符串
@@ -96,28 +96,28 @@ docker-compose down -v
 
 ```bash
 # 查看所有服务状态
-docker-compose ps
+docker compose ps
 
 # 查看特定服务日志
-docker-compose logs -f pindata-api
-docker-compose logs -f pindata-celery
+docker compose logs -f pindata-api
+docker compose logs -f pindata-celery
 ```
 
 ### 重启服务
 
 ```bash
 # 重启 API 服务
-docker-compose restart pindata-api
+docker compose restart pindata-api
 
 # 重启 Celery 服务
-docker-compose restart pindata-celery
+docker compose restart pindata-celery
 ```
 
 ### 扩展服务
 
 ```bash
 # 扩展 Celery Workers（运行多个实例）
-docker-compose up -d --scale pindata-celery=3
+docker compose up -d --scale pindata-celery=3
 ```
 
 ## 🔍 故障排除
@@ -126,7 +126,7 @@ docker-compose up -d --scale pindata-celery=3
 
 1. **端口冲突**
    - 检查本地端口是否被占用
-   - 修改 `docker-compose.yml` 中的端口映射
+   - 修改 `docker compose.yml` 中的端口映射
 
 2. **数据库连接失败**
    - 确保 PostgreSQL 服务已启动
@@ -140,13 +140,13 @@ docker-compose up -d --scale pindata-celery=3
 
 ```bash
 # 查看所有服务日志
-docker-compose logs
+docker compose logs
 
 # 实时查看特定服务日志
-docker-compose logs -f pindata-api
+docker compose logs -f pindata-api
 
 # 查看最近的 100 行日志
-docker-compose logs --tail=100 pindata-celery
+docker compose logs --tail=100 pindata-celery
 ```
 
 ## 🔒 安全配置
@@ -162,8 +162,8 @@ docker-compose logs --tail=100 pindata-celery
 
 ```bash
 # 更新镜像
-docker-compose pull
-docker-compose up -d
+docker compose pull
+docker compose up -d
 
 # 清理未使用的镜像
 docker image prune

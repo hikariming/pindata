@@ -51,9 +51,9 @@ python run.py
 ### 2. Docker运行
 
 ```bash
-# 使用docker-compose启动（推荐）
+# 使用docker compose启动（推荐）
 cd ..
-docker-compose up -d
+docker compose up -d
 
 # 或单独构建运行
 docker build -t pindata-backend .

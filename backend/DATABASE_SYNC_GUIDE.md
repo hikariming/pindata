@@ -115,8 +115,8 @@ ON user_organizations(status);
 
 1. **重启容器**（推荐）
    ```bash
-   docker-compose down
-   docker-compose up -d
+   docker compose down
+   docker compose up -d
    ```
    新版本会在启动时自动修复数据库。
 
@@ -129,9 +129,9 @@ ON user_organizations(status);
    python sync_database.py --sync --force
    ```
 
-3. **使用 docker-compose 执行**
+3. **使用 docker compose 执行**
    ```bash
-   docker-compose exec backend python sync_database.py --sync --force
+   docker compose exec backend python sync_database.py --sync --force
    ```
 
 ## 📋 验证修复结果

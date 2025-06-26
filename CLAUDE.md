@@ -75,13 +75,13 @@ npm run build
 cd docker
 
 # Start all services (recommended for development)
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f [service_name]
+docker compose logs -f [service_name]
 
 # Stop services
-docker-compose down
+docker compose down
 
 # Alternative: Use root start script for local development
 # This starts backend, frontend, and celery workers outside Docker
