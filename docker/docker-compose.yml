@@ -19,7 +19,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "15432:15432"
     healthcheck:
       test: ['CMD', 'pg_isready', '-h', 'localhost', '-U', 'postgres', '-d', 'pindata_dataset']
       interval: 10s
@@ -50,7 +50,7 @@ services:
     image: redis:7-alpine
     container_name: pindata_redis
     ports:
-      - "6379:6379"
+      - "16379:16379"
     volumes:
       - ./data/redis:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
@@ -75,7 +75,7 @@ services:
       - SECRET_KEY=your-secret-key-change-in-production
       
       # 数据库配置
-      - DATABASE_URL=postgresql://postgres:password@db:5432/pindata_dataset
+      - DATABASE_URL=postgresql://postgres:password@db:15432/pindata_dataset
       
       # 数据库连接池配置
       - DB_POOL_SIZE=10
@@ -91,7 +91,7 @@ services:
       - DATABASE_INIT_RETRY_DELAY=5
       
       # Redis配置
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:16379/0
       
       # MinIO配置
       - MINIO_ENDPOINT=minio:9000
@@ -104,8 +104,8 @@ services:
       - MINIO_DEFAULT_BUCKET=pindata-bucket
       
       # Celery配置
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:16379/0
+      - CELERY_RESULT_BACKEND=redis://redis:16379/1
       - CELERY_TASK_SERIALIZER=json
       - CELERY_RESULT_SERIALIZER=json
       - CELERY_ACCEPT_CONTENT=json
@@ -156,7 +156,7 @@ services:
       - SECRET_KEY=your-secret-key-change-in-production
       
       # 数据库配置
-      - DATABASE_URL=postgresql://postgres:password@db:5432/pindata_dataset
+      - DATABASE_URL=postgresql://postgres:password@db:15432/pindata_dataset
       
       # 数据库连接池配置
       - DB_POOL_SIZE=10
@@ -172,7 +172,7 @@ services:
       - DATABASE_INIT_RETRY_DELAY=5
       
       # Redis配置
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:16379/0
       
       # MinIO配置
       - MINIO_ENDPOINT=minio:9000
@@ -185,8 +185,8 @@ services:
       - MINIO_DEFAULT_BUCKET=pindata-bucket
       
       # Celery配置
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:16379/0
+      - CELERY_RESULT_BACKEND=redis://redis:16379/1
       - CELERY_TASK_SERIALIZER=json
       - CELERY_RESULT_SERIALIZER=json
       - CELERY_ACCEPT_CONTENT=json

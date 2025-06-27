@@ -6,7 +6,7 @@ import logging
 import time
 from datetime import datetime
 
-from app.models import LLMConfig, ProviderType, SystemLog
+from app.models import LLMConfig, ProviderType, SystemLog, ReasoningExtractionMethod
 from app.api.v1.schemas.llm_schemas import (
     LLMConfigCreateSchema, LLMConfigUpdateSchema, 
     LLMConfigQuerySchema, SetDefaultConfigSchema
@@ -47,6 +47,9 @@ class LLMConfigListResource(Resource):
             if args.get('supports_vision') is not None:
                 query = query.filter(LLMConfig.supports_vision == args['supports_vision'])
             
+            if args.get('supports_reasoning') is not None:
+                query = query.filter(LLMConfig.supports_reasoning == args['supports_reasoning'])
+
             # 搜索功能
             if args.get('search'):
                 search_term = f"%{args['search']}%"
@@ -121,6 +124,9 @@ class LLMConfigListResource(Resource):
                 temperature=data.get('temperature', 0.7),
                 max_tokens=data.get('max_tokens', 4096),
                 supports_vision=data.get('supports_vision', False),
+                supports_reasoning=data.get('supports_reasoning', False),
+                reasoning_extraction_method=data.get('reasoning_extraction_method'),
+                reasoning_extraction_config=data.get('reasoning_extraction_config'),
                 is_active=data.get('is_active', True),
                 custom_headers=data.get('custom_headers'),
                 provider_config=data.get('provider_config')
@@ -200,6 +206,8 @@ class LLMConfigResource(Resource):
             for field, value in data.items():
                 if field == 'provider':
                     setattr(config, field, ProviderType(value))
+                elif field == 'reasoning_extraction_method' and value:
+                    setattr(config, field, ReasoningExtractionMethod(value))
                 else:
                     setattr(config, field, value)
             

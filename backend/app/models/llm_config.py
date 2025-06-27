@@ -11,6 +11,11 @@ class ProviderType(enum.Enum):
     GEMINI = "gemini"
     CUSTOM = "custom"
 
+class ReasoningExtractionMethod(enum.Enum):
+    """思考过程提取方法枚举"""
+    TAG_BASED = "tag_based"    # 基于标签, 例如 <think>...</think>
+    JSON_FIELD = "json_field"  # 基于独立的JSON字段
+
 class LLMConfig(db.Model):
     """大模型配置模型"""
     __tablename__ = 'llm_configs'
@@ -28,6 +33,9 @@ class LLMConfig(db.Model):
     
     # 功能支持
     supports_vision = Column(Boolean, default=False)  # 是否支持视觉
+    supports_reasoning = Column(Boolean, default=False)  # 是否支持思考过程
+    reasoning_extraction_method = Column(Enum(ReasoningExtractionMethod), nullable=True)  # 提取方法
+    reasoning_extraction_config = Column(JSON, nullable=True)  # 提取方法的具体配置
     
     # 状态控制
     is_active = Column(Boolean, default=True)  # 是否启用
@@ -63,6 +71,9 @@ class LLMConfig(db.Model):
             'temperature': self.temperature,
             'max_tokens': self.max_tokens,
             'supports_vision': self.supports_vision,
+            'supports_reasoning': self.supports_reasoning,
+            'reasoning_extraction_method': self.reasoning_extraction_method.value if self.reasoning_extraction_method else None,
+            'reasoning_extraction_config': self.reasoning_extraction_config,
             'is_active': self.is_active,
             'is_default': self.is_default,
             'custom_headers': self.custom_headers,

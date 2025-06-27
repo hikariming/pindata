@@ -28,7 +28,8 @@ import {
   CheckCircleIcon,
   ClockIcon,
   WifiIcon,
-  WifiOffIcon
+  WifiOffIcon,
+  BrainCircuitIcon
 } from 'lucide-react';
 import {
   Dialog,
@@ -40,7 +41,7 @@ import {
   DialogTrigger,
 } from "../../../components/ui/dialog";
 import { useLLMConfigs } from '../../../hooks/useLLMConfigs';
-import { type LLMConfig, ProviderType, CreateLLMConfigRequest, UpdateLLMConfigRequest, ModelProvider, TestConfigResponse } from '../../../types/llm';
+import { type LLMConfig, ProviderType, CreateLLMConfigRequest, UpdateLLMConfigRequest, ModelProvider, TestConfigResponse, ReasoningExtractionMethod } from '../../../types/llm';
 
 const MODEL_PROVIDERS: ModelProvider[] = [
   {
@@ -109,7 +110,10 @@ export const LLMConfigComponent = (): JSX.Element => {
     temperature: 0.7,
     max_tokens: 4096,
     is_active: true,
-    supports_vision: false
+    supports_vision: false,
+    supports_reasoning: false,
+    reasoning_extraction_method: 'tag_based',
+    reasoning_extraction_config: { "tag": "think" }
   });
 
   const [editConfig, setEditConfig] = useState<Partial<UpdateLLMConfigRequest>>({});
@@ -134,7 +138,10 @@ export const LLMConfigComponent = (): JSX.Element => {
       temperature: 0.7,
       max_tokens: 4096,
       is_active: true,
-      supports_vision: false
+      supports_vision: false,
+      supports_reasoning: false,
+      reasoning_extraction_method: 'tag_based',
+      reasoning_extraction_config: { "tag": "think" }
     });
   };
 
@@ -295,7 +302,10 @@ export const LLMConfigComponent = (): JSX.Element => {
       temperature: config.temperature,
       max_tokens: config.max_tokens,
       is_active: config.is_active,
-      supports_vision: config.supports_vision
+      supports_vision: config.supports_vision,
+      supports_reasoning: config.supports_reasoning,
+      reasoning_extraction_method: config.reasoning_extraction_method,
+      reasoning_extraction_config: config.reasoning_extraction_config
     });
   };
 
@@ -307,6 +317,56 @@ export const LLMConfigComponent = (): JSX.Element => {
   const closeDeleteDialog = () => {
     setDeleteConfigId(null);
     setShowDeleteDialog(false);
+  };
+
+  const renderReasoningConfig = (
+    config: Partial<CreateLLMConfigRequest> | Partial<UpdateLLMConfigRequest>,
+    setter: React.Dispatch<React.SetStateAction<any>>
+  ) => {
+    if (!config.supports_reasoning) return null;
+
+    return (
+      <div className="p-4 border rounded-md bg-gray-50 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">{t('settings.llm.reasoningExtractionMethod')}</label>
+            <Select
+              value={config.reasoning_extraction_method}
+              onValueChange={(value: ReasoningExtractionMethod) => {
+                const newExtractionConfig = value === 'tag_based' 
+                  ? { tag: 'think' } 
+                  : { field: 'reasoning_content' };
+                setter({ ...config, reasoning_extraction_method: value, reasoning_extraction_config: newExtractionConfig });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tag_based">{t('settings.llm.tagBased')}</SelectItem>
+                <SelectItem value="json_field">{t('settings.llm.jsonField')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">{t('settings.llm.extractionConfig')}</label>
+            {config.reasoning_extraction_method === 'tag_based' ? (
+              <Input
+                placeholder={t('settings.llm.tagNamePlaceholder')}
+                value={config.reasoning_extraction_config?.tag || ''}
+                onChange={(e) => setter({ ...config, reasoning_extraction_config: { tag: e.target.value } })}
+              />
+            ) : (
+              <Input
+                placeholder={t('settings.llm.fieldNamePlaceholder')}
+                value={config.reasoning_extraction_config?.field || ''}
+                onChange={(e) => setter({ ...config, reasoning_extraction_config: { field: e.target.value } })}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -528,6 +588,21 @@ export const LLMConfigComponent = (): JSX.Element => {
                   <div className="text-xs text-[#4f7096] ml-6">
                     {t('settings.llm.visionSupportTip')}
                   </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={newConfig.supports_reasoning || false}
+                      onCheckedChange={(checked: boolean) => setNewConfig({...newConfig, supports_reasoning: checked})}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm font-medium">{t('settings.llm.reasoningSupport')}</label>
+                      <BrainCircuitIcon className="w-4 h-4 text-[#4f7096]" />
+                    </div>
+                  </div>
+                  <div className="text-xs text-[#4f7096] ml-6">
+                    {t('settings.llm.reasoningSupportTip')}
+                  </div>
+                  {renderReasoningConfig(newConfig, setNewConfig)}
                 </div>
               </div>
 
@@ -635,6 +710,18 @@ export const LLMConfigComponent = (): JSX.Element => {
                   <InfoIcon className="w-4 h-4 text-[#4f7096]" />
                 </div>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editConfig.supports_reasoning ?? false}
+                  onCheckedChange={(checked: boolean) => setEditConfig({...editConfig, supports_reasoning: checked})}
+                />
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium">{t('settings.llm.reasoningSupport')}</label>
+                  <BrainCircuitIcon className="w-4 h-4 text-[#4f7096]" />
+                </div>
+              </div>
+              {renderReasoningConfig(editConfig, setEditConfig)}
             </div>
           </div>
 
@@ -843,6 +930,12 @@ export const LLMConfigComponent = (): JSX.Element => {
                         <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50">
                           <InfoIcon className="w-3 h-3 mr-1" />
                           {t('settings.llm.visionSupportLabel')}
+                        </Badge>
+                      )}
+                      {config.supports_reasoning && (
+                        <Badge variant="outline" className="border-purple-500 text-purple-700 bg-purple-50">
+                          <BrainCircuitIcon className="w-3 h-3 mr-1" />
+                          {t('settings.llm.reasoningSupportLabel')}
                         </Badge>
                       )}
                     </h4>

@@ -1,6 +1,7 @@
 import { ApiResponse, PaginatedResponse } from './api';
 
 export type ProviderType = 'openai' | 'claude' | 'gemini' | 'custom';
+export type ReasoningExtractionMethod = 'tag_based' | 'json_field';
 
 export interface LLMConfig {
   id: string;
@@ -12,6 +13,9 @@ export interface LLMConfig {
   temperature: number;
   max_tokens: number;
   supports_vision: boolean;
+  supports_reasoning: boolean;
+  reasoning_extraction_method?: ReasoningExtractionMethod;
+  reasoning_extraction_config?: Record<string, any>;
   is_active: boolean;
   is_default: boolean;
   custom_headers?: Record<string, string>;
@@ -32,6 +36,9 @@ export interface CreateLLMConfigRequest {
   temperature?: number;
   max_tokens?: number;
   supports_vision?: boolean;
+  supports_reasoning?: boolean;
+  reasoning_extraction_method?: ReasoningExtractionMethod;
+  reasoning_extraction_config?: Record<string, any>;
   is_active?: boolean;
   custom_headers?: Record<string, string>;
   provider_config?: Record<string, any>;
@@ -46,6 +53,9 @@ export interface UpdateLLMConfigRequest {
   temperature?: number;
   max_tokens?: number;
   supports_vision?: boolean;
+  supports_reasoning?: boolean;
+  reasoning_extraction_method?: ReasoningExtractionMethod;
+  reasoning_extraction_config?: Record<string, any>;
   is_active?: boolean;
   custom_headers?: Record<string, string>;
   provider_config?: Record<string, any>;
@@ -57,6 +67,7 @@ export interface LLMConfigQueryParams {
   provider?: ProviderType;
   is_active?: boolean;
   supports_vision?: boolean;
+  supports_reasoning?: boolean;
   search?: string;
 }
 
