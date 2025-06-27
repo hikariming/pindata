@@ -5,8 +5,8 @@ Flask-CORS==4.0.0
 Flask-JWT-Extended==4.5.3
 
 # 数据库相关
-SQLAlchemy==2.0.23
-psycopg2-binary==2.9.9
+SQLAlchemy==2.0.31
+psycopg2-binary==2.9.10
 alembic==1.13.0
 redis==5.0.1
 flask_sqlalchemy

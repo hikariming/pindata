@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Toaster } from 'react-hot-toast';
 import { Layout } from "./components/Layout";
+import { StitchDesign } from "./screens/StitchDesign/StitchDesign";
 import { ActivitySection } from "./screens/StitchDesign/sections/ActivitySection";
 import { RawData } from "./screens/RawData";
 import { FilePreview } from "./screens/RawData/FilePreview";
@@ -47,7 +48,7 @@ export const App = (): JSX.Element => {
           <Route index element={<Navigate to="/overview" replace />} />
           
           {/* 主要页面路由 */}
-          <Route path="overview" element={<ActivitySection />} />
+          <Route path="overview" element={<StitchDesign />} />
           <Route path="rawdata" element={<RawData />} />
           <Route path="rawdata/library/:libraryId/file/:fileId" element={<FilePreview />} />
           <Route path="settings" element={<Settings />} />

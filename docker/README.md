@@ -101,6 +101,9 @@ docker compose ps
 # 查看特定服务日志
 docker compose logs -f pindata-api
 docker compose logs -f pindata-celery
+
+
+
 ```
 
 ### 重启服务
@@ -164,6 +167,9 @@ docker compose logs --tail=100 pindata-celery
 # 更新镜像
 docker compose pull
 docker compose up -d
+
+podman compose -f docker-compose.dev.yml up -d
+
 
 # 清理未使用的镜像
 docker image prune

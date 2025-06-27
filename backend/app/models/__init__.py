@@ -5,7 +5,7 @@ from .plugin import Plugin
 from .raw_data import RawData, FileType, ProcessingStatus
 from .library import Library, DataType
 from .library_file import LibraryFile, ProcessStatus
-from .llm_config import LLMConfig, ProviderType
+from .llm_config import LLMConfig, ProviderType, ReasoningExtractionMethod
 from .system_log import SystemLog, LogLevel
 from .conversion_job import ConversionJob, ConversionStatus
 from .conversion_file_detail import ConversionFileDetail
@@ -37,7 +37,7 @@ __all__ = [
     'EnhancedDatasetVersion', 'EnhancedDatasetFile', 'VersionType',
     'Task', 'TaskType', 'TaskStatus', 'Plugin', 'RawData', 'FileType', 'ProcessingStatus',
     'Library', 'LibraryFile', 'DataType', 'ProcessStatus',
-    'LLMConfig', 'ProviderType', 'SystemLog', 'LogLevel',
+    'LLMConfig', 'ProviderType', 'ReasoningExtractionMethod', 'SystemLog', 'LogLevel',
     'ConversionJob', 'ConversionStatus', 'ConversionFileDetail',
     # User management
     'User', 'UserStatus', 'Organization', 'OrganizationStatus',

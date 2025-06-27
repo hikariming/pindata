@@ -6,7 +6,8 @@ import logging
 import time
 from datetime import datetime
 
-from app.models import LLMConfig, ProviderType, SystemLog, ReasoningExtractionMethod
+# 将模型导入移动到函数内部或在需要时导入，以避免循环依赖
+# from app.models import LLMConfig, ProviderType, SystemLog, ReasoningExtractionMethod
 from app.api.v1.schemas.llm_schemas import (
     LLMConfigCreateSchema, LLMConfigUpdateSchema, 
     LLMConfigQuerySchema, SetDefaultConfigSchema
@@ -29,6 +30,7 @@ class LLMConfigListResource(Resource):
     
     def get(self):
         """获取LLM配置列表"""
+        from app.models import LLMConfig, ProviderType
         try:
             # 验证查询参数
             schema = LLMConfigQuerySchema()
@@ -74,6 +76,7 @@ class LLMConfigListResource(Resource):
             configs = [config.to_dict() for config in pagination.items]
             
             # 记录日志
+            from app.models import SystemLog
             SystemLog.log_info(
                 f"用户查询LLM配置列表，页码: {page}，筛选条件: {args}",
                 "LLMConfig",
@@ -99,11 +102,13 @@ class LLMConfigListResource(Resource):
             return {'success': False, 'message': '参数验证失败', 'errors': e.messages}, 400
         except Exception as e:
             logger.error(f"获取LLM配置列表失败: {str(e)}")
+            from app.models import SystemLog
             SystemLog.log_error(f"获取LLM配置列表失败: {str(e)}", "LLMConfig")
             return {'success': False, 'message': '服务器内部错误'}, 500
     
     def post(self):
         """创建新的LLM配置"""
+        from app.models import LLMConfig, ProviderType, SystemLog, ReasoningExtractionMethod
         try:
             # 验证请求数据
             schema = LLMConfigCreateSchema()
@@ -125,7 +130,7 @@ class LLMConfigListResource(Resource):
                 max_tokens=data.get('max_tokens', 4096),
                 supports_vision=data.get('supports_vision', False),
                 supports_reasoning=data.get('supports_reasoning', False),
-                reasoning_extraction_method=data.get('reasoning_extraction_method'),
+                reasoning_extraction_method=ReasoningExtractionMethod(data['reasoning_extraction_method']) if data.get('reasoning_extraction_method') else None,
                 reasoning_extraction_config=data.get('reasoning_extraction_config'),
                 is_active=data.get('is_active', True),
                 custom_headers=data.get('custom_headers'),
@@ -169,6 +174,7 @@ class LLMConfigResource(Resource):
     
     def get(self, config_id):
         """获取单个LLM配置"""
+        from app.models import LLMConfig
         try:
             config = LLMConfig.query.get(config_id)
             if not config:
@@ -185,6 +191,7 @@ class LLMConfigResource(Resource):
     
     def put(self, config_id):
         """更新LLM配置"""
+        from app.models import LLMConfig, ProviderType, SystemLog, ReasoningExtractionMethod
         try:
             config = LLMConfig.query.get(config_id)
             if not config:
@@ -204,7 +211,7 @@ class LLMConfigResource(Resource):
             
             # 更新字段
             for field, value in data.items():
-                if field == 'provider':
+                if field == 'provider' and value:
                     setattr(config, field, ProviderType(value))
                 elif field == 'reasoning_extraction_method' and value:
                     setattr(config, field, ReasoningExtractionMethod(value))
@@ -236,6 +243,7 @@ class LLMConfigResource(Resource):
     
     def delete(self, config_id):
         """删除LLM配置"""
+        from app.models import LLMConfig, SystemLog
         try:
             config = LLMConfig.query.get(config_id)
             if not config:
@@ -281,6 +289,7 @@ class LLMConfigDefaultResource(Resource):
     
     def post(self):
         """设置默认配置"""
+        from app.models import LLMConfig, SystemLog
         try:
             # 验证请求数据
             schema = SetDefaultConfigSchema()
@@ -292,7 +301,7 @@ class LLMConfigDefaultResource(Resource):
             
             # 记录日志
             SystemLog.log_info(
-                f"设置默认LLM配置: {config.name}",
+                f"设��默认LLM配置: {config.name}",
                 "LLMConfig",
                 extra_data={'config_id': config.id}
             )
@@ -320,6 +329,7 @@ class LLMConfigTestResource(Resource):
     
     def post(self, config_id):
         """测试配置连接"""
+        from app.models import LLMConfig, SystemLog
         try:
             config = LLMConfig.query.get(config_id)
             if not config:
@@ -360,11 +370,13 @@ class LLMConfigTestResource(Resource):
             
         except Exception as e:
             logger.error(f"测试LLM配置连接失败: {str(e)}")
+            from app.models import SystemLog
             SystemLog.log_error(f"测试LLM配置连接失败: {str(e)}", "LLMConfig")
             return {'success': False, 'message': f'连接测试失败: {str(e)}'}, 500
     
-    def _test_llm_connection(self, config: LLMConfig) -> dict:
+    def _test_llm_connection(self, config) -> dict:
         """测试LLM连接"""
+        from app.models import ProviderType
         try:
             # 获取LLM服务实例
             llm_service = LLMConversionService()
