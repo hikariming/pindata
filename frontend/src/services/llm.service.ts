@@ -106,6 +106,22 @@ export class LLMService {
     }>(`/api/v1/llm/configs/${id}/test`);
     return response.data!;
   }
+
+  /**
+   * 测试大模型
+   */
+  static async testModel(
+    llm_config_id: string,
+    prompt: string,
+    image_url?: string
+  ): Promise<any> {
+    const response = await apiClient.post<ApiResponse<any>>('/api/v1/llms/test', {
+      llm_config_id,
+      prompt,
+      image_url,
+    });
+    return response.data;
+  }
 }
 
 // 导出单例实例

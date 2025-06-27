@@ -72,34 +72,32 @@ const MODEL_PROVIDERS: ModelProvider[] = [
 
 export const LLMConfigComponent = (): JSX.Element => {
   const { t } = useTranslation();
-  const [isAddModelOpen, setIsAddModelOpen] = useState(false);
-  const [editingConfig, setEditingConfig] = useState<string | null>(null);
-  const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
-  const [testingConfigId, setTestingConfigId] = useState<string | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    configId: string;
-    result: TestConfigResponse;
-    success: boolean;
-  } | null>(null);
-  const [showTestResult, setShowTestResult] = useState(false);
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
-
-  // 使用自定义Hook
   const {
     configs: llmConfigs,
-    loading: configsLoading,
-    error: configsError,
+    loading,
+    error,
     createConfig,
     updateConfig,
     deleteConfig,
     setDefaultConfig,
     testConfig,
-    refreshConfigs
+    refresh,
   } = useLLMConfigs();
+
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [selectedConfigForTest, setSelectedConfigForTest] = useState<LLMConfig | null>(null);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [isAddModelOpen, setIsAddModelOpen] = useState(false);
+  const [editingConfig, setEditingConfig] = useState<string | null>(null);
+  const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [testingConfigId, setTestingConfigId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [showTestResult, setShowTestResult] = useState(false);
+  const configsError = error;
+  const configsLoading = loading;
+  const refreshConfigs = refresh;
+
 
   const [newConfig, setNewConfig] = useState<Partial<CreateLLMConfigRequest>>({
     name: '',
