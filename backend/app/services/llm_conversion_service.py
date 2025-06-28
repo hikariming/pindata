@@ -80,12 +80,40 @@ class LLMConversionService:
             )
         elif llm_config.provider == ProviderType.OLLAMA:
             from langchain_community.chat_models import ChatOllama
-            client = ChatOllama(
-                model=llm_config.model_name,
-                base_url=llm_config.base_url,
-                temperature=llm_config.temperature,
-                **llm_config.provider_config if llm_config.provider_config else {}
-            )
+            # 检查是否是OpenAI兼容的API (base_url包含/v1)
+            if llm_config.base_url and '/v1' in llm_config.base_url:
+                logger.info(f"检测到Ollama使用OpenAI兼容API格式: {llm_config.base_url}")
+                # 使用OpenAI客户端处理OpenAI兼容的Ollama API
+                
+                # 智能处理API key：很多Ollama服务不需要真实的API key
+                api_key_to_use = None
+                if llm_config.api_key and llm_config.api_key not in ['ollama', 'placeholder', '']:
+                    # 如果有真实的API key，使用它
+                    api_key_to_use = llm_config.api_key
+                    logger.info("使用配置的API key")
+                else:
+                    # 对于本地或不需要认证的Ollama服务，尝试不提供API key
+                    # 如果失败，ChatOpenAI通常会要求提供，我们再提供一个placeholder
+                    api_key_to_use = "not-needed"  # 使用一个明确的placeholder
+                    logger.info("Ollama服务通常不需要API key，使用placeholder")
+                
+                client = ChatOpenAI(
+                    model=llm_config.model_name,
+                    api_key=api_key_to_use,
+                    base_url=llm_config.base_url,
+                    temperature=llm_config.temperature,
+                    max_tokens=llm_config.max_tokens,
+                    **llm_config.provider_config if llm_config.provider_config else {}
+                )
+            else:
+                # 使用原生Ollama API格式（通常不需要API key）
+                logger.info(f"使用原生Ollama API格式: {llm_config.base_url}")
+                client = ChatOllama(
+                    model=llm_config.model_name,
+                    base_url=llm_config.base_url,
+                    temperature=llm_config.temperature,
+                    **llm_config.provider_config if llm_config.provider_config else {}
+                )
         else:
             raise ValueError(f"不支持的LLM提供商: {llm_config.provider}")
         

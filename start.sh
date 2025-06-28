@@ -8,10 +8,6 @@ CONDA_ENV_NAME="pindata-env"
 echo "--- Starting backend in Conda env: $CONDA_ENV_NAME ---"
 cd "$PROJECT_ROOT/backend"
 
-# 初始化数据库
-echo "Initializing database..."
-conda run -n "$CONDA_ENV_NAME" flask init-db
-
 # 启动后端服务器 (后台运行)
 echo "Starting backend server..."
 conda run -n "$CONDA_ENV_NAME" python run.py &

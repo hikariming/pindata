@@ -545,8 +545,12 @@ export const LLMConfigComponent = (): JSX.Element => {
                       placeholder={newConfig.provider === 'ollama' ? t('settings.llm.apiKeyNotNeeded') : "sk-..."}
                       value={newConfig.api_key || ''}
                       onChange={(e) => setNewConfig({...newConfig, api_key: e.target.value})}
-                      disabled={newConfig.provider === 'ollama'}
                     />
+                    {newConfig.provider === 'ollama' && (
+                      <div className="text-xs text-[#4f7096] mt-1">
+                        {t('settings.llm.apiKeyOllamaHint')}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -675,8 +679,12 @@ export const LLMConfigComponent = (): JSX.Element => {
                 placeholder={llmConfigs.find(c => c.id === editingConfig)?.provider === 'ollama' ? t('settings.llm.apiKeyNotNeeded') : "sk-..."}
                 value={editConfig.api_key || ''}
                 onChange={(e) => setEditConfig({...editConfig, api_key: e.target.value})}
-                disabled={llmConfigs.find(c => c.id === editingConfig)?.provider === 'ollama'}
               />
+              {llmConfigs.find(c => c.id === editingConfig)?.provider === 'ollama' && (
+                <div className="text-xs text-[#4f7096] mt-1">
+                  {t('settings.llm.apiKeyOllamaHint')}
+                </div>
+              )}
             </div>
 
             <div>

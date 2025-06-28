@@ -301,7 +301,7 @@ class LLMConfigDefaultResource(Resource):
             
             # 记录日志
             SystemLog.log_info(
-                f"设��默认LLM配置: {config.name}",
+                f"设置默认LLM配置: {config.name}",
                 "LLMConfig",
                 extra_data={'config_id': config.id}
             )
@@ -459,13 +459,24 @@ class LLMConfigTestResource(Resource):
                 message = '连接超时或网络错误'
             elif 'not found' in error_msg.lower() or '404' in error_msg:
                 status = 'model_not_found'
-                message = '模型不存在或无权访问'
+                # 为Ollama配置提供更具体的错误提示
+                if config.provider == ProviderType.OLLAMA:
+                    if config.base_url and '/v1' in config.base_url:
+                        message = f'模型 {config.model_name} 不存在。请确认该模型在OpenAI兼容服务中可用。'
+                    else:
+                        message = f'模型 {config.model_name} 不存在。请先使用 "ollama pull {config.model_name}" 下载模型。'
+                else:
+                    message = '模型不存在或无权访问'
             elif 'rate limit' in error_msg.lower() or '429' in error_msg:
                 status = 'rate_limited'
                 message = '请求频率超限'
             else:
                 status = 'unknown_error'
-                message = f'未知错误: {error_msg}'
+                # 为Ollama配置提供配置建议
+                if config.provider == ProviderType.OLLAMA and config.base_url and '/v1' in config.base_url:
+                    message = f'连接失败。您的API ({config.base_url}) 看起来是OpenAI兼容格式，建议将Provider类型改为"OpenAI"而不是"Ollama"。错误详情: {error_msg}'
+                else:
+                    message = f'未知错误: {error_msg}'
             
             return {
                 'success': False,

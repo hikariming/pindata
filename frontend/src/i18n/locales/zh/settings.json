@@ -221,6 +221,8 @@
     "modelNameTip": "您可以输入任何模型名称，包括自定义模型",
     "viewSupportedModels": "查看支持的模型",
     "apiKeyLabel": "API密钥",
+    "apiKeyNotNeeded": "Ollama通常不需要API密钥",
+    "apiKeyOllamaHint": "大部分Ollama服务（特别是本地部署）不需要API密钥，可以留空",
     "apiUrlLabel": "API接口地址",
     "temperatureParam": "温度参数",
     "maxTokensParam": "最大Token数",
