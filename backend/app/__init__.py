@@ -26,10 +26,27 @@ from app.utils.db_utils import is_new_database, stamp_db_as_latest
 from .celery_app import celery
 
 # 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# )
+
+# 获取根日志记录器
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# 创建一个输出到控制台的处理器
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+
+# 创建一个格式化器并将其添加到处理器
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# 将处理器添加到根日志记录器
+if not logger.handlers:
+    logger.addHandler(handler)
+
 logger = logging.getLogger(__name__)
 
 def create_app(config_name='default'):
