@@ -417,6 +417,17 @@ class LLMConfigTestResource(Resource):
                     'provider': 'Gemini',
                     'response_preview': response.content[:100] + '...' if len(response.content) > 100 else response.content
                 }
+            
+            elif config.provider == ProviderType.OLLAMA:
+                # Ollama格式测试
+                from langchain.schema import HumanMessage
+                messages = [HumanMessage(content=test_prompt)]
+                response = llm_client.invoke(messages)
+                model_info = {
+                    'model': config.model_name,
+                    'provider': 'Ollama',
+                    'response_preview': response.content[:100] + '...' if len(response.content) > 100 else response.content
+                }
                 
             else:
                 # 自定义提供商测试

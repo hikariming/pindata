@@ -23,7 +23,6 @@ from app.api.v1.endpoints.data_governance import data_governance_bp
 from config.config import config, get_config
 from app.db import ensure_database_exists
 from app.utils.db_utils import is_new_database, stamp_db_as_latest
-from app.db_migrations import check_and_migrate
 from .celery_app import celery
 
 # 配置日志
@@ -110,18 +109,9 @@ def create_app(config_name='default'):
                 except Exception as e:
                     logger.error(f"❌ 初始化全新数据库时发生错误: {e}", exc_info=True)
             else:
-                logger.info("检测到现有数据库，开始检查迁移...")
-                # 3. 对现有数据库执行迁移检查
-                try:
-                    auto_migrate = app.config.get('AUTO_MIGRATE', True)
-                    if not check_and_migrate(database_url, auto_migrate):
-                        logger.warning("数据库迁移未完全成功，但应用将继续启动")
-                    
-                    # 确保默认组织存在
-                    ensure_default_organization()
-                    
-                except Exception as e:
-                    logger.error(f"数据库迁移检查失败: {e}", exc_info=True)
+                logger.info("检测到现有数据库，Alembic迁移将在run.py中执行...")
+                # 确保默认组织存在
+                ensure_default_organization()
 
     except Exception as e:
         logger.error(f"数据库设置过程中发生严重错误: {e}", exc_info=True)

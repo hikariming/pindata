@@ -3,7 +3,7 @@ from marshmallow import Schema, fields, validate, validates_schema, ValidationEr
 class LLMConfigCreateSchema(Schema):
     """创建LLM配置的验证模式"""
     name = fields.String(required=True, validate=validate.Length(min=1, max=255))
-    provider = fields.String(required=True, validate=validate.OneOf(['openai', 'claude', 'gemini', 'custom']))
+    provider = fields.String(required=True, validate=validate.OneOf(['openai', 'claude', 'gemini', 'ollama', 'custom']))
     model_name = fields.String(required=True, validate=validate.Length(min=1, max=255))
     api_key = fields.String(required=True, validate=validate.Length(min=1))
     base_url = fields.String(validate=validate.Length(max=500), allow_none=True)
@@ -37,7 +37,7 @@ class LLMConfigCreateSchema(Schema):
 class LLMConfigUpdateSchema(Schema):
     """更新LLM配置的验证模式"""
     name = fields.String(validate=validate.Length(min=1, max=255))
-    provider = fields.String(validate=validate.OneOf(['openai', 'claude', 'gemini', 'custom']))
+    provider = fields.String(validate=validate.OneOf(['openai', 'claude', 'gemini', 'ollama', 'custom']))
     model_name = fields.String(validate=validate.Length(min=1, max=255))
     api_key = fields.String(validate=validate.Length(min=1))
     base_url = fields.String(validate=validate.Length(max=500), allow_none=True)
@@ -58,7 +58,7 @@ class LLMConfigQuerySchema(Schema):
     """查询LLM配置的验证模式"""
     page = fields.Integer(validate=validate.Range(min=1), missing=1)
     per_page = fields.Integer(validate=validate.Range(min=1, max=100), missing=20)
-    provider = fields.String(validate=validate.OneOf(['openai', 'claude', 'gemini', 'custom']), allow_none=True)
+    provider = fields.String(validate=validate.OneOf(['openai', 'claude', 'gemini', 'ollama', 'custom']), allow_none=True)
     is_active = fields.Boolean(allow_none=True)
     supports_vision = fields.Boolean(allow_none=True)
     supports_reasoning = fields.Boolean(allow_none=True)

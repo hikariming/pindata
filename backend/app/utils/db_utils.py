@@ -233,6 +233,9 @@ def is_new_database(engine):
         # 如果出现异常，保守地认为不是新数据库
         return False
 
+from alembic.config import Config
+from alembic import command
+
 def stamp_db_as_latest(app):
     """
     将数据库标记为最新版本，避免执行不必要的迁移
@@ -240,47 +243,9 @@ def stamp_db_as_latest(app):
     logger.info("将数据库标记为最新版本...")
     try:
         with app.app_context():
-            # 动态导入迁移管理器
-            migrations_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'migrations')
-            if migrations_dir not in sys.path:
-                sys.path.append(migrations_dir)
-            
-            from migration_manager import MigrationManager
-            
-            manager = MigrationManager(app.config['SQLALCHEMY_DATABASE_URI'], migrations_dir)
-            
-            # 1. 初始化迁移记录表
-            manager.init_migrations_table()
-            logger.info("迁移记录表已初始化")
-            
-            # 2. 获取所有可用的迁移文件
-            all_migrations = manager.scan_migration_files()
-            logger.info(f"发现 {len(all_migrations)} 个可用的迁移文件")
-            
-            # 3. 将所有迁移记录为已执行
-            with manager.engine.connect() as conn:
-                trans = conn.begin()
-                try:
-                    for migration in all_migrations:
-                        conn.execute(text(f"""
-                            INSERT INTO {manager.migrations_table} 
-                            (version, filename, checksum, status)
-                            VALUES (:version, :filename, :checksum, 'SUCCESS')
-                            ON CONFLICT (version) DO NOTHING;
-                        """), {
-                            'version': migration['version'],
-                            'filename': migration['filename'],
-                            'checksum': migration['checksum']
-                        })
-                    trans.commit()
-                    logger.info("成功将所有可用迁移标记为已执行")
-                except Exception as e:
-                    trans.rollback()
-                    logger.error(f"标记迁移为已执行时失败: {e}")
-                    raise
-
-            latest_version = manager.get_latest_available_version()
-            logger.info(f"数据库已成功标记为最新版本: {latest_version}")
+            alembic_cfg = Config("alembic.ini")
+            command.stamp(alembic_cfg, "head")
+            logger.info("数据库已成功标记为最新版本")
             return True
             
     except Exception as e:

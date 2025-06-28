@@ -67,6 +67,14 @@ const MODEL_PROVIDERS: ModelProvider[] = [
     icon: '✨',
     baseUrl: 'https://generativelanguage.googleapis.com/v1',
     models: ['gemini-pro', 'gemini-pro-vision', 'gemini-ultra']
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama',
+    type: 'ollama',
+    icon: '🦙',
+    baseUrl: 'http://localhost:11434/api',
+    models: ['llama2', 'codellama', 'mistral']
   }
 ];
 
@@ -144,9 +152,13 @@ export const LLMConfigComponent = (): JSX.Element => {
   };
 
   const handleAddModel = async () => {
-    if (newConfig.name && newConfig.model_name && newConfig.api_key) {
+    if (newConfig.name && newConfig.model_name && (newConfig.provider === 'ollama' || newConfig.api_key)) {
       try {
-        await createConfig(newConfig as CreateLLMConfigRequest);
+        const configToCreate = { ...newConfig };
+        if (configToCreate.provider === 'ollama') {
+          configToCreate.api_key = 'ollama'; // 为Ollama设置一个默认的非空值
+        }
+        await createConfig(configToCreate as CreateLLMConfigRequest);
         resetNewConfig();
         setIsAddModelOpen(false);
       } catch (error) {
@@ -158,7 +170,12 @@ export const LLMConfigComponent = (): JSX.Element => {
   const handleEditModel = async () => {
     if (editingConfig && editConfig) {
       try {
-        await updateConfig(editingConfig, editConfig);
+        const configToUpdate = { ...editConfig };
+        const originalConfig = llmConfigs.find(c => c.id === editingConfig);
+        if (originalConfig?.provider === 'ollama') {
+          configToUpdate.api_key = 'ollama'; // 为Ollama设置一个默认的非空值
+        }
+        await updateConfig(editingConfig, configToUpdate);
         setEditingConfig(null);
         setEditConfig({});
       } catch (error) {
@@ -525,9 +542,10 @@ export const LLMConfigComponent = (): JSX.Element => {
                     <label className="block text-sm font-medium mb-2">{t('settings.llm.apiKeyLabel')}</label>
                     <Input
                       type="password"
-                      placeholder="sk-..."
+                      placeholder={newConfig.provider === 'ollama' ? t('settings.llm.apiKeyNotNeeded') : "sk-..."}
                       value={newConfig.api_key || ''}
                       onChange={(e) => setNewConfig({...newConfig, api_key: e.target.value})}
+                      disabled={newConfig.provider === 'ollama'}
                     />
                   </div>
                 </div>
@@ -608,7 +626,10 @@ export const LLMConfigComponent = (): JSX.Element => {
                 <Button variant="outline" onClick={() => setIsAddModelOpen(false)}>
                   {t('settings.llm.cancel')}
                 </Button>
-                <Button onClick={handleAddModel}>
+                <Button 
+                  onClick={handleAddModel}
+                  disabled={!newConfig.name || !newConfig.model_name || (newConfig.provider !== 'ollama' && !newConfig.api_key)}
+                >
                   {t('settings.llm.confirm')}
                 </Button>
               </DialogFooter>
@@ -651,9 +672,10 @@ export const LLMConfigComponent = (): JSX.Element => {
               <label className="block text-sm font-medium mb-2">{t('settings.llm.apiKeyLabel')}</label>
               <Input
                 type="password"
-                placeholder="sk-..."
+                placeholder={llmConfigs.find(c => c.id === editingConfig)?.provider === 'ollama' ? t('settings.llm.apiKeyNotNeeded') : "sk-..."}
                 value={editConfig.api_key || ''}
                 onChange={(e) => setEditConfig({...editConfig, api_key: e.target.value})}
+                disabled={llmConfigs.find(c => c.id === editingConfig)?.provider === 'ollama'}
               />
             </div>
 
@@ -727,7 +749,10 @@ export const LLMConfigComponent = (): JSX.Element => {
             <Button variant="outline" onClick={() => setEditingConfig(null)}>
               {t('settings.llm.cancel')}
             </Button>
-            <Button onClick={handleEditModel}>
+            <Button 
+              onClick={handleEditModel}
+              disabled={!editConfig.name || !editConfig.model_name || (llmConfigs.find(c => c.id === editingConfig)?.provider !== 'ollama' && !editConfig.api_key)}
+            >
               {t('settings.llm.confirm')}
             </Button>
           </DialogFooter>

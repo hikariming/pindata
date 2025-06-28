@@ -1,6 +1,6 @@
 import { ApiResponse, PaginatedResponse } from './api';
 
-export type ProviderType = 'openai' | 'claude' | 'gemini' | 'custom';
+export type ProviderType = 'openai' | 'claude' | 'gemini' | 'ollama' | 'custom';
 export type ReasoningExtractionMethod = 'tag_based' | 'json_field';
 
 export interface LLMConfig {

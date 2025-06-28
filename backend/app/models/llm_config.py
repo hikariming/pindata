@@ -9,6 +9,7 @@ class ProviderType(enum.Enum):
     OPENAI = "openai"
     CLAUDE = "claude"
     GEMINI = "gemini"
+    OLLAMA = "ollama"
     CUSTOM = "custom"
 
 class ReasoningExtractionMethod(enum.Enum):

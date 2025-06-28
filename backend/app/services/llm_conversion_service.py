@@ -78,6 +78,14 @@ class LLMConversionService:
                 max_tokens=llm_config.max_tokens,
                 **llm_config.provider_config if llm_config.provider_config else {}
             )
+        elif llm_config.provider == ProviderType.OLLAMA:
+            from langchain_community.chat_models import ChatOllama
+            client = ChatOllama(
+                model=llm_config.model_name,
+                base_url=llm_config.base_url,
+                temperature=llm_config.temperature,
+                **llm_config.provider_config if llm_config.provider_config else {}
+            )
         else:
             raise ValueError(f"不支持的LLM提供商: {llm_config.provider}")
         
