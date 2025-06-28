@@ -73,7 +73,7 @@ const MODEL_PROVIDERS: ModelProvider[] = [
     name: 'Ollama',
     type: 'ollama',
     icon: '🦙',
-    baseUrl: 'http://localhost:11434/api',
+    baseUrl: 'http://127.0.0.1:11434',
     models: ['llama2', 'codellama', 'mistral']
   }
 ];
@@ -347,11 +347,11 @@ export const LLMConfigComponent = (): JSX.Element => {
             <label className="block text-sm font-medium mb-2">{t('settings.llm.reasoningExtractionMethod')}</label>
             <Select
               value={config.reasoning_extraction_method}
-              onValueChange={(value: ReasoningExtractionMethod) => {
+              onValueChange={(value: string) => {
                 const newExtractionConfig = value === 'tag_based' 
                   ? { tag: 'think' } 
                   : { field: 'reasoning_content' };
-                setter({ ...config, reasoning_extraction_method: value, reasoning_extraction_config: newExtractionConfig });
+                setter({ ...config, reasoning_extraction_method: value as ReasoningExtractionMethod, reasoning_extraction_config: newExtractionConfig });
               }}
             >
               <SelectTrigger>
@@ -885,22 +885,22 @@ export const LLMConfigComponent = (): JSX.Element => {
                       <h4 className="font-medium text-blue-900 mb-1">{t('settings.llm.suggestedSolutions')}</h4>
                       <ul className="text-sm text-blue-800 space-y-1">
                         {testResult.result.status === 'auth_failed' && 
-                          t('settings.llm.authFailedTips', { returnObjects: true }).map((tip: string, index: number) => (
+                          (t('settings.llm.authFailedTips', { returnObjects: true }) as string[]).map((tip: string, index: number) => (
                             <li key={index}>• {tip}</li>
                           ))
                         }
                         {testResult.result.status === 'connection_failed' && 
-                          t('settings.llm.connectionFailedTips', { returnObjects: true }).map((tip: string, index: number) => (
+                          (t('settings.llm.connectionFailedTips', { returnObjects: true }) as string[]).map((tip: string, index: number) => (
                             <li key={index}>• {tip}</li>
                           ))
                         }
                         {testResult.result.status === 'model_not_found' && 
-                          t('settings.llm.modelNotFoundTips', { returnObjects: true }).map((tip: string, index: number) => (
+                          (t('settings.llm.modelNotFoundTips', { returnObjects: true }) as string[]).map((tip: string, index: number) => (
                             <li key={index}>• {tip}</li>
                           ))
                         }
                         {testResult.result.status === 'rate_limited' && 
-                          t('settings.llm.rateLimitedTips', { returnObjects: true }).map((tip: string, index: number) => (
+                          (t('settings.llm.rateLimitedTips', { returnObjects: true }) as string[]).map((tip: string, index: number) => (
                             <li key={index}>• {tip}</li>
                           ))
                         }
