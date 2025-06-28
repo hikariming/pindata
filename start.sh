@@ -4,41 +4,31 @@
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONDA_ENV_NAME="pindata-env"
 
-# --- 启动后端服务 ---
-echo "--- Starting backend in Conda env: $CONDA_ENV_NAME ---"
-cd "$PROJECT_ROOT/backend"
+# 设置环境变量，确保Celery和Flask能正确运行
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+export FLASK_APP=run.py
+export FLASK_ENV=development
 
-# 启动后端服务器 (后台运行)
-echo "Starting backend server..."
-conda run -n "$CONDA_ENV_NAME" python run.py &
-BACKEND_PID=$!
-
-# --- 启动Celery服务 ---
-echo "--- Starting Celery... ---"
-# Celery 脚本现在也会使用 conda run
-./start_celery_threads.sh &
-CELERY_PID=$!
-
-# 等待后端和Celery服务启动
-sleep 5
-
-# --- 启动前端服务 ---
-echo "--- Starting frontend... ---"
-cd "$PROJECT_ROOT/frontend"
-
-# 安装前端依赖 (如果node_modules不存在)
-if [ ! -d "node_modules" ]; then
-    echo "Node modules not found, running pnpm install..."
-    pnpm install
+# --- 检查 Overmind 是否安装 ---
+if ! command -v overmind &> /dev/null; then
+    echo "✋ Overmind is not installed."
+    echo "Please install it first. On macOS: brew install overmind"
+    exit 1
 fi
 
-# 启动前端开发服务器 (后台运行)
-echo "Starting frontend dev server..."
-pnpm run dev &
-FRONTEND_PID=$!
+echo "🚀 Starting all services with Overmind..."
+echo "Press Ctrl+C to stop all services."
+echo "======================================"
 
-# 等待所有后台进程，并设置trap在退出时清理
-# 当脚本接收到 SIGINT (Ctrl+C) 或 SIGTERM 时，杀死所有后台子进程
-trap "echo 'Stopping all services...'; kill $BACKEND_PID $CELERY_PID $FRONTEND_PID 2>/dev/null; exit" SIGINT SIGTERM
+# 使用 overmind 启动 Procfile 中定义的所有服务
+# -f Procfile: 指定配置文件
+# --not-race-conditions: 确保所有进程都已启动
+overmind s -f Procfile
+EXIT_CODE=$?
 
-wait 
+echo "======================================"
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ All services stopped gracefully."
+else
+    echo "❌ Services exited with code: $EXIT_CODE"
+fi 
