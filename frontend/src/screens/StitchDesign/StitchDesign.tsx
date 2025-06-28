@@ -1,7 +1,6 @@
 // frontend/src/screens/StitchDesign/StitchDesign.tsx
 
 import React from 'react';
-import { Layout } from '../../components/Layout';
 import { ActivitySection } from './sections/ActivitySection';
 
 /**
@@ -11,8 +10,6 @@ import { ActivitySection } from './sections/ActivitySection';
  */
 export const StitchDesign: React.FC = (): JSX.Element => {
   return (
-    <Layout>
-      <ActivitySection />
-    </Layout>
+    <ActivitySection />
   );
 };

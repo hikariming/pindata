@@ -52,22 +52,22 @@ export const ActivitySection = (): JSX.Element => {
   const overviewData = [
     {
       title: t('navigation.datasets'),
-      value: stats?.datasets.total?.toString() || "0",
+      value: stats?.datasets?.total?.toString() || "0",
       icon: <DatabaseIcon className="w-6 h-6" />,
     },
     {
       title: t('navigation.tasks'),
-      value: stats?.tasks.total?.toString() || "0",
+      value: stats?.tasks?.total?.toString() || "0",
       icon: <CheckSquareIcon className="w-6 h-6" />,
     },
     {
       title: t('navigation.storage'),
-      value: stats ? `${stats.storage.used_gb} GB / ${stats.storage.total_gb} GB` : "0 GB / 0 GB",
+      value: stats?.storage ? `${stats.storage.used_gb} GB / ${stats.storage.total_gb} GB` : "0 GB / 0 GB",
       icon: <HardDriveIcon className="w-6 h-6" />,
     },
     {
       title: t('navigation.plugins'),
-      value: stats?.plugins.status === 'coming_soon' ? t('overview.comingSoon') : stats?.plugins.total?.toString() || "0",
+      value: stats?.plugins?.status === 'coming_soon' ? t('overview.comingSoon') : stats?.plugins?.total?.toString() || "0",
       icon: <PieChartIcon className="w-6 h-6" />,
     },
   ];
