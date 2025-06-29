@@ -13,7 +13,9 @@ import {
   SparklesIcon,
   CpuIcon,
   LayersIcon,
-  ZapIcon
+  ZapIcon,
+  LightbulbIcon,
+  InfoIcon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
@@ -220,6 +222,199 @@ export const Step3ModelConfig: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      {/* 思考过程配置 - 仅在Step2启用时显示 */}
+      {processingConfig.enableThinkingProcess && selectedModel && (
+        <Card className="border-[#d1dbe8]">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <LightbulbIcon className="w-6 h-6 text-[#1977e5]" />
+              <h3 className="text-lg font-semibold text-[#0c141c]">
+                {selectedModel.supports_reasoning ? '思考过程提取配置' : '蒸馏思考配置'}
+              </h3>
+              <div className="ml-auto">
+                <span className={`px-3 py-1 text-xs rounded-full ${
+                  selectedModel.supports_reasoning 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {selectedModel.supports_reasoning ? '原生支持CoT' : '需要蒸馏'}
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 bg-[#f0f9ff] border border-[#bae6fd] rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <InfoIcon className="w-4 h-4 text-[#0369a1]" />
+                <span className="text-sm font-medium text-[#0369a1]">配置说明</span>
+              </div>
+              <p className="text-xs text-[#0369a1]">
+                {selectedModel.supports_reasoning 
+                  ? `模型 "${selectedModel.name}" 原生支持Chain of Thought推理，系统将直接从模型输出中提取思考过程。`
+                  : `模型 "${selectedModel.name}" 不支持原生CoT，将通过蒸馏技术引导其生成推理步骤。`
+                }
+              </p>
+            </div>
+
+            {selectedModel.supports_reasoning ? (
+              // 支持CoT的模型：显示提取配置
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#0c141c] mb-2">思考过程提取方法</label>
+                    <select
+                      className="w-full p-2 border border-[#d1dbe8] rounded-lg bg-white"
+                      value={processingConfig.reasoningExtractionMethod || ''}
+                      onChange={(e) => {
+                        const method = e.target.value as 'tag_based' | 'json_field';
+                        const config = method === 'tag_based' 
+                          ? { tag: 'thinking' } 
+                          : { field: 'reasoning' };
+                        setProcessingConfig({ 
+                          reasoningExtractionMethod: method,
+                          reasoningExtractionConfig: config
+                        });
+                      }}
+                    >
+                      <option value="">请选择提取方法</option>
+                      <option value="tag_based">标签模式 (推荐)</option>
+                      <option value="json_field">JSON字段模式</option>
+                    </select>
+                    <p className="text-xs text-[#4f7096] mt-1">
+                      {processingConfig.reasoningExtractionMethod === 'tag_based' && 
+                        '使用 <thinking>...</thinking> 标签提取思考过程'}
+                      {processingConfig.reasoningExtractionMethod === 'json_field' && 
+                        '从JSON响应的指定字段提取思考内容'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#0c141c] mb-2">提取配置</label>
+                    {processingConfig.reasoningExtractionMethod === 'tag_based' ? (
+                      <Input
+                        className="border-[#d1dbe8]"
+                        placeholder="标签名称 (如: thinking)"
+                        value={processingConfig.reasoningExtractionConfig?.tag || 'thinking'}
+                        onChange={(e) => setProcessingConfig({ 
+                          reasoningExtractionConfig: { tag: e.target.value }
+                        })}
+                      />
+                    ) : processingConfig.reasoningExtractionMethod === 'json_field' ? (
+                      <Input
+                        className="border-[#d1dbe8]"
+                        placeholder="字段名称 (如: reasoning)"
+                        value={processingConfig.reasoningExtractionConfig?.field || 'reasoning'}
+                        onChange={(e) => setProcessingConfig({ 
+                          reasoningExtractionConfig: { field: e.target.value }
+                        })}
+                      />
+                    ) : (
+                      <Input
+                        className="border-[#d1dbe8]"
+                        placeholder="请先选择提取方法"
+                        disabled
+                      />
+                    )}
+                    <p className="text-xs text-[#4f7096] mt-1">
+                      配置提取方法的具体参数
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-[#0c141c]">在输出中包含思考过程</label>
+                    <p className="text-xs text-[#4f7096] mt-1">决定最终数据集是否包含提取的思考内容</p>
+                  </div>
+                  <Switch
+                    checked={processingConfig.includeThinkingInOutput}
+                    onCheckedChange={(checked) => setProcessingConfig({ includeThinkingInOutput: checked })}
+                  />
+                </div>
+              </div>
+            ) : (
+              // 不支持CoT的模型：显示蒸馏配置
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-[#0c141c]">生成思考过程</label>
+                    <p className="text-xs text-[#4f7096] mt-1">通过蒸馏技术引导模型生成推理步骤</p>
+                  </div>
+                  <Switch
+                    checked={processingConfig.includeThinkingInOutput}
+                    onCheckedChange={(checked) => setProcessingConfig({ includeThinkingInOutput: checked })}
+                  />
+                </div>
+
+                {processingConfig.includeThinkingInOutput && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#0c141c] mb-2">蒸馏思考提示词</label>
+                    <Textarea
+                      className="border-[#d1dbe8] min-h-[120px]"
+                      placeholder="输入用于引导模型生成思考过程的提示词..."
+                      value={processingConfig.distillationPrompt}
+                      onChange={(e) => setProcessingConfig({ distillationPrompt: e.target.value })}
+                      rows={4}
+                    />
+                    <p className="text-xs text-[#4f7096] mt-1">
+                      此提示词将被插入到主提示词中，引导模型生成详细的思考过程。建议包含"请详细说明你的思考过程"等引导语。
+                    </p>
+                  </div>
+                )}
+
+                <div className="p-3 bg-[#fef3cd] border border-[#fbbf24] rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <InfoIcon className="w-4 h-4 text-[#f59e0b]" />
+                    <span className="text-sm font-medium text-[#92400e]">蒸馏技术说明</span>
+                  </div>
+                  <p className="text-xs text-[#92400e]">
+                    对于不支持CoT的模型，系统将通过特殊的提示词设计来"蒸馏"出推理能力，
+                    让模型学会逐步思考和推理，从而生成包含推理过程的高质量训练数据。
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 思考过程配置预览 */}
+            <div className="mt-6 p-4 bg-[#f8fbff] border border-[#e3f2fd] rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <SparklesIcon className="w-4 h-4 text-[#1977e5]" />
+                <span className="text-sm font-medium text-[#0c141c]">配置预览</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <span className="text-[#4f7096]">模型类型: </span>
+                  <span className="font-medium">{selectedModel.supports_reasoning ? 'CoT原生' : '蒸馏模式'}</span>
+                </div>
+                <div>
+                  <span className="text-[#4f7096]">处理方式: </span>
+                  <span className="font-medium">
+                    {selectedModel.supports_reasoning ? '提取思考过程' : '生成思考过程'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#4f7096]">输出包含: </span>
+                  <span className="font-medium">
+                    {processingConfig.includeThinkingInOutput ? '思考+答案' : '仅答案'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#4f7096]">配置状态: </span>
+                  <span className={`font-medium ${
+                    (selectedModel.supports_reasoning && processingConfig.reasoningExtractionMethod) ||
+                    (!selectedModel.supports_reasoning && processingConfig.distillationPrompt)
+                      ? 'text-green-600' : 'text-orange-600'
+                  }`}>
+                    {(selectedModel.supports_reasoning && processingConfig.reasoningExtractionMethod) ||
+                     (!selectedModel.supports_reasoning && processingConfig.distillationPrompt)
+                      ? '已配置' : '待配置'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* 文档分片配置 */}
       <Card className="border-[#d1dbe8]">

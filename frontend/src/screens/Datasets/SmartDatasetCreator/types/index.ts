@@ -25,6 +25,14 @@ export interface ProcessingConfig {
   chunkOverlap: number;     // 分片重叠大小
   preserveStructure: boolean; // 保持文档结构
   splitByHeaders: boolean;   // 按标题分割
+  // 思考过程配置（根据模型能力动态调整）
+  enableThinkingProcess: boolean; // 启用思考过程处理
+  // 对于supports_reasoning=true的模型：提取配置
+  reasoningExtractionMethod: 'tag_based' | 'json_field' | null; // 思考提取方法
+  reasoningExtractionConfig: Record<string, any> | null; // 提取方法的具体配置
+  // 对于supports_reasoning=false的模型：蒸馏配置
+  distillationPrompt: string; // 蒸馏思考过程的提示词
+  includeThinkingInOutput: boolean; // 在最终输出中包含思考过程
 }
 
 export interface DatasetType {

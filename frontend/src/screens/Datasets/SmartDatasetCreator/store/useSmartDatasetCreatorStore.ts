@@ -29,7 +29,13 @@ const initialState: SmartDatasetCreatorState = {
     chunkSize: 1000,
     chunkOverlap: 200,
     preserveStructure: true,
-    splitByHeaders: true
+    splitByHeaders: true,
+    // 思考过程配置默认值
+    enableThinkingProcess: false,
+    reasoningExtractionMethod: null,
+    reasoningExtractionConfig: null,
+    distillationPrompt: '请详细说明你的思考过程，包括分析步骤和推理逻辑：',
+    includeThinkingInOutput: false
   },
   availableLLMConfigs: [],
   
