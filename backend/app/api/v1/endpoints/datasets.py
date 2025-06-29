@@ -595,7 +595,12 @@ def get_dataset_import_status(dataset_id):
                             'qa_pairs_per_chunk': {'type': 'integer'},
                             'summary_length': {'type': 'string'},
                             'instructions_per_chunk': {'type': 'integer'},
-                            'categories': {'type': 'array', 'items': {'type': 'string'}}
+                            'categories': {'type': 'array', 'items': {'type': 'string'}},
+                            'enableThinkingProcess': {'type': 'boolean', 'description': '启用思考过程处理'},
+                            'reasoningExtractionMethod': {'type': 'string', 'enum': ['tag_based', 'json_field'], 'description': '思考过程提取方法'},
+                            'reasoningExtractionConfig': {'type': 'object', 'description': '思考过程提取配置'},
+                            'distillationPrompt': {'type': 'string', 'description': '知识蒸馏提示词'},
+                            'includeThinkingInOutput': {'type': 'boolean', 'description': '在输出中包含思考过程'}
                         }
                     }
                 },
@@ -629,6 +634,16 @@ def generate_dataset(dataset_id):
         dataset_config = data['dataset_config']
         model_config = data['model_config']
         processing_config = data['processing_config']
+        
+        # 记录配置信息用于调试
+        logger.info(f"生成数据集任务配置:")
+        logger.info(f"  - 选中文件数: {len(selected_files)}")
+        logger.info(f"  - 数据集类型: {dataset_config.get('type')}")
+        logger.info(f"  - 输出格式: {dataset_config.get('format')}")
+        logger.info(f"  - 模型ID: {model_config.get('id')}")
+        logger.info(f"  - 思考过程配置: 启用={processing_config.get('enableThinkingProcess')}, "
+                   f"提取方法={processing_config.get('reasoningExtractionMethod')}, "
+                   f"包含输出={processing_config.get('includeThinkingInOutput')}")
         
         # 验证文件列表
         if not selected_files or not isinstance(selected_files, list):

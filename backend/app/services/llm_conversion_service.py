@@ -45,11 +45,12 @@ class LLMConversionService:
             return self.llm_cache[cache_key]
         
         logger.info(f"创建新的LLM客户端: Provider={llm_config.provider}, Model={llm_config.model_name}")
-        logger.info(f"API Key信息: 前缀={llm_config.api_key[:10]}..., 长度={len(llm_config.api_key)}")
         
         client = None
         
-        if llm_config.provider == ProviderType.OPENAI:
+        provider_value = llm_config.provider.value if isinstance(llm_config.provider, ProviderType) else llm_config.provider
+
+        if provider_value == ProviderType.OPENAI.value:
             client = ChatOpenAI(
                 model=llm_config.model_name,
                 api_key=llm_config.api_key,
@@ -58,8 +59,7 @@ class LLMConversionService:
                 max_tokens=llm_config.max_tokens,
                 **llm_config.provider_config if llm_config.provider_config else {}
             )
-        elif llm_config.provider == ProviderType.GEMINI:
-            logger.info(f"初始化Gemini客户端，使用API Key: {llm_config.api_key[:10]}...")
+        elif provider_value == ProviderType.GEMINI.value:
             client = ChatGoogleGenerativeAI(
                 model=llm_config.model_name,
                 google_api_key=llm_config.api_key,
@@ -67,7 +67,7 @@ class LLMConversionService:
                 max_output_tokens=llm_config.max_tokens,
                 **llm_config.provider_config if llm_config.provider_config else {}
             )
-        elif llm_config.provider == ProviderType.CLAUDE:
+        elif provider_value == ProviderType.CLAUDE.value:
             if ChatAnthropic is None:
                 raise ImportError("langchain_anthropic is not installed. Please install it to use Claude models.")
             client = ChatAnthropic(
@@ -78,25 +78,13 @@ class LLMConversionService:
                 max_tokens=llm_config.max_tokens,
                 **llm_config.provider_config if llm_config.provider_config else {}
             )
-        elif llm_config.provider == ProviderType.OLLAMA:
+        elif provider_value == ProviderType.OLLAMA.value:
             from langchain_community.chat_models import ChatOllama
-            # 检查是否是OpenAI兼容的API (base_url包含/v1)
             if llm_config.base_url and '/v1' in llm_config.base_url:
                 logger.info(f"检测到Ollama使用OpenAI兼容API格式: {llm_config.base_url}")
-                # 使用OpenAI客户端处理OpenAI兼容的Ollama API
-                
-                # 智能处理API key：很多Ollama服务不需要真实的API key
-                api_key_to_use = None
-                if llm_config.api_key and llm_config.api_key not in ['ollama', 'placeholder', '']:
-                    # 如果有真实的API key，使用它
+                api_key_to_use = "not-needed"
+                if llm_config.api_key and llm_config.api_key not in ['ollama', 'placeholder', '', 'not-needed']:
                     api_key_to_use = llm_config.api_key
-                    logger.info("使用配置的API key")
-                else:
-                    # 对于本地或不需要认证的Ollama服务，尝试不提供API key
-                    # 如果失败，ChatOpenAI通常会要求提供，我们再提供一个placeholder
-                    api_key_to_use = "not-needed"  # 使用一个明确的placeholder
-                    logger.info("Ollama服务通常不需要API key，使用placeholder")
-                
                 client = ChatOpenAI(
                     model=llm_config.model_name,
                     api_key=api_key_to_use,
@@ -106,7 +94,6 @@ class LLMConversionService:
                     **llm_config.provider_config if llm_config.provider_config else {}
                 )
             else:
-                # 使用原生Ollama API格式（通常不需要API key）
                 logger.info(f"使用原生Ollama API格式: {llm_config.base_url}")
                 client = ChatOllama(
                     model=llm_config.model_name,
@@ -405,37 +392,151 @@ class LLMConversionService:
         ]
     
     def call_llm(self, llm_config: LLMConfig, prompt: str) -> str:
-        """调用LLM生成文本回复
-        
-        Args:
-            llm_config: LLM配置
-            prompt: 提示词
-            
-        Returns:
-            str: LLM的回复内容
-        """
+        """调用LLM生成文本回复"""
         try:
             llm = self.get_llm_client(llm_config)
-            
-            # 构建消息
             messages = [HumanMessage(content=prompt)]
-            
-            # 调用LLM
             logger.info(f"调用LLM生成文本 - 模型: {llm_config.model_name}")
             start_time = time.time()
             response = llm.invoke(messages)
             duration = time.time() - start_time
-            
             logger.info(f"LLM调用完成 - 耗时: {duration:.2f}秒, 输入长度: {len(prompt)}, 输出长度: {len(response.content)}")
-            
-            # 更新使用统计
             llm_config.update_usage()
-            
             return response.content
-            
         except Exception as e:
-            logger.error(f"调用LLM失败: {str(e)}")
+            logger.error(f"调用LLM失败: {str(e)}", exc_info=True)
             raise
+
+    def call_llm_with_thinking_process(self, llm_config: LLMConfig, prompt: str, thinking_config: Dict[str, Any] = None) -> Dict[str, str]:
+        """调用支持思考过程的LLM生成文本回复"""
+        try:
+            # 根据模型是否原生支持思考过程，决定使用的提示词
+            if llm_config.supports_reasoning:
+                logger.info(f"模型 {llm_config.name} 原生支持思考过程，直接使用组合后的提示词。")
+                final_prompt = prompt
+            else:
+                logger.info(f"模型 {llm_config.name} 不支持原生思考过程，构建引导性提示词。")
+                final_prompt = self._build_thinking_prompt(prompt, llm_config, thinking_config)
+
+            raw_response = self.call_llm(llm_config, final_prompt)
+
+            # 在控制台打印原始输出，方便调试
+            logger.info("===== LLM Raw Response Start =====")
+            logger.info(raw_response)
+            logger.info("===== LLM Raw Response End =====")
+
+            parsed_result = self._extract_thinking_process(raw_response, llm_config, thinking_config)
+            
+            return {
+                'raw_response': raw_response,
+                'final_answer': parsed_result.get('final_answer', raw_response),
+                'reasoning': parsed_result.get('reasoning', '')
+            }
+        except Exception as e:
+            logger.error(f"调用支持思考过程的LLM失败: {str(e)}", exc_info=True)
+            raise
+
+    def distill_thinking_process(self, llm_config: LLMConfig, original_prompt: str, 
+                                original_response: str, distillation_config: Dict[str, Any] = None) -> Dict[str, str]:
+        """为不支持推理的模型进行知识蒸馏，生成思考过程"""
+        try:
+            distillation_prompt = distillation_config.get('distillation_prompt', '') if distillation_config else ''
+            if not distillation_prompt:
+                distillation_prompt = f"""请为以下问答对生成详细的思考过程。
+
+### 原始问题/指令:
+{original_prompt}
+
+### 原始答案:
+{original_response}
+
+请在 <thinking> ... </thinking> 标签内提供你的思考过程，然后在新的一行用 "最终答案：" 开头，提供最终答案。
+"""
+            else:
+                 prompt = distillation_prompt.format(
+                    original_prompt=original_prompt,
+                    original_response=original_response,
+                    final_answer=original_response
+                )
+
+            distilled_response = self.call_llm(llm_config, prompt)
+            
+            thinking_start = distilled_response.find('<thinking>')
+            thinking_end = distilled_response.find('</thinking>')
+            
+            if thinking_start != -1 and thinking_end != -1:
+                reasoning = distilled_response[thinking_start + 10:thinking_end].strip()
+                final_answer_part = distilled_response[thinking_end + 11:].strip()
+                if '最终答案：' in final_answer_part:
+                    final_answer = final_answer_part.split('最终答案：', 1)[-1].strip()
+                else:
+                    final_answer = final_answer_part if final_answer_part else original_response
+            else:
+                reasoning = ''
+                final_answer = distilled_response
+            
+            return {'reasoning': reasoning, 'final_answer': final_answer}
+
+        except Exception as e:
+            logger.error(f"知识蒸馏失败: {str(e)}", exc_info=True)
+            return {'reasoning': '', 'final_answer': original_response}
+
+    def _build_thinking_prompt(self, original_prompt: str, llm_config: LLMConfig, thinking_config: Dict[str, Any] = None) -> str:
+        """构建包含思考过程引导的提示词"""
+        if not thinking_config:
+            thinking_config = {}
+        
+        thinking_instructions = thinking_config.get('distillationPrompt', '')
+        
+        if thinking_instructions:
+            # 如果用户提供了完整的思考指令，直接使用它
+            logger.debug("使用用户提供的完整思考过程提示词 (distillationPrompt)")
+            return thinking_instructions
+
+        # 否则，使用默认的构建方式
+        method = thinking_config.get('reasoning_extraction_method', 'tag_based')
+        if method == 'tag_based':
+            tag = thinking_config.get('tag', 'thinking')
+            thinking_instructions = f"Please provide your reasoning process within <{tag}>...</{tag}> tags before giving the final answer."
+        else:
+            thinking_instructions = "Please provide your reasoning process before giving the final answer."
+
+        return f"{original_prompt}\n\n---\n{thinking_instructions}"
+
+    def _extract_thinking_process(self, response: str, llm_config: LLMConfig, thinking_config: Dict[str, Any] = None) -> Dict[str, str]:
+        """从LLM的原始响应中提取思考过程和最终答案"""
+        if not thinking_config:
+            return {'reasoning': '', 'final_answer': response}
+        
+        method = thinking_config.get('reasoning_extraction_method', 'tag_based')
+        config = thinking_config.get('reasoning_extraction_config', {})
+        
+        if method == 'tag_based':
+            # 确保tag与模型实际输出一致，这里根据日志调整为小写'think'
+            tag = config.get('tag', 'think').lower()
+            start_tag = f"<{tag}>"
+            end_tag = f"</{tag}>"
+            
+            start_index = response.find(start_tag)
+            end_index = response.find(end_tag)
+            
+            if start_index != -1 and end_index != -1 and start_index < end_index:
+                reasoning = response[start_index + len(start_tag):end_index].strip()
+                # 最终答案是</thinking>标签之后的所有内容
+                final_answer = response[end_index + len(end_tag):].strip()
+                
+                # 如果最终答案为空，可能是模型将所有内容都放在标签内，此时将标签内的内容作为答案
+                if not final_answer:
+                    final_answer = reasoning
+                    reasoning = "(内容全部在思考标签内，已自动提取)" # 提供一个默认的思考过程
+
+                logger.info(f"成功提取思考过程和最终答案。思考过程长度: {len(reasoning)}, 答案长度: {len(final_answer)}")
+                return {'reasoning': reasoning, 'final_answer': final_answer}
+            else:
+                logger.warning(f"无法在LLM响应中找到思考过程标签 '{start_tag}' 和 '{end_tag}'。返回整个响应作为最终答案。")
+                
+        # 如果没有找到思考过程，则将整个响应作为最终答案
+        return {'reasoning': '', 'final_answer': response}
     
     def _get_system_prompt(self, custom_prompt: str) -> str:
         """获取系统提示词"""

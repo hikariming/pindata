@@ -144,6 +144,31 @@ def generate_dataset_task(
                     })
                     processed_files += 1
             
+            # 计算成功文件数和失败率
+            successful_files = len([r for r in conversion_results if r.get('status') == 'success'])
+            failed_files = len([r for r in conversion_results if r.get('status') == 'failed'])
+            file_success_rate = (successful_files / len(selected_files)) * 100 if selected_files else 0
+            
+            logger.info(f"文件处理统计: 总数={len(selected_files)}, 成功={successful_files}, "
+                       f"失败={failed_files}, 成功率={file_success_rate:.1f}%")
+            
+            # 检查文件级别的失败率
+            if file_success_rate < 50.0:
+                error_msg = f"文件处理成功率过低: {file_success_rate:.1f}%，可能是LLM服务不可用或配置错误"
+                logger.error(error_msg)
+                raise Exception(error_msg)
+            
+            # 检查是否生成了足够的数据
+            if total_generated_entries == 0:
+                error_msg = "未从任何文件生成数据，请检查LLM服务状态和配置"
+                logger.error(error_msg)
+                raise Exception(error_msg)
+            
+            # 如果成功率较低但不是完全失败，给出警告
+            if file_success_rate < 80.0:
+                warning_msg = f"注意：文件处理成功率较低({file_success_rate:.1f}%)，建议检查LLM服务状态"
+                logger.warning(warning_msg)
+            
             # 更新版本统计信息
             _update_version_stats(version, conversion_results, total_generated_entries)
             
@@ -308,6 +333,12 @@ def _process_single_file(
             # 默认生成通用文本数据
             generated_data = _generate_generic_data(file_content, model_config, processing_config)
         
+        # 检查生成的数据是否有效
+        if not generated_data or len(generated_data) == 0:
+            raise Exception(f"文件 {filename} 未生成任何有效数据，可能是LLM服务不可用或内容无法处理")
+        
+        logger.info(f"文件 {filename} 成功生成 {len(generated_data)} 个数据条目")
+        
         # 3. 保存生成的数据文件
         celery_task.update_state(
             state='PROGRESS',
@@ -389,6 +420,16 @@ def _generate_qa_data(content: str, model_config: Dict, processing_config: Dict)
         if not llm_config:
             raise Exception(f"LLM配置不存在: {llm_config_id}")
         
+        # 获取思考过程配置
+        enable_thinking = processing_config.get('enableThinkingProcess', False)
+        include_thinking_in_output = processing_config.get('includeThinkingInOutput', False)
+        reasoning_extraction_method = processing_config.get('reasoningExtractionMethod')
+        reasoning_extraction_config = processing_config.get('reasoningExtractionConfig', {})
+        distillation_prompt = processing_config.get('distillationPrompt', '')
+        
+        logger.info(f"问答数据生成配置 - 启用思考过程: {enable_thinking}, 包含思考过程: {include_thinking_in_output}")
+        logger.info(f"思考过程配置 - 提取方法: {reasoning_extraction_method}, 蒸馏提示词: {bool(distillation_prompt)}")
+        
         # 分块处理长文本
         chunk_size = processing_config.get('chunk_size', 2000)
         chunk_overlap = processing_config.get('chunk_overlap', 200)
@@ -396,6 +437,8 @@ def _generate_qa_data(content: str, model_config: Dict, processing_config: Dict)
         logger.info(f"将内容分为 {len(chunks)} 块进行处理，块大小: {chunk_size}, 重叠: {chunk_overlap}")
         
         all_qa_pairs = []
+        successful_chunks = 0
+        failed_chunks = 0
         
         for i, chunk in enumerate(chunks):
             logger.info(f"处理块 {i+1}/{len(chunks)}")
@@ -411,19 +454,90 @@ def _generate_qa_data(content: str, model_config: Dict, processing_config: Dict)
             
             # 调用LLM生成问答对
             try:
-                response = llm_conversion_service.call_llm(llm_config, prompt)
+                if enable_thinking and llm_config.supports_reasoning:
+                    # 使用支持思考过程的调用方式
+                    thinking_config = {
+                        'reasoning_extraction_method': reasoning_extraction_method or 'tag_based',
+                        'reasoning_extraction_config': reasoning_extraction_config,
+                        'tag': reasoning_extraction_config.get('tag', 'thinking'),
+                        'distillationPrompt': distillation_prompt
+                    }
+                    
+                    response_data = llm_conversion_service.call_llm_with_thinking_process(
+                        llm_config, prompt, thinking_config
+                    )
+                    
+                    # 解析响应获取问答对
+                    qa_pairs = _parse_qa_response_with_thinking(
+                        response_data, processing_config.get('dataset_type'), include_thinking_in_output
+                    )
+                    
+                elif enable_thinking and not llm_config.supports_reasoning:
+                    # 对于不支持推理的模型，先正常生成，再蒸馏思考过程
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    qa_pairs = _parse_qa_response(response, processing_config.get('dataset_type'))
+                    
+                    # 为每个问答对进行知识蒸馏
+                    if distillation_prompt:
+                        distillation_config = {
+                            'distillation_prompt': distillation_prompt
+                        }
+                        
+                        for qa_pair in qa_pairs:
+                            try:
+                                # 构建原始问题和答案
+                                original_prompt = qa_pair.get('question', '')
+                                original_response = qa_pair.get('answer', '')
+                                
+                                # 调用蒸馏方法
+                                distilled_data = llm_conversion_service.distill_thinking_process(
+                                    llm_config, original_prompt, original_response, distillation_config
+                                )
+                                
+                                # 根据配置决定是否包含思考过程
+                                if include_thinking_in_output and distilled_data.get('reasoning'):
+                                    qa_pair['thinking'] = distilled_data['reasoning']
+                                
+                                # 更新答案（如果蒸馏后有改进）
+                                if distilled_data.get('final_answer'):
+                                    qa_pair['answer'] = distilled_data['final_answer']
+                                    
+                            except Exception as distill_error:
+                                logger.warning(f"蒸馏问答对失败: {str(distill_error)}")
+                                continue
+                else:
+                    # 普通调用方式
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    qa_pairs = _parse_qa_response(response, processing_config.get('dataset_type'))
                 
-                # 解析响应获取问答对
-                qa_pairs = _parse_qa_response(response, processing_config.get('dataset_type'))
-                all_qa_pairs.extend(qa_pairs)
-                
-                logger.info(f"块 {i+1} 生成问答对: {len(qa_pairs)} 个")
+                # 检查这个块是否成功生成了数据
+                if qa_pairs and len(qa_pairs) > 0:
+                    all_qa_pairs.extend(qa_pairs)
+                    successful_chunks += 1
+                    logger.info(f"块 {i+1} 生成问答对: {len(qa_pairs)} 个")
+                else:
+                    failed_chunks += 1
+                    logger.warning(f"块 {i+1} 未生成任何问答对")
                 
             except Exception as e:
+                failed_chunks += 1
                 logger.warning(f"处理块 {i+1} 失败: {str(e)}")
                 continue
         
+        # 计算成功率
+        total_chunks = len(chunks)
+        success_rate = (successful_chunks / total_chunks) * 100 if total_chunks > 0 else 0
+        
+        logger.info(f"块处理统计: 总数={total_chunks}, 成功={successful_chunks}, 失败={failed_chunks}, 成功率={success_rate:.1f}%")
         logger.info(f"总共生成问答对: {len(all_qa_pairs)} 个")
+        
+        # 设置失败阈值：如果成功率低于30%或没有生成任何数据，则认为失败
+        if success_rate < 30.0:
+            raise Exception(f"块处理成功率过低: {success_rate:.1f}%，可能是LLM服务不可用或配置错误")
+        
+        if len(all_qa_pairs) == 0:
+            raise Exception("未生成任何问答对数据，请检查LLM服务状态和配置")
+        
         return all_qa_pairs
         
     except Exception as e:
@@ -436,29 +550,102 @@ def _generate_summary_data(content: str, model_config: Dict, processing_config: 
         llm_config_id = model_config.get('id')
         llm_config = LLMConfig.query.get(llm_config_id)
         
+        # 获取思考过程配置
+        enable_thinking = processing_config.get('enableThinkingProcess', False)
+        include_thinking_in_output = processing_config.get('includeThinkingInOutput', False)
+        reasoning_extraction_method = processing_config.get('reasoningExtractionMethod')
+        reasoning_extraction_config = processing_config.get('reasoningExtractionConfig', {})
+        distillation_prompt = processing_config.get('distillationPrompt', '')
+        
+        logger.info(f"摘要数据生成配置 - 启用思考过程: {enable_thinking}, 包含思考过程: {include_thinking_in_output}")
+        logger.info(f"思考过程配置 - 提取方法: {reasoning_extraction_method}, 蒸馏提示词: {bool(distillation_prompt)}")
+        
         # 分块处理
         chunk_size = processing_config.get('chunk_size', 3000)
         chunk_overlap = processing_config.get('chunk_overlap', 300)
         chunks = _split_content_into_chunks_with_overlap(content, chunk_size, chunk_overlap)
         summary_data = []
+        successful_chunks = 0
+        failed_chunks = 0
         
         for i, chunk in enumerate(chunks):
-            # 使用自定义提示词或默认提示词
-            custom_prompt = processing_config.get('custom_prompt', '')
-            if custom_prompt:
-                prompt = _build_custom_prompt_for_chunk(chunk, custom_prompt, processing_config)
-            else:
-                prompt = _build_summary_generation_prompt(chunk, processing_config)
+            logger.info(f"处理块 {i+1}/{len(chunks)} 用于摘要")
             
             try:
-                response = llm_conversion_service.call_llm(llm_config, prompt)
+                if enable_thinking and llm_config.supports_reasoning:
+                    thinking_config = {
+                        'reasoning_extraction_method': reasoning_extraction_method or 'tag_based',
+                        'reasoning_extraction_config': reasoning_extraction_config,
+                        'tag': reasoning_extraction_config.get('tag', 'thinking'),
+                        'distillationPrompt': distillation_prompt
+                    }
+                    response_data = llm_conversion_service.call_llm_with_thinking_process(
+                        llm_config, prompt, thinking_config
+                    )
+                    
+                    summary_entries = _parse_summary_response_with_thinking(
+                        response_data, chunk, include_thinking_in_output
+                    )
+                    
+                elif enable_thinking and not llm_config.supports_reasoning:
+                    # 对于不支持推理的模型，先正常生成，再蒸馏思考过程
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    summary_entries = _parse_summary_response(response, chunk)
+                    
+                    # 为每个摘要进行知识蒸馏
+                    if distillation_prompt:
+                        distillation_config = {
+                            'distillation_prompt': distillation_prompt
+                        }
+                        
+                        for summary_entry in summary_entries:
+                            try:
+                                original_prompt = f"请对以下内容进行摘要：\n{chunk}"
+                                original_response = summary_entry.get('summary', '')
+                                
+                                distilled_data = llm_conversion_service.distill_thinking_process(
+                                    llm_config, original_prompt, original_response, distillation_config
+                                )
+                                
+                                if include_thinking_in_output and distilled_data.get('reasoning'):
+                                    summary_entry['thinking'] = distilled_data['reasoning']
+                                
+                                if distilled_data.get('final_answer'):
+                                    summary_entry['summary'] = distilled_data['final_answer']
+                                    
+                            except Exception as distill_error:
+                                logger.warning(f"蒸馏摘要失败: {str(distill_error)}")
+                                continue
+                else:
+                    # 普通调用方式
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    summary_entries = _parse_summary_response(response, chunk)
                 
-                summary_entries = _parse_summary_response(response, chunk)
-                summary_data.extend(summary_entries)
+                # 检查这个块是否成功生成了数据
+                if summary_entries and len(summary_entries) > 0:
+                    summary_data.extend(summary_entries)
+                    successful_chunks += 1
+                else:
+                    failed_chunks += 1
+                    logger.warning(f"块 {i+1} 未生成任何摘要数据")
                 
             except Exception as e:
+                failed_chunks += 1
                 logger.warning(f"生成摘要失败 块{i+1}: {str(e)}")
                 continue
+        
+        # 计算成功率
+        total_chunks = len(chunks)
+        success_rate = (successful_chunks / total_chunks) * 100 if total_chunks > 0 else 0
+        
+        logger.info(f"块处理统计: 总数={total_chunks}, 成功={successful_chunks}, 失败={failed_chunks}, 成功率={success_rate:.1f}%")
+        
+        # 设置失败阈值
+        if success_rate < 30.0:
+            raise Exception(f"块处理成功率过低: {success_rate:.1f}%，可能是LLM服务不可用或配置错误")
+        
+        if len(summary_data) == 0:
+            raise Exception("未生成任何摘要数据，请检查LLM服务状态和配置")
         
         return summary_data
         
@@ -472,12 +659,25 @@ def _generate_instruction_data(content: str, model_config: Dict, processing_conf
         llm_config_id = model_config.get('id')
         llm_config = LLMConfig.query.get(llm_config_id)
         
+        # 获取思考过程配置
+        enable_thinking = processing_config.get('enableThinkingProcess', False)
+        include_thinking_in_output = processing_config.get('includeThinkingInOutput', False)
+        reasoning_extraction_method = processing_config.get('reasoningExtractionMethod')
+        reasoning_extraction_config = processing_config.get('reasoningExtractionConfig', {})
+        distillation_prompt = processing_config.get('distillationPrompt', '')
+        
+        logger.info(f"指令数据生成配置 - 启用思考过程: {enable_thinking}, 包含思考过程: {include_thinking_in_output}")
+        
         chunk_size = processing_config.get('chunk_size', 2500)
         chunk_overlap = processing_config.get('chunk_overlap', 200)
         chunks = _split_content_into_chunks_with_overlap(content, chunk_size, chunk_overlap)
         instruction_data = []
+        successful_chunks = 0
+        failed_chunks = 0
         
         for i, chunk in enumerate(chunks):
+            logger.info(f"处理块 {i+1}/{len(chunks)}")
+            
             # 使用自定义提示词或默认提示词
             custom_prompt = processing_config.get('custom_prompt', '')
             if custom_prompt:
@@ -486,14 +686,82 @@ def _generate_instruction_data(content: str, model_config: Dict, processing_conf
                 prompt = _build_instruction_generation_prompt(chunk, processing_config)
             
             try:
-                response = llm_conversion_service.call_llm(llm_config, prompt)
+                if enable_thinking and llm_config.supports_reasoning:
+                    # 使用支持思考过程的调用方式
+                    thinking_config = {
+                        'reasoning_extraction_method': reasoning_extraction_method or 'tag_based',
+                        'reasoning_extraction_config': reasoning_extraction_config,
+                        'tag': reasoning_extraction_config.get('tag', 'thinking'),
+                        'distillationPrompt': distillation_prompt
+                    }
+                    
+                    response_data = llm_conversion_service.call_llm_with_thinking_process(
+                        llm_config, prompt, thinking_config
+                    )
+                    
+                    instructions = _parse_instruction_response_with_thinking(
+                        response_data, processing_config.get('dataset_type'), include_thinking_in_output
+                    )
+                    
+                elif enable_thinking and not llm_config.supports_reasoning:
+                    # 对于不支持推理的模型，先正常生成，再蒸馏思考过程
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    instructions = _parse_instruction_response(response, processing_config.get('dataset_type'))
+                    
+                    # 为每个指令进行知识蒸馏
+                    if distillation_prompt:
+                        distillation_config = {
+                            'distillation_prompt': distillation_prompt
+                        }
+                        
+                        for instruction in instructions:
+                            try:
+                                original_prompt = instruction.get('instruction', '')
+                                original_response = instruction.get('output', '')
+                                
+                                distilled_data = llm_conversion_service.distill_thinking_process(
+                                    llm_config, original_prompt, original_response, distillation_config
+                                )
+                                
+                                if include_thinking_in_output and distilled_data.get('reasoning'):
+                                    instruction['thinking'] = distilled_data['reasoning']
+                                
+                                if distilled_data.get('final_answer'):
+                                    instruction['output'] = distilled_data['final_answer']
+                                    
+                            except Exception as distill_error:
+                                logger.warning(f"蒸馏指令失败: {str(distill_error)}")
+                                continue
+                else:
+                    # 普通调用方式
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    instructions = _parse_instruction_response(response, processing_config.get('dataset_type'))
                 
-                instructions = _parse_instruction_response(response, processing_config.get('dataset_type'))
-                instruction_data.extend(instructions)
+                # 检查这个块是否成功生成了数据
+                if instructions and len(instructions) > 0:
+                    instruction_data.extend(instructions)
+                    successful_chunks += 1
+                else:
+                    failed_chunks += 1
+                    logger.warning(f"块 {i+1} 未生成任何指令数据")
                 
             except Exception as e:
+                failed_chunks += 1
                 logger.warning(f"生成指令数据失败 块{i+1}: {str(e)}")
                 continue
+        
+        # 计算成功率
+        total_chunks = len(chunks)
+        success_rate = (successful_chunks / total_chunks) * 100 if total_chunks > 0 else 0
+        
+        logger.info(f"块处理统计: 总数={total_chunks}, 成功={successful_chunks}, 失败={failed_chunks}, 成功率={success_rate:.1f}%")
+        
+        # 设置失败阈值
+        if success_rate < 30.0:
+            raise Exception(f"块处理成功率过低: {success_rate:.1f}%，可能是LLM服务不可用或配置错误")
+        
+        if len(instruction_data) == 0:
+            raise Exception("未生成任何指令数据，请检查LLM服务状态和配置")
         
         return instruction_data
         
@@ -502,17 +770,30 @@ def _generate_instruction_data(content: str, model_config: Dict, processing_conf
         raise
 
 def _generate_classification_data(content: str, model_config: Dict, processing_config: Dict) -> List[Dict]:
-    """生成分类数据"""
+    """生成文本分类数据"""
     try:
         llm_config_id = model_config.get('id')
         llm_config = LLMConfig.query.get(llm_config_id)
+        
+        # 获取思考过程配置
+        enable_thinking = processing_config.get('enableThinkingProcess', False)
+        include_thinking_in_output = processing_config.get('includeThinkingInOutput', False)
+        reasoning_extraction_method = processing_config.get('reasoningExtractionMethod')
+        reasoning_extraction_config = processing_config.get('reasoningExtractionConfig', {})
+        distillation_prompt = processing_config.get('distillationPrompt', '')
+        
+        logger.info(f"分类数据生成配置 - 启用思考过程: {enable_thinking}, 包含思考过程: {include_thinking_in_output}")
         
         chunk_size = processing_config.get('chunk_size', 1500)
         chunk_overlap = processing_config.get('chunk_overlap', 150)
         chunks = _split_content_into_chunks_with_overlap(content, chunk_size, chunk_overlap)
         classification_data = []
+        successful_chunks = 0
+        failed_chunks = 0
         
         for i, chunk in enumerate(chunks):
+            logger.info(f"处理块 {i+1}/{len(chunks)}")
+            
             # 使用自定义提示词或默认提示词
             custom_prompt = processing_config.get('custom_prompt', '')
             if custom_prompt:
@@ -521,14 +802,82 @@ def _generate_classification_data(content: str, model_config: Dict, processing_c
                 prompt = _build_classification_generation_prompt(chunk, processing_config)
             
             try:
-                response = llm_conversion_service.call_llm(llm_config, prompt)
+                if enable_thinking and llm_config.supports_reasoning:
+                    # 使用支持思考过程的调用方式
+                    thinking_config = {
+                        'reasoning_extraction_method': reasoning_extraction_method or 'tag_based',
+                        'reasoning_extraction_config': reasoning_extraction_config,
+                        'tag': reasoning_extraction_config.get('tag', 'thinking'),
+                        'distillationPrompt': distillation_prompt
+                    }
+                    
+                    response_data = llm_conversion_service.call_llm_with_thinking_process(
+                        llm_config, prompt, thinking_config
+                    )
+                    
+                    classifications = _parse_classification_response_with_thinking(
+                        response_data, processing_config.get('dataset_type'), include_thinking_in_output
+                    )
+                    
+                elif enable_thinking and not llm_config.supports_reasoning:
+                    # 对于不支持推理的模型，先正常生成，再蒸馏思考过程
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    classifications = _parse_classification_response(response, processing_config.get('dataset_type'))
+                    
+                    # 为每个分类进行知识蒸馏
+                    if distillation_prompt:
+                        distillation_config = {
+                            'distillation_prompt': distillation_prompt
+                        }
+                        
+                        for classification in classifications:
+                            try:
+                                original_prompt = f"请对以下内容进行分类：\n{classification.get('text', '')}"
+                                original_response = classification.get('label', '')
+                                
+                                distilled_data = llm_conversion_service.distill_thinking_process(
+                                    llm_config, original_prompt, original_response, distillation_config
+                                )
+                                
+                                if include_thinking_in_output and distilled_data.get('reasoning'):
+                                    classification['thinking'] = distilled_data['reasoning']
+                                
+                                if distilled_data.get('final_answer'):
+                                    classification['label'] = distilled_data['final_answer']
+                                    
+                            except Exception as distill_error:
+                                logger.warning(f"蒸馏分类失败: {str(distill_error)}")
+                                continue
+                else:
+                    # 普通调用方式
+                    response = llm_conversion_service.call_llm(llm_config, prompt)
+                    classifications = _parse_classification_response(response, processing_config.get('dataset_type'))
                 
-                classifications = _parse_classification_response(response, processing_config.get('dataset_type'))
-                classification_data.extend(classifications)
+                # 检查这个块是否成功生成了数据
+                if classifications and len(classifications) > 0:
+                    classification_data.extend(classifications)
+                    successful_chunks += 1
+                else:
+                    failed_chunks += 1
+                    logger.warning(f"块 {i+1} 未生成任何分类数据")
                 
             except Exception as e:
+                failed_chunks += 1
                 logger.warning(f"生成分类数据失败 块{i+1}: {str(e)}")
                 continue
+        
+        # 计算成功率
+        total_chunks = len(chunks)
+        success_rate = (successful_chunks / total_chunks) * 100 if total_chunks > 0 else 0
+        
+        logger.info(f"块处理统计: 总数={total_chunks}, 成功={successful_chunks}, 失败={failed_chunks}, 成功率={success_rate:.1f}%")
+        
+        # 设置失败阈值
+        if success_rate < 30.0:
+            raise Exception(f"块处理成功率过低: {success_rate:.1f}%，可能是LLM服务不可用或配置错误")
+        
+        if len(classification_data) == 0:
+            raise Exception("未生成任何分类数据，请检查LLM服务状态和配置")
         
         return classification_data
         
@@ -550,6 +899,9 @@ def _generate_generic_data(content: str, model_config: Dict, processing_config: 
             chunks = _split_content_into_chunks_with_overlap(content, chunk_size, chunk_overlap)
             
             generic_data = []
+            successful_chunks = 0
+            failed_chunks = 0
+            
             for i, chunk in enumerate(chunks):
                 try:
                     prompt = _build_custom_prompt_for_chunk(chunk, custom_prompt, processing_config)
@@ -559,16 +911,23 @@ def _generate_generic_data(content: str, model_config: Dict, processing_config: 
                     parsed_data = _parse_generic_response(response)
                     if parsed_data:
                         generic_data.extend(parsed_data)
+                        successful_chunks += 1
                     else:
                         # 如果解析失败，使用原始响应
-                        generic_data.append({
-                            'id': i + 1,
-                            'content': response.strip(),
-                            'source': 'llm_generated',
-                            'type': 'generated_text'
-                        })
+                        if response and response.strip():
+                            generic_data.append({
+                                'id': i + 1,
+                                'content': response.strip(),
+                                'source': 'llm_generated',
+                                'type': 'generated_text'
+                            })
+                            successful_chunks += 1
+                        else:
+                            failed_chunks += 1
+                            logger.warning(f"LLM处理块{i+1}返回空响应")
                         
                 except Exception as e:
+                    failed_chunks += 1
                     logger.warning(f"LLM处理块{i+1}失败: {str(e)}")
                     # 回退到简单分段
                     generic_data.append({
@@ -577,18 +936,34 @@ def _generate_generic_data(content: str, model_config: Dict, processing_config: 
                         'source': 'auto_segmented',
                         'type': 'text_segment'
                     })
+            
+            # 计算成功率
+            total_chunks = len(chunks)
+            success_rate = (successful_chunks / total_chunks) * 100 if total_chunks > 0 else 0
+            
+            logger.info(f"通用数据生成统计: 总数={total_chunks}, 成功={successful_chunks}, 失败={failed_chunks}, 成功率={success_rate:.1f}%")
+            
+            # 如果使用了LLM但成功率过低，抛出异常
+            if success_rate < 30.0:
+                raise Exception(f"LLM处理成功率过低: {success_rate:.1f}%，可能是LLM服务不可用或配置错误")
+                
         else:
             # 简单的文本分段处理
             chunks = _split_content_into_chunks(content, processing_config.get('chunk_size', 1000))
             
             generic_data = []
             for i, chunk in enumerate(chunks):
-                generic_data.append({
-                    'id': i + 1,
-                    'text': chunk.strip(),
-                    'source': 'auto_segmented',
-                    'type': 'text_segment'
-                })
+                if chunk.strip():  # 确保块不为空
+                    generic_data.append({
+                        'id': i + 1,
+                        'text': chunk.strip(),
+                        'source': 'auto_segmented',
+                        'type': 'text_segment'
+                    })
+        
+        # 最终检查
+        if not generic_data or len(generic_data) == 0:
+            raise Exception("未生成任何通用数据，请检查内容或配置")
         
         return generic_data
         
@@ -869,6 +1244,7 @@ def _parse_qa_response(response: str, dataset_type: str = None) -> List[Dict]:
                 continue
         
         # 尝试提取多个JSON对象
+        # 改进的正则表达式，可以匹配多个独立的JSON对象，即使它们之间没有逗号或数组包裹
         json_object_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
         json_objects = re.findall(json_object_pattern, response)
         if json_objects:
@@ -878,9 +1254,11 @@ def _parse_qa_response(response: str, dataset_type: str = None) -> List[Dict]:
                     obj = json.loads(obj_str)
                     if isinstance(obj, dict):
                         parsed_objects.append(obj)
-                except:
+                except json.JSONDecodeError as e:
+                    logger.warning(f"解析单个JSON对象失败: {obj_str[:100]}..., 错误: {e}")
                     continue
             if parsed_objects:
+                logger.info(f"成功从响应中提取 {len(parsed_objects)} 个JSON对象")
                 return _standardize_qa_format(parsed_objects, dataset_type)
         
         # 尝试基于模式匹配提取问答对
@@ -1291,104 +1669,131 @@ def _convert_to_training_format(data: List[Dict], output_format: str, dataset_ty
 def _convert_to_alpaca_format(item: Dict, dataset_type: str) -> Dict:
     """转换为Alpaca格式"""
     if dataset_type in ['qa-pairs', 'qa']:
-        return {
+        result = {
             'instruction': item.get('question', item.get('instruction', '')),
             'input': '',
             'output': item.get('answer', item.get('output', ''))
         }
+        # 如果有思考过程，添加到结果中
+        if 'thinking' in item and item['thinking']:
+            result['thinking'] = item['thinking']
+        return result
     elif dataset_type == 'instruction-tuning':
-        return {
+        result = {
             'instruction': item.get('instruction', ''),
             'input': item.get('input', ''),
             'output': item.get('output', '')
         }
+        if 'thinking' in item and item['thinking']:
+            result['thinking'] = item['thinking']
+        return result
     elif dataset_type == 'text-classification':
-        return {
+        result = {
             'instruction': f"请对以下文本进行分类：{item.get('text', '')}",
             'input': '',
             'output': item.get('label', '')
         }
+        if 'thinking' in item and item['thinking']:
+            result['thinking'] = item['thinking']
+        return result
     else:
         return item
 
 def _convert_to_sharegpt_format(item: Dict, dataset_type: str) -> Dict:
     """转换为ShareGPT格式"""
     if dataset_type in ['qa-pairs', 'qa']:
-        return {
-            'conversations': [
-                {'role': 'user', 'content': item.get('question', item.get('instruction', ''))},
-                {'role': 'assistant', 'content': item.get('answer', item.get('output', ''))}
-            ]
-        }
+        conversations = [
+            {'role': 'user', 'content': item.get('question', item.get('instruction', ''))},
+            {'role': 'assistant', 'content': item.get('answer', item.get('output', ''))}
+        ]
+        # 如果有思考过程，在助手回复前添加思考过程
+        if 'thinking' in item and item['thinking']:
+            conversations.insert(1, {'role': 'assistant', 'content': f"<thinking>\n{item['thinking']}\n</thinking>"})
+        return {'conversations': conversations}
     elif dataset_type == 'instruction-tuning':
         user_content = item.get('instruction', '')
         if item.get('input'):
             user_content += f"\n\n{item.get('input')}"
         
-        return {
-            'conversations': [
-                {'role': 'user', 'content': user_content},
-                {'role': 'assistant', 'content': item.get('output', '')}
-            ]
-        }
+        conversations = [
+            {'role': 'user', 'content': user_content},
+            {'role': 'assistant', 'content': item.get('output', '')}
+        ]
+        if 'thinking' in item and item['thinking']:
+            conversations.insert(1, {'role': 'assistant', 'content': f"<thinking>\n{item['thinking']}\n</thinking>"})
+        return {'conversations': conversations}
     elif dataset_type == 'text-classification':
-        return {
-            'conversations': [
-                {'role': 'user', 'content': f"请对以下文本进行分类：{item.get('text', '')}"},
-                {'role': 'assistant', 'content': f"分类结果：{item.get('label', '')}"}
-            ]
-        }
+        conversations = [
+            {'role': 'user', 'content': f"请对以下文本进行分类：{item.get('text', '')}"},
+            {'role': 'assistant', 'content': f"分类结果：{item.get('label', '')}"}
+        ]
+        if 'thinking' in item and item['thinking']:
+            conversations.insert(1, {'role': 'assistant', 'content': f"<thinking>\n{item['thinking']}\n</thinking>"})
+        return {'conversations': conversations}
     else:
         return item
 
 def _convert_to_openai_format(item: Dict, dataset_type: str) -> Dict:
     """转换为OpenAI格式"""
     if dataset_type in ['qa-pairs', 'qa']:
-        return {
-            'messages': [
-                {'role': 'user', 'content': item.get('question', item.get('instruction', ''))},
-                {'role': 'assistant', 'content': item.get('answer', item.get('output', ''))}
-            ]
-        }
+        messages = [
+            {'role': 'user', 'content': item.get('question', item.get('instruction', ''))},
+            {'role': 'assistant', 'content': item.get('answer', item.get('output', ''))}
+        ]
+        # 如果有思考过程，在助手回复前添加思考过程
+        if 'thinking' in item and item['thinking']:
+            messages.insert(1, {'role': 'assistant', 'content': f"<thinking>\n{item['thinking']}\n</thinking>"})
+        return {'messages': messages}
     elif dataset_type == 'instruction-tuning':
         user_content = item.get('instruction', '')
         if item.get('input'):
             user_content += f"\n\n{item.get('input')}"
         
-        return {
-            'messages': [
-                {'role': 'user', 'content': user_content},
-                {'role': 'assistant', 'content': item.get('output', '')}
-            ]
-        }
+        messages = [
+            {'role': 'user', 'content': user_content},
+            {'role': 'assistant', 'content': item.get('output', '')}
+        ]
+        if 'thinking' in item and item['thinking']:
+            messages.insert(1, {'role': 'assistant', 'content': f"<thinking>\n{item['thinking']}\n</thinking>"})
+        return {'messages': messages}
     elif dataset_type == 'text-classification':
-        return {
-            'messages': [
-                {'role': 'user', 'content': f"请对以下文本进行分类：{item.get('text', '')}"},
-                {'role': 'assistant', 'content': f"分类结果：{item.get('label', '')}"}
-            ]
-        }
+        messages = [
+            {'role': 'user', 'content': f"请对以下文本进行分类：{item.get('text', '')}"},
+            {'role': 'assistant', 'content': f"分类结果：{item.get('label', '')}"}
+        ]
+        if 'thinking' in item and item['thinking']:
+            messages.insert(1, {'role': 'assistant', 'content': f"<thinking>\n{item['thinking']}\n</thinking>"})
+        return {'messages': messages}
     else:
         return item
 
 def _convert_to_csv_format(item: Dict, dataset_type: str) -> Dict:
     """转换为CSV格式"""
     if dataset_type in ['qa-pairs', 'qa']:
-        return {
+        result = {
             'question': item.get('question', item.get('instruction', '')),
             'answer': item.get('answer', item.get('output', ''))
         }
+        if 'thinking' in item and item['thinking']:
+            result['thinking'] = item['thinking']
+        return result
     elif dataset_type == 'instruction-tuning':
-        return {
+        result = {
             'instruction': item.get('instruction', ''),
             'input': item.get('input', ''),
             'output': item.get('output', '')
         }
+        if 'thinking' in item and item['thinking']:
+            result['thinking'] = item['thinking']
+        return result
     elif dataset_type == 'text-classification':
-        return {
+        result = {
             'text': item.get('text', ''),
             'label': item.get('label', '')
         }
+        if 'thinking' in item and item['thinking']:
+            result['thinking'] = item['thinking']
+        return result
     else:
         return item
 
@@ -1452,3 +1857,110 @@ def _update_version_stats(version: EnhancedDatasetVersion, conversion_results: L
     except Exception as e:
         logger.error(f"更新版本统计失败: {str(e)}")
         # 不抛出异常，避免影响主流程 
+
+def _parse_qa_response_with_thinking(response_data: Dict, dataset_type: str = None, include_thinking: bool = False) -> List[Dict]:
+    """解析包含思考过程的问答对响应
+    
+    Args:
+        response_data: 包含raw_response、final_answer、reasoning的字典
+        dataset_type: 数据集类型
+        include_thinking: 是否在输出中包含思考过程
+        
+    Returns:
+        List[Dict]: 问答对列表
+    """
+    try:
+        # 先从final_answer中解析问答对
+        final_answer = response_data.get('final_answer', '')
+        reasoning = response_data.get('reasoning', '')
+        
+        # 使用现有的解析方法解析问答对
+        qa_pairs = _parse_qa_response(final_answer, dataset_type)
+        
+        # 如果需要包含思考过程，为每个问答对添加思考过程
+        if include_thinking and reasoning:
+            for qa_pair in qa_pairs:
+                qa_pair['thinking'] = reasoning
+                
+        return qa_pairs
+        
+    except Exception as e:
+        logger.error(f"解析包含思考过程的问答对失败: {str(e)}")
+        # 如果解析失败，尝试从原始响应解析
+        try:
+            raw_response = response_data.get('raw_response', '')
+            return _parse_qa_response(raw_response, dataset_type)
+        except:
+            return []
+
+def _parse_summary_response_with_thinking(response_data: Dict, original_text: str, include_thinking: bool = False) -> List[Dict]:
+    """解析包含思考过程的摘要响应"""
+    try:
+        final_answer = response_data.get('final_answer', '')
+        reasoning = response_data.get('reasoning', '')
+        
+        # 使用现有的解析方法解析摘要
+        summary_entries = _parse_summary_response(final_answer, original_text)
+        
+        # 如果需要包含思考过程，为每个摘要添加思考过程
+        if include_thinking and reasoning:
+            for entry in summary_entries:
+                entry['thinking'] = reasoning
+                
+        return summary_entries
+        
+    except Exception as e:
+        logger.error(f"解析包含思考过程的摘要失败: {str(e)}")
+        try:
+            raw_response = response_data.get('raw_response', '')
+            return _parse_summary_response(raw_response, original_text)
+        except:
+            return []
+
+def _parse_instruction_response_with_thinking(response_data: Dict, dataset_type: str = None, include_thinking: bool = False) -> List[Dict]:
+    """解析包含思考过程的指令响应"""
+    try:
+        final_answer = response_data.get('final_answer', '')
+        reasoning = response_data.get('reasoning', '')
+        
+        # 使用现有的解析方法解析指令
+        instructions = _parse_instruction_response(final_answer, dataset_type)
+        
+        # 如果需要包含思考过程，为每个指令添加思考过程
+        if include_thinking and reasoning:
+            for instruction in instructions:
+                instruction['thinking'] = reasoning
+                
+        return instructions
+        
+    except Exception as e:
+        logger.error(f"解析包含思考过程的指令失败: {str(e)}")
+        try:
+            raw_response = response_data.get('raw_response', '')
+            return _parse_instruction_response(raw_response, dataset_type)
+        except:
+            return []
+
+def _parse_classification_response_with_thinking(response_data: Dict, dataset_type: str = None, include_thinking: bool = False) -> List[Dict]:
+    """解析包含思考过程的分类响应"""
+    try:
+        final_answer = response_data.get('final_answer', '')
+        reasoning = response_data.get('reasoning', '')
+        
+        # 使用现有的解析方法解析分类
+        classifications = _parse_classification_response(final_answer, dataset_type)
+        
+        # 如果需要包含思考过程，为每个分类添加思考过程
+        if include_thinking and reasoning:
+            for classification in classifications:
+                classification['thinking'] = reasoning
+                
+        return classifications
+        
+    except Exception as e:
+        logger.error(f"解析包含思考过程的分类失败: {str(e)}")
+        try:
+            raw_response = response_data.get('raw_response', '')
+            return _parse_classification_response(raw_response, dataset_type)
+        except:
+            return [] 

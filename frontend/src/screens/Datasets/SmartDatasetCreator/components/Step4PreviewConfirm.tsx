@@ -18,7 +18,8 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   Loader2Icon,
-  RefreshCwIcon
+  RefreshCwIcon,
+  LightbulbIcon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSmartDatasetCreatorStore } from '../store/useSmartDatasetCreatorStore';
@@ -71,6 +72,21 @@ export const Step4PreviewConfirm: React.FC = () => {
   if (!processingConfig.model) configurationIssues.push(t('smartDatasetCreator.step4.configCheck.missingModel'));
   if (!processingConfig.customPrompt) configurationIssues.push(t('smartDatasetCreator.step4.configCheck.missingPrompt'));
   if (selectedFiles.length === 0) configurationIssues.push(t('smartDatasetCreator.step4.configCheck.missingFiles'));
+  
+  // 检查思考过程配置
+  if (processingConfig.enableThinkingProcess && selectedModel) {
+    if (selectedModel.supports_reasoning) {
+      // 支持推理的模型需要配置提取方法
+      if (!processingConfig.reasoningExtractionMethod) {
+        configurationIssues.push('思考过程提取方法未配置');
+      }
+    } else {
+      // 不支持推理的模型需要蒸馏提示词
+      if (processingConfig.includeThinkingInOutput && !processingConfig.distillationPrompt) {
+        configurationIssues.push('蒸馏思考过程提示词未配置');
+      }
+    }
+  }
 
   const isConfigurationComplete = configurationIssues.length === 0;
 
@@ -291,6 +307,20 @@ export const Step4PreviewConfirm: React.FC = () => {
       setIsGenerating(true);
       setGenerationError(null);
 
+      // 调试输出：检查思考过程配置
+      console.log('前端思考过程配置状态:', {
+        enableThinkingProcess: processingConfig.enableThinkingProcess,
+        reasoningExtractionMethod: processingConfig.reasoningExtractionMethod,
+        reasoningExtractionConfig: processingConfig.reasoningExtractionConfig,
+        distillationPrompt: processingConfig.distillationPrompt,
+        includeThinkingInOutput: processingConfig.includeThinkingInOutput,
+        selectedModel: selectedModel ? {
+          id: selectedModel.id,
+          name: selectedModel.name,
+          supports_reasoning: selectedModel.supports_reasoning
+        } : null
+      });
+
       // 首先创建数据集
       const datasetResponse = await fetch(`${config.apiBaseUrl}/datasets`, {
         method: 'POST',
@@ -345,7 +375,13 @@ export const Step4PreviewConfirm: React.FC = () => {
             qa_pairs_per_chunk: 3,
             summary_length: 'medium',
             instructions_per_chunk: 2,
-            categories: ['positive', 'negative', 'neutral']
+            categories: ['positive', 'negative', 'neutral'],
+            // 思考过程配置
+            enableThinkingProcess: processingConfig.enableThinkingProcess,
+            reasoningExtractionMethod: processingConfig.reasoningExtractionMethod,
+            reasoningExtractionConfig: processingConfig.reasoningExtractionConfig,
+            distillationPrompt: processingConfig.distillationPrompt,
+            includeThinkingInOutput: processingConfig.includeThinkingInOutput
           }
         }),
       });
@@ -604,6 +640,101 @@ export const Step4PreviewConfirm: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {/* 思考过程配置概览 */}
+      {processingConfig.enableThinkingProcess && (
+        <Card className="border-[#d1dbe8]">
+          <div className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <LightbulbIcon className="w-5 h-5 text-[#1977e5]" />
+              <h3 className="text-base font-semibold text-[#0c141c]">思考过程配置</h3>
+              <span className="px-2 py-1 bg-[#1977e5] text-white text-xs rounded-full">已启用</span>
+            </div>
+
+            <div className="space-y-3">
+              {/* 模型支持状态 */}
+              <div className="p-3 bg-[#f0f9ff] border border-[#bae6fd] rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="font-medium text-[#0c141c] text-sm">
+                      {selectedModel?.supports_reasoning ? '原生推理支持' : '知识蒸馏模式'}
+                    </h4>
+                    <p className="text-xs text-[#0369a1]">
+                      {selectedModel?.supports_reasoning 
+                        ? `模型 "${selectedModel.name}" 原生支持Chain of Thought推理`
+                        : `模型 "${selectedModel?.name}" 通过蒸馏技术生成推理过程`
+                      }
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    selectedModel?.supports_reasoning 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {selectedModel?.supports_reasoning ? 'CoT原生' : '蒸馏模式'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 配置详情 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                  <div className="text-sm">
+                    <span className="text-[#4f7096] text-xs">处理方式</span>
+                    <p className="font-semibold text-[#0c141c]">
+                      {selectedModel?.supports_reasoning ? '提取思考过程' : '生成思考过程'}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                  <div className="text-sm">
+                    <span className="text-[#4f7096] text-xs">输出包含</span>
+                    <p className="font-semibold text-[#0c141c]">
+                      {processingConfig.includeThinkingInOutput ? '思考过程+答案' : '仅最终答案'}
+                    </p>
+                  </div>
+                </div>
+                {selectedModel?.supports_reasoning && processingConfig.reasoningExtractionMethod && (
+                  <div className="p-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                    <div className="text-sm">
+                      <span className="text-[#4f7096] text-xs">提取方法</span>
+                      <p className="font-semibold text-[#0c141c]">
+                        {processingConfig.reasoningExtractionMethod === 'tag_based' ? '标签模式' : 'JSON字段模式'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {!selectedModel?.supports_reasoning && processingConfig.distillationPrompt && (
+                  <div className="p-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                    <div className="text-sm">
+                      <span className="text-[#4f7096] text-xs">蒸馏提示词</span>
+                      <p className="font-semibold text-[#0c141c]">
+                        {processingConfig.distillationPrompt.length > 30 
+                          ? `${processingConfig.distillationPrompt.substring(0, 30)}...`
+                          : processingConfig.distillationPrompt}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="p-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                  <div className="text-sm">
+                    <span className="text-[#4f7096] text-xs">配置状态</span>
+                    <p className={`font-semibold text-sm ${
+                      (selectedModel?.supports_reasoning && processingConfig.reasoningExtractionMethod) ||
+                      (!selectedModel?.supports_reasoning && processingConfig.distillationPrompt)
+                        ? 'text-green-600' : 'text-orange-600'
+                    }`}>
+                      {(selectedModel?.supports_reasoning && processingConfig.reasoningExtractionMethod) ||
+                       (!selectedModel?.supports_reasoning && processingConfig.distillationPrompt)
+                        ? '✓ 已配置' : '⚠ 待配置'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* 文档分片设置概览 */}
       <Card className="border-[#d1dbe8]">
