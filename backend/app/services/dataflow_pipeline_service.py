@@ -20,6 +20,17 @@ from app.services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 
+def _clean_nul_chars(value):
+    """递归清理字符串、字典和列表中的NUL字符"""
+    if isinstance(value, str):
+        return value.replace('\x00', '')
+    elif isinstance(value, dict):
+        return {k: _clean_nul_chars(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_clean_nul_chars(i) for i in value]
+    else:
+        return value
+
 class DataFlowPipelineService:
     """DataFlow流水线服务"""
     
@@ -332,19 +343,19 @@ class DataFlowPipelineService:
             
             # 创建结果记录
             result = DataFlowResult(
-                task_id=task.id,
-                original_file_id=file.id,
-                library_file_id=file.id,
-                original_content=file_content,
-                processed_content=json.dumps(processed_result) if isinstance(processed_result, dict) else str(processed_result),
+                task_id=_clean_nul_chars(task.id),
+                original_file_id=_clean_nul_chars(file.id),
+                library_file_id=_clean_nul_chars(file.id),
+                original_content=_clean_nul_chars(file_content),
+                processed_content=_clean_nul_chars(json.dumps(processed_result) if isinstance(processed_result, dict) else str(processed_result)),
                 quality_score=quality_score,
                 processing_time=processing_time,
-                result_metadata={'pipeline_type': pipeline_type, 'config': task.config},
-                output_format='json',
-                minio_bucket=file.minio_bucket,
-                minio_object_name=result_object_name,
+                result_metadata=_clean_nul_chars({'pipeline_type': pipeline_type, 'config': task.config}),
+                output_format=_clean_nul_chars('json'),
+                minio_bucket=_clean_nul_chars(file.minio_bucket),
+                minio_object_name=_clean_nul_chars(result_object_name),
                 file_size=len(result_json.encode('utf-8')),
-                status='completed',
+                status=_clean_nul_chars('completed'),
                 processed_at=datetime.utcnow()
             )
             
