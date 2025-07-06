@@ -263,13 +263,16 @@ class DataFlowPipelineService:
             处理结果
         """
         start_time = datetime.utcnow()
-        
+        file_content = None
         try:
             # 获取文件内容
             file_content = storage_service.get_file_content(file.minio_bucket, file.minio_object_name)
             if not file_content:
                 raise ValueError(f"无法获取文件内容: {file.id}")
-            
+
+            # 清理可能存在的NUL字符
+            file_content = file_content.replace('\x00', '')
+
             # 根据任务类型确定处理方式
             pipeline_type = task.type.value
             
@@ -282,6 +285,22 @@ class DataFlowPipelineService:
             # 调用DataFlow处理
             processed_result = self._call_dataflow_pipeline(file_content, process_config)
             
+            # 清理处理结果中的NUL字符
+            if isinstance(processed_result, str):
+                processed_result = processed_result.replace('\x00', '')
+            elif isinstance(processed_result, dict):
+                # 对于字典，需要递归清理所有字符串值
+                def clean_dict(d):
+                    for k, v in d.items():
+                        if isinstance(v, str):
+                            d[k] = v.replace('\x00', '')
+                        elif isinstance(v, dict):
+                            d[k] = clean_dict(v)
+                        elif isinstance(v, list):
+                            d[k] = [item.replace('\x00', '') if isinstance(item, str) else item for item in v]
+                    return d
+                processed_result = clean_dict(processed_result)
+
             # 计算质量分数
             quality_score = self._calculate_quality_score(file_content, processed_result)
             
@@ -336,6 +355,7 @@ class DataFlowPipelineService:
             return result
             
         except Exception as e:
+            db.session.rollback()
             logger.error(f"文件处理失败 {file.id}: {str(e)}")
             
             # 创建失败记录
@@ -343,7 +363,7 @@ class DataFlowPipelineService:
                 task_id=task.id,
                 original_file_id=file.id,
                 library_file_id=file.id,
-                original_content=file_content if 'file_content' in locals() else None,
+                original_content=file_content if file_content else None,
                 status='failed',
                 error_message=str(e),
                 processing_time=(datetime.utcnow() - start_time).total_seconds(),
@@ -373,17 +393,20 @@ class DataFlowPipelineService:
             # 根据流水线类型调用不同的处理方法
             pipeline_type = config.get('pipeline_type')
             pipeline_config = config.get('config', {})
+
+            pipeline_type_lower = pipeline_type.lower()
             
-            if pipeline_type == 'PRETRAIN_FILTER':
-                return self.integration.run_pretrain_filter(content, pipeline_config)
-            elif pipeline_type == 'PRETRAIN_SYNTHETIC':
-                return self.integration.run_pretrain_synthetic(content, pipeline_config)
-            elif pipeline_type == 'SFT_FILTER':
-                return self.integration.run_sft_filter(content, pipeline_config)
-            elif pipeline_type == 'SFT_SYNTHETIC':
-                return self.integration.run_sft_synthetic(content, pipeline_config)
-            else:
-                raise ValueError(f"不支持的流水线类型: {pipeline_type}")
+            supported_dataflow_pipelines = ["pretrain_filter", "pretrain_synthetic", "reasoning", "knowledge_base"]
+            
+            if pipeline_type_lower in supported_dataflow_pipelines:
+                return self.integration.process_text_data(
+                    text_data=content,
+                    pipeline_type=pipeline_type_lower,
+                    config=pipeline_config
+                )
+            elif pipeline_type in ['SFT_FILTER', 'SFT_SYNTHETIC']:
+                logger.warning(f"Pipeline type {pipeline_type} is not yet supported in dataflow_integration.py, returning original content.")
+                return content
                 
         except Exception as e:
             logger.error(f"DataFlow处理失败: {str(e)}")
