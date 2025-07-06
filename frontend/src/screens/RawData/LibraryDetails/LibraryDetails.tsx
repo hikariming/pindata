@@ -55,6 +55,7 @@ import { useLibraryFiles, useFileActions } from '../../../hooks/useLibraries';
 import { useFileConversion } from '../../../hooks/useFileConversion';
 import { ConvertToMarkdownDialog, ConversionConfig } from './components/ConvertToMarkdownDialog';
 import { ConversionProgress } from './components/ConversionProgress';
+import { DataFlowPanel } from '../../../components/DataFlow/DataFlowPanel';
 
 interface LibraryDetailsProps {
   onBack: () => void;
@@ -70,6 +71,7 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [conversionJobs, setConversionJobs] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'files' | 'dataflow'>('files');
   
   // 使用Hook获取文件列表
   const { files, loading: filesLoading, error: filesError, refresh: refreshFiles } = useLibraryFiles(library.id);
@@ -411,8 +413,41 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
         />
       )}
 
-      {/* 文件列表 */}
-      <Card className="border-[#d1dbe8] bg-white">
+      {/* 标签页导航 */}
+      <div className="mb-6">
+        <div className="border-b border-[#d1dbe8]">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('files')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'files'
+                  ? 'border-[#1977e5] text-[#1977e5]'
+                  : 'border-transparent text-[#4f7096] hover:text-[#1977e5] hover:border-[#d1dbe8]'
+              }`}
+            >
+              <FileIcon className="w-4 h-4 inline mr-2" />
+              文件管理
+            </button>
+            <button
+              onClick={() => setActiveTab('dataflow')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'dataflow'
+                  ? 'border-[#1977e5] text-[#1977e5]'
+                  : 'border-transparent text-[#4f7096] hover:text-[#1977e5] hover:border-[#d1dbe8]'
+              }`}
+            >
+              <PlayIcon className="w-4 h-4 inline mr-2" />
+              DataFlow 流水线
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* 标签页内容 */}
+      {activeTab === 'files' && (
+        <>
+          {/* 文件列表 */}
+          <Card className="border-[#d1dbe8] bg-white">
         <div className="p-4 border-b border-[#d1dbe8]">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -610,6 +645,18 @@ export const LibraryDetails = ({ onBack, onFileSelect, library }: LibraryDetails
           </div>
         )}
       </Card>
+        </>
+      )}
+
+      {/* DataFlow 流水线标签页 */}
+      {activeTab === 'dataflow' && (
+        <DataFlowPanel
+          libraryId={library.id}
+          libraryName={library.name}
+          markdownFiles={files.filter(f => f.converted_format === 'markdown')}
+          onRefresh={refreshFiles}
+        />
+      )}
 
       {/* 文件上传弹窗 */}
       {showUpload && (

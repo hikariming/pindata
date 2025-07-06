@@ -9,6 +9,7 @@ from .llm_config import LLMConfig, ProviderType, ReasoningExtractionMethod
 from .system_log import SystemLog, LogLevel
 from .conversion_job import ConversionJob, ConversionStatus
 from .conversion_file_detail import ConversionFileDetail
+from .dataflow_result import DataFlowResult, DataFlowQualityMetrics, PipelineType
 
 # User management models
 from .user import User, UserStatus
@@ -39,6 +40,7 @@ __all__ = [
     'Library', 'LibraryFile', 'DataType', 'ProcessStatus',
     'LLMConfig', 'ProviderType', 'ReasoningExtractionMethod', 'SystemLog', 'LogLevel',
     'ConversionJob', 'ConversionStatus', 'ConversionFileDetail',
+    'DataFlowResult', 'DataFlowQualityMetrics', 'PipelineType',
     # User management
     'User', 'UserStatus', 'Organization', 'OrganizationStatus',
     'Role', 'RoleType', 'RoleStatus', 'Permission',

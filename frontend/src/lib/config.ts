@@ -1,7 +1,7 @@
 // 配置常量
 export const config = {
   // API基础地址
-  apiBaseUrl: 'http://localhost:8897/api/v1',
+  apiBaseUrl: 'http://localhost:8897/api/v1/',
   
   // 应用信息
   appName: 'LLaMA Dataset Manager',

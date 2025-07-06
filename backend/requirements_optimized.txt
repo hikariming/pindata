@@ -1,0 +1,67 @@
+# Flask核心
+Flask==3.0.0
+Flask-RESTful==0.3.10
+Flask-CORS==4.0.0
+Flask-JWT-Extended==4.5.3
+
+# 数据库相关
+SQLAlchemy==2.0.31
+psycopg2-binary==2.9.10
+alembic==1.13.0
+redis==5.0.1
+flask_sqlalchemy
+
+# API文档
+flasgger==0.9.7.1
+
+# 数据处理
+pandas>=1.5.0
+numpy>=1.24.0,<2.0.0
+
+# 对象存储
+minio==7.2.0
+
+# 任务队列
+celery==5.3.4
+kombu==5.3.4
+
+# 工具库
+python-dotenv==1.0.0
+marshmallow==3.19.0
+marshmallow-sqlalchemy==0.29.0
+python-multipart==0.0.6
+
+# 文档解析
+python-docx==1.1.0
+python-pptx==0.6.23
+PyPDF2==3.0.1
+
+# 开发工具
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.12.0
+flake8==6.1.0
+
+# Markdown
+markitdown
+
+# LLM集成
+langchain
+langchain-openai
+langchain-google-genai
+langchain-anthropic
+langchain-community
+pillow>=9.0.0
+pdf2image
+pytesseract
+google-generativeai
+anthropic>=0.8.0
+openai>=1.0.0
+
+# 数据集导入
+huggingface_hub>=0.19.0
+modelscope>=1.9.0
+
+# 图像处理
+opencv-python-headless>=4.8.0
+scikit-image>=0.21.0

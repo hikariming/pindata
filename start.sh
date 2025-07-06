@@ -117,6 +117,11 @@ install_backend_dependencies() {
     log_info "Installing backend dependencies..."
     
     cd "$PROJECT_ROOT/backend"
+    
+    # 先升级pip和setuptools
+    pip install --upgrade pip setuptools wheel
+    
+    # 安装基础包
     pip install -r requirements.txt
     if [ $? -eq 0 ]; then
         log_success "Backend dependencies installed successfully"
@@ -169,15 +174,103 @@ install_dataflow_dependencies() {
     log_info "Installing Dataflow dependencies..."
     
     cd "$PROJECT_ROOT/Dataflow"
-    pip install -r requirements.txt
+    
+    # 升级pip和setuptools
+    pip install --upgrade pip setuptools wheel
+    
+    # 设置环境变量以避免编译错误
+    export CFLAGS=-Wno-error=incompatible-function-pointer-types
+    export CPPFLAGS=-Wno-error=incompatible-function-pointer-types
+    
+    # 首先尝试从conda-forge安装一些容易出错的包
+    log_info "Installing problematic packages from conda-forge..."
+    conda install -c conda-forge -y \
+        spacy \
+        numpy \
+        scipy \
+        torch \
+        torchvision \
+        torchaudio \
+        transformers \
+        pandas \
+        scikit-learn \
+        nltk
+    
+    # 然后安装剩余的包
+    log_info "Installing remaining packages with pip..."
+    pip install -r requirements.txt --prefer-binary --no-build-isolation
+    
     if [ $? -eq 0 ]; then
         log_success "Dataflow dependencies installed successfully"
         cd "$PROJECT_ROOT"
         return 0
     else
-        log_error "Failed to install Dataflow dependencies"
-        cd "$PROJECT_ROOT"
-        exit 1
+        log_warning "Some packages failed to install, trying alternative approach..."
+        
+        # 创建一个临时的requirements文件，排除可能有问题的包
+        cat > requirements_safe.txt << 'EOF'
+datasets<=3.2
+numpy<2.0.0
+scipy
+torch
+torchvision
+torchaudio
+tqdm
+transformers<=4.51.3
+aisuite
+math_verify
+word2number
+accelerate
+rapidfuzz
+colorlog
+appdirs
+datasketch
+modelscope
+addict
+pytest
+rich
+docstring_parser
+pydantic
+nltk
+colorama
+func_timeout
+sqlglot
+openai
+sentencepiece
+datasketch
+vendi-score==0.0.3
+google-api-core
+google-api-python-client
+evaluate
+chonkie
+trafilatura
+lxml_html_clean
+cloudpickle
+fastapi
+httpx
+pandas
+psutil
+pyfiglet
+pyyaml
+requests
+termcolor
+EOF
+        
+        # 尝试安装安全的依赖
+        pip install -r requirements_safe.txt --prefer-binary --no-build-isolation
+        
+        # 清理临时文件
+        rm -f requirements_safe.txt
+        
+        if [ $? -eq 0 ]; then
+            log_success "Dataflow dependencies installed successfully (with exclusions)"
+            cd "$PROJECT_ROOT"
+            return 0
+        else
+            log_error "Failed to install Dataflow dependencies"
+            cd "$PROJECT_ROOT"
+            exit 1
+        fi
     fi
 }
 

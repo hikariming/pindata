@@ -44,6 +44,70 @@ class StorageService:
             logger.error(f"初始化 MinIO 客户端失败: {str(e)}")
             raise
     
+    def get_file_content(self, bucket_name: str, object_name: str) -> str:
+        """
+        从 MinIO 获取文件内容并返回字符串
+        
+        Args:
+            bucket_name: 存储桶名
+            object_name: 对象名
+            
+        Returns:
+            str: 文件内容字符串
+        """
+        try:
+            # 获取文件字节数据
+            file_bytes = self.get_file(object_name, bucket_name)
+            
+            # 尝试解码为字符串
+            try:
+                content = file_bytes.decode('utf-8')
+            except UnicodeDecodeError:
+                # 如果UTF-8解码失败，尝试其他编码
+                try:
+                    content = file_bytes.decode('gbk')
+                except UnicodeDecodeError:
+                    content = file_bytes.decode('utf-8', errors='ignore')
+            
+            return content
+            
+        except Exception as e:
+            logger.error(f"获取文件内容失败: {str(e)}")
+            raise
+    
+    def upload_content(self, bucket: str, object_name: str, content: bytes, content_type: str = None):
+        """
+        上传内容到 MinIO
+        
+        Args:
+            bucket: 存储桶名
+            object_name: 对象名
+            content: 内容字节
+            content_type: 内容类型
+        """
+        try:
+            client = self._get_client()
+            
+            # 确保bucket存在
+            if not self._bucket_exists(bucket):
+                client.make_bucket(bucket)
+                logger.info(f"创建bucket: {bucket}")
+            
+            # 上传内容
+            client.put_object(
+                bucket,
+                object_name,
+                BytesIO(content),
+                len(content),
+                content_type=content_type
+            )
+            
+            logger.info(f"内容上传成功: {object_name}, 大小: {len(content)} bytes")
+            
+        except Exception as e:
+            logger.error(f"上传内容失败: {str(e)}")
+            raise
+    
     def upload_file(self, file_data: BinaryIO, original_filename: str, 
                    content_type: str = None, library_id: str = None) -> Tuple[str, int]:
         """
