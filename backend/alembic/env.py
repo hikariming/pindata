@@ -4,15 +4,26 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from dotenv import load_dotenv
 
 from alembic import context
 
 # 将 backend 目录添加到 Python 路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# 加载环境变量
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+env_path = os.path.join(backend_dir, '.env')
+load_dotenv(env_path)
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# 从环境变量读取数据库URL，如果没有则使用alembic.ini中的配置
+database_url = os.getenv('DATABASE_URL')
+if database_url:
+    config.set_main_option('sqlalchemy.url', database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

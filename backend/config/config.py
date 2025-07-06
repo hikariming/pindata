@@ -2,8 +2,11 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 
-# 加载环境变量
-load_dotenv()
+# 加载环境变量 - 指定.env文件的正确路径
+# 获取当前文件所在目录的上级目录（backend目录）
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env_path = os.path.join(backend_dir, '.env')
+load_dotenv(env_path)
 
 class Config:
     """基础配置类"""
