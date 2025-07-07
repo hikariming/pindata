@@ -383,6 +383,33 @@ class StorageService:
         except Exception as e:
             logger.error(f"上传文件失败: {str(e)}")
             raise
+    
+    def list_objects(self, bucket_name: str, prefix: str = None):
+        """
+        列出指定bucket中的对象
+        
+        Args:
+            bucket_name: 存储桶名
+            prefix: 对象前缀（可选）
+            
+        Returns:
+            list: 对象列表
+        """
+        try:
+            client = self._get_client()
+            
+            # 列出对象
+            objects = client.list_objects(bucket_name, prefix=prefix)
+            
+            # 返回对象列表
+            return list(objects)
+            
+        except S3Error as e:
+            logger.error(f"MinIO 列出对象失败: {str(e)}")
+            raise Exception(f"列出对象失败: {str(e)}")
+        except Exception as e:
+            logger.error(f"列出对象失败: {str(e)}")
+            raise
 
 # 创建全局存储服务实例
 storage_service = StorageService() 

@@ -26,6 +26,8 @@ class TaskType(enum.Enum):
     PRETRAIN_SYNTHETIC = "PRETRAIN_SYNTHETIC"
     SFT_FILTER = "SFT_FILTER"
     SFT_SYNTHETIC = "SFT_SYNTHETIC"
+    # 中文DataFlow 相关类型
+    CHINESE_DATAFLOW = "CHINESE_DATAFLOW"
 
 class Task(db.Model):
     """统一任务模型"""

@@ -21,6 +21,8 @@ from app.api.v1.endpoints.organizations import organizations_bp
 from app.api.v1.endpoints.roles import roles_bp
 from app.api.v1.endpoints.data_governance import data_governance_bp
 from app.api.v1.endpoints.dataflow import dataflow_bp
+from app.api.v1.endpoints.chinese_dataflow import chinese_dataflow_bp
+from app.api.v1.endpoints.unified_tasks import unified_tasks_bp
 from config.config import config, get_config
 from app.db import ensure_database_exists
 from app.utils.db_utils import is_new_database, stamp_db_as_latest
@@ -84,6 +86,8 @@ def create_app(config_name='default'):
     app.register_blueprint(users_bp, url_prefix='/api/v1/users')
     app.register_blueprint(data_governance_bp, url_prefix='/api/v1')
     app.register_blueprint(dataflow_bp, url_prefix='/api/v1/dataflow')
+    app.register_blueprint(chinese_dataflow_bp, url_prefix='/api/v1/chinese-dataflow')
+    app.register_blueprint(unified_tasks_bp, url_prefix='/api/v1/unified')
     
     # 注册任务状态查询蓝图
     from app.api.v1.endpoints.tasks import tasks_bp

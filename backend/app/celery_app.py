@@ -34,7 +34,8 @@ def make_celery(app_name=__name__):
             'app.tasks.conversion_tasks',
             'app.tasks.dataset_import_tasks', 
             'app.tasks.dataset_generation_tasks',
-            'app.tasks.dataflow_tasks'  # 添加DataFlow任务
+            'app.tasks.dataflow_tasks',  # 添加DataFlow任务
+            'app.tasks.chinese_dataflow_tasks'  # 添加中文DataFlow任务
             # 'app.tasks.multimodal_dataset_tasks'  # 暂时移除，功能开发中
         ]
     )

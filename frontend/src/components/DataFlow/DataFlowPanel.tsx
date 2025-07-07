@@ -12,8 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { dataflowService, DataFlowTask, PipelineType, PipelineConfig } from '../../services/dataflow.service';
+import { chineseDataflowService, ChineseDataFlowPipelineType, ChineseDataFlowTask } from '../../services/chinese-dataflow.service';
 import { LibraryFile } from '../../types/library';
 import { toast } from 'react-hot-toast';
+import { apiClient } from '../../lib/api-client';
 import { 
   Play, 
   Pause, 
@@ -59,6 +61,7 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showChineseDialog, setShowChineseDialog] = useState(false);
   const [configForm, setConfigForm] = useState<TaskConfigForm>({
     pipeline_type: '',
     task_name: '',
@@ -99,8 +102,20 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
 
   const loadTasks = async () => {
     try {
-      const libraryTasks = await dataflowService.getLibraryTasks(libraryId);
-      setTasks(libraryTasks);
+      // 加载原始DataFlow任务
+      const originalTasks = await dataflowService.getLibraryTasks(libraryId);
+      
+      // 加载中文DataFlow任务（通过统一API查询任务状态）
+      const chineseTasks: DataFlowTask[] = [];
+      
+      // 由于我们无法直接查询中文任务列表，我们将显示所有任务
+      // 在实际使用中，中文任务和原始任务会混合显示
+      const allTasks = [...originalTasks, ...chineseTasks];
+      
+      // 按创建时间排序
+      allTasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setTasks(allTasks);
     } catch (error) {
       console.error('加载任务列表失败:', error);
     }
@@ -133,6 +148,39 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
     } catch (error) {
       console.error('启动批量处理失败:', error);
       toast.error('启动批量处理失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChineseBatchProcess = async (pipelineType: string) => {
+    try {
+      setIsLoading(true);
+      
+      // 获取所有可处理的文件ID
+      const fileIds = processableFiles.map(file => file.id);
+      
+      if (fileIds.length === 0) {
+        toast.error('没有可处理的文件');
+        return;
+      }
+      
+      const config = {}; // 使用默认配置
+      const taskName = `${pipelineType}_${new Date().toLocaleString()}`;
+      
+      const task = await chineseDataflowService.processBatchFiles(
+        libraryId,
+        fileIds,
+        pipelineType,
+        config,
+        taskName
+      );
+      
+      toast.success(`中文DataFlow任务已启动: ${task.task_name}`);
+      setTimeout(loadTasks, 1000); // 延迟刷新任务列表
+    } catch (error) {
+      console.error('启动中文DataFlow批量处理失败:', error);
+      toast.error('启动中文DataFlow批量处理失败');
     } finally {
       setIsLoading(false);
     }
@@ -281,16 +329,107 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
 
   const handleDownloadZip = async (taskId: string) => {
     try {
-      console.log('开始打包下载，任务ID:', taskId); // 调试日志
+      console.log('开始统一打包下载，任务ID:', taskId); // 调试日志
       toast.success('正在准备下载包，请稍候...'); // 给用户反馈
       
-      await dataflowService.downloadTaskResultsZip(taskId);
+      // 使用统一的下载API
+      const downloadUrl = `${config.apiBaseUrl}unified/tasks/${taskId}/download-zip`;
       
-      console.log('打包下载完成'); // 调试日志
+      console.log('统一打包下载URL:', downloadUrl); // 调试日志
+      
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': (apiClient as any).defaultHeaders['Authorization'] || '',
+        },
+      });
+
+      console.log('响应状态:', response.status, response.statusText); // 调试日志
+      console.log('响应内容类型:', response.headers.get('content-type')); // 调试日志
+
+      if (!response.ok) {
+        let errorText = `下载失败: ${response.status}`;
+        try {
+          const contentType = response.headers.get('content-type');
+          
+          // 如果是JSON响应，说明服务器返回了错误信息
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorText = errorData.message || errorData.error || '服务器返回了错误响应';
+          } else {
+            // 如果不是JSON响应，使用状态码
+            errorText = `HTTP ${response.status}: ${response.statusText}`;
+          }
+        } catch {
+          // 如果解析失败，使用状态码
+          errorText = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorText);
+      }
+
+      // 检查响应内容类型
+      const contentType = response.headers.get('content-type');
+      
+      // 如果是JSON响应，说明服务器返回了错误信息
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const errorData = await response.json();
+          console.log('服务器返回的JSON内容:', errorData); // 调试日志
+          const errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+          throw new Error(`服务器错误: ${errorMessage}`);
+        } catch (parseError) {
+          console.error('解析JSON失败:', parseError);
+          throw new Error('服务器返回了意外的JSON响应');
+        }
+      }
+
+      // 检查响应大小
+      const contentLength = response.headers.get('content-length');
+      const responseSize = contentLength ? parseInt(contentLength) : 0;
+      
+      console.log('响应大小:', responseSize, '字节'); // 调试日志
+      
+      // 如果文件太小，可能是错误响应
+      if (responseSize > 0 && responseSize < 100) {
+        console.warn('响应文件过小，可能是错误响应');
+        const text = await response.text();
+        console.log('小文件内容:', text);
+        throw new Error('下载文件过小，可能是错误响应');
+      }
+
+      // 获取blob数据
+      const blob = await response.blob();
+      console.log('获得blob，大小:', blob.size); // 调试日志
+      
+      // 再次检查blob大小
+      if (blob.size < 100) {
+        throw new Error('下载的文件过小，可能包含错误信息而非实际文件');
+      }
+
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob);
+      
+      // 生成文件名
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+      const filename = `dataflow_results_${taskId.slice(0, 8)}_${timestamp}.zip`;
+      
+      // 触发下载
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      // 清理
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      console.log('统一打包下载完成'); // 调试日志
       toast.success('下载包已生成');
     } catch (error) {
-      console.error('打包下载失败:', error);
-      const errorMessage = error instanceof Error ? error.message : '打包下载失败';
+      console.error('统一打包下载失败:', error);
+      const errorMessage = error instanceof Error ? error.message : '统一打包下载失败';
       toast.error(errorMessage);
     }
   };
@@ -425,6 +564,44 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
             </Button>
           </div>
           
+          {/* 分隔线 */}
+          <div className="flex items-center my-4">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="px-3 text-sm text-gray-500">自研・支持中文</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+          
+          {/* 中文DataFlow快速操作 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Button
+              onClick={() => handleChineseBatchProcess('CHINESE_PRETRAIN_FILTER')}
+              disabled={isLoading}
+              className="w-full"
+              variant="default"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              中文预训练过滤
+            </Button>
+            <Button
+              onClick={() => handleChineseBatchProcess('CHINESE_PRETRAIN_SYNTHESIS')}
+              disabled={isLoading}
+              className="w-full"
+              variant="secondary"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              中文预训练合成
+            </Button>
+            <Button
+              onClick={() => setShowChineseDialog(true)}
+              disabled={isLoading}
+              className="w-full"
+              variant="outline"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              中文自定义任务
+            </Button>
+          </div>
+          
           {/* 文件状态提示 */}
           {processableFiles.length === 0 && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -545,6 +722,66 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
               </DialogContent>
             </Dialog>
           </div>
+          
+          {/* 中文DataFlow自定义任务对话框 */}
+          <Dialog open={showChineseDialog} onOpenChange={setShowChineseDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>中文DataFlow自定义任务</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">🚀 中文优化特性</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• 专门针对中文语言特点进行优化</li>
+                    <li>• 支持中文文本清理、分词、信息提取</li>
+                    <li>• 智能质量评估，保留高质量中文内容</li>
+                    <li>• 生成中文问答对话、摘要和知识点</li>
+                  </ul>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 mb-4">
+                    选择一个中文DataFlow任务类型：
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button
+                      onClick={() => {
+                        setShowChineseDialog(false);
+                        handleChineseBatchProcess('CHINESE_PRETRAIN_FILTER');
+                      }}
+                      className="h-auto p-4 flex flex-col items-center"
+                    >
+                      <div className="text-base font-medium mb-1">预训练过滤</div>
+                      <div className="text-xs text-gray-600">中文文本质量过滤</div>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowChineseDialog(false);
+                        handleChineseBatchProcess('CHINESE_PRETRAIN_SYNTHESIS');
+                      }}
+                      variant="secondary"
+                      className="h-auto p-4 flex flex-col items-center"
+                    >
+                      <div className="text-base font-medium mb-1">预训练合成</div>
+                      <div className="text-xs text-gray-600">生成问答、摘要等</div>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowChineseDialog(false);
+                        handleChineseBatchProcess('CHINESE_CUSTOM_TASK');
+                      }}
+                      variant="outline"
+                      className="h-auto p-4 flex flex-col items-center"
+                    >
+                      <div className="text-base font-medium mb-1">自定义任务</div>
+                      <div className="text-xs text-gray-600">文本清理、分词等</div>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
@@ -574,13 +811,20 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
               {tasks.map(task => (
                 <div key={task.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(task.status)}
-                      <div>
-                        <div className="font-medium">{task.name}</div>
-                        <div className="text-sm text-gray-500">{task.description}</div>
+                                          <div className="flex items-center gap-3">
+                        {getStatusIcon(task.status)}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium">{task.name}</div>
+                            {(task as any).type === 'CHINESE_DATAFLOW' && (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                                中文
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500">{task.description}</div>
+                        </div>
                       </div>
-                    </div>
                     <div className="flex items-center gap-2">
                       <Badge className={getStatusColor(task.status)}>
                         {task.status}
