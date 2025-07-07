@@ -175,6 +175,7 @@ export class DataFlowService {
     });
 
     console.log('响应状态:', response.status, response.statusText); // 调试日志
+    console.log('响应内容类型:', response.headers.get('content-type')); // 调试日志
 
     if (!response.ok) {
       let errorText = `下载失败: ${response.status}`;
@@ -188,8 +189,27 @@ export class DataFlowService {
       throw new Error(errorText);
     }
 
+    // 检查响应内容类型
+    const contentType = response.headers.get('content-type');
+    
+    // 如果是JSON响应，说明服务器返回了错误信息
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const errorData = await response.json();
+        const errorMessage = errorData.message || errorData.error || '服务器返回了错误响应';
+        throw new Error(errorMessage);
+      } catch (parseError) {
+        throw new Error('服务器返回了无效的响应');
+      }
+    }
+
     const blob = await response.blob();
     console.log('获得blob，大小:', blob.size); // 调试日志
+    
+    // 检查blob大小是否合理（至少应该有一定大小）
+    if (blob.size < 100) {
+      throw new Error('下载的文件过小，可能是空文件或错误响应');
+    }
     
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

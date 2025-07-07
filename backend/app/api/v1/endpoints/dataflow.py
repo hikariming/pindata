@@ -281,10 +281,20 @@ def download_task_results_zip(task_id):
         if not task_info:
             return error_response("任务不存在")
         
+        # 检查任务状态
+        if task_info.get('status') != 'completed':
+            status_name = {
+                'pending': '待处理',
+                'running': '运行中',
+                'failed': '失败',
+                'cancelled': '已取消'
+            }.get(task_info.get('status'), '未知状态')
+            return error_response(f"任务尚未完成，当前状态: {status_name}")
+        
         # 获取结果
         results = service.get_task_results(task_id)
         if not results:
-            return error_response("没有找到结果")
+            return error_response("任务已完成但没有找到结果文件")
         
         # 过滤出成功的结果
         successful_results = [
@@ -293,7 +303,9 @@ def download_task_results_zip(task_id):
         ]
         
         if not successful_results:
-            return error_response("没有可下载的结果文件")
+            failed_count = len([r for r in results if r.get('status') == 'failed'])
+            total_count = len(results)
+            return error_response(f"没有可下载的结果文件。总共 {total_count} 个文件，其中 {failed_count} 个处理失败")
         
         # 创建临时zip文件
         temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
