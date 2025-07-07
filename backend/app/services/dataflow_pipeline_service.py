@@ -12,10 +12,20 @@ import logging
 from flask import current_app
 from app.db import db
 from app.models.task import Task, TaskStatus, TaskType
-from app.models.dataflow_result import DataFlowResult, DataFlowQualityMetrics, PipelineType
+from app.models.dataflow_result import DataFlowResult, DataFlowQualityMetrics
 from app.models.library import Library
 from app.models.library_file import LibraryFile
 from app.services.storage_service import storage_service
+
+# 导入PipelineType枚举
+from enum import Enum
+
+class PipelineType(Enum):
+    PRETRAIN_FILTER = "PRETRAIN_FILTER"
+    PRETRAIN_SYNTHETIC = "PRETRAIN_SYNTHETIC"
+    SFT_FILTER = "SFT_FILTER"
+    SFT_SYNTHETIC = "SFT_SYNTHETIC"
+
 # dataflow_integration将在运行时导入
 
 logger = logging.getLogger(__name__)
@@ -94,10 +104,23 @@ class DataFlowPipelineService:
             if len(files) != len(file_ids):
                 raise ValueError("部分文件不存在或不属于指定文件库")
             
-            # 只处理Markdown文件
-            markdown_files = [f for f in files if f.converted_format == 'markdown']
+            # 只处理已完成转换的Markdown文件
+            from app.models.library_file import ProcessStatus
+            markdown_files = [f for f in files if f.converted_format == 'markdown' 
+                             and f.process_status == ProcessStatus.COMPLETED 
+                             and f.converted_object_name]
             if not markdown_files:
-                raise ValueError("未找到可处理的Markdown文件")
+                # 提供更详细的错误信息
+                pending_files = [f for f in files if f.process_status != ProcessStatus.COMPLETED]
+                no_markdown_files = [f for f in files if f.converted_format != 'markdown']
+                
+                error_msg = "未找到可处理的Markdown文件。"
+                if pending_files:
+                    error_msg += f" 有 {len(pending_files)} 个文件未完成转换。"
+                if no_markdown_files:
+                    error_msg += f" 有 {len(no_markdown_files)} 个文件不是Markdown格式。"
+                    
+                raise ValueError(error_msg)
             
             # 生成任务名称
             if not task_name:
@@ -181,94 +204,84 @@ class DataFlowPipelineService:
             if not task:
                 raise ValueError(f"任务不存在: {task_id}")
             
-            # 更新任务状态
-            task.status = TaskStatus.RUNNING
-            task.started_at = datetime.utcnow()
-            db.session.commit()
-            
             # 获取需要处理的文件
             files = LibraryFile.query.filter(
                 LibraryFile.id.in_(task.file_ids)
             ).all()
             
+            # 创建DataFlow管道
+            logger.info(f"创建DataFlow管道: {task.type.value}")
+            
+            if task.type.value == PipelineType.PRETRAIN_FILTER.value:
+                pipeline = self.integration.create_pretrain_filter_pipeline()
+            elif task.type.value == PipelineType.SFT_FILTER.value:
+                pipeline = self.integration.create_sft_filter_pipeline()
+            else:
+                # 对于其他类型，先使用模拟模式
+                pipeline = self.integration.create_pretrain_filter_pipeline()
+                logger.warning(f"管道类型 {task.type.value} 暂未实现，使用预训练过滤管道")
+            
+            # 处理所有文件
             results = []
-            total_files = len(files)
-            processed_count = 0
-            failed_count = 0
-            
-            # 处理每个文件
-            for i, file in enumerate(files):
+            for file in files:
                 try:
-                    # 更新进度
-                    task.current_file = file.original_filename
-                    task.progress = int((i / total_files) * 100)
-                    db.session.commit()
-                    
-                    # 处理单个文件
-                    result = self._process_single_file(task, file)
+                    result = self._process_single_file(task, file, pipeline, task.type.value)
                     results.append(result)
-                    processed_count += 1
-                    
                 except Exception as e:
-                    logger.error(f"处理文件失败 {file.id}: {str(e)}")
-                    failed_count += 1
-                    
-                    # 更新失败统计
-                    task.failed_files = failed_count
-                    db.session.commit()
-            
-            # 更新任务统计
-            task.processed_files = processed_count
-            task.failed_files = failed_count
-            task.progress = 100
-            
-            # 生成结果摘要
-            results_summary = {
-                'total_files': total_files,
-                'processed_files': processed_count,
-                'failed_files': failed_count,
-                'success_rate': (processed_count / total_files * 100) if total_files > 0 else 0
-            }
-            
-            # 计算质量指标
-            quality_metrics = self._calculate_quality_metrics(results)
+                    logger.error(f"处理文件失败: {file.id}, 错误: {e}")
+                    results.append({
+                        'file_id': file.id,
+                        'status': 'failed',
+                        'error': str(e)
+                    })
             
             # 更新任务状态
-            task.status = TaskStatus.COMPLETED if failed_count == 0 else TaskStatus.FAILED
+            task.status = TaskStatus.COMPLETED
             task.completed_at = datetime.utcnow()
-            task.results = results_summary
-            task.quality_metrics = quality_metrics
+            task.processed_files = len(results)
+            
+            # 将结果存储到任务中，方便后续查询
+            task.config = task.config or {}
+            task.config['processing_results'] = results
             
             db.session.commit()
             
-            logger.info(f"任务处理完成: {task_id}, 成功: {processed_count}, 失败: {failed_count}")
-            
+            logger.info(f"DataFlow任务完成: {task_id}")
             return {
                 'task_id': task_id,
-                'status': task.status.value,
-                'results': results_summary,
-                'quality_metrics': quality_metrics
+                'status': 'completed',
+                'results': results,
+                'total_files': len(files),
+                'processed_files': len(results)
             }
             
         except Exception as e:
-            logger.error(f"处理任务失败 {task_id}: {str(e)}")
+            logger.error(f"处理DataFlow任务失败: {task_id}, 错误: {str(e)}")
             
             # 更新任务状态为失败
             if task:
                 task.status = TaskStatus.FAILED
-                task.error_message = str(e)
                 task.completed_at = datetime.utcnow()
+                task.error_message = str(e)
                 db.session.commit()
             
-            raise
+            # 返回可序列化的错误结果
+            return {
+                'task_id': task_id,
+                'status': 'failed',
+                'error': str(e),
+                'timestamp': datetime.now().isoformat()
+            }
     
-    def _process_single_file(self, task: Task, file: LibraryFile) -> DataFlowResult:
+    def _process_single_file(self, task: Task, file: LibraryFile, pipeline: Any, pipeline_type: str) -> Dict[str, Any]:
         """
         处理单个文件
         
         Args:
             task: 任务对象
             file: 文件对象
+            pipeline: DataFlow管道
+            pipeline_type: 流水线类型
             
         Returns:
             处理结果
@@ -276,115 +289,140 @@ class DataFlowPipelineService:
         start_time = datetime.utcnow()
         file_content = None
         try:
-            # 获取文件内容
-            file_content = storage_service.get_file_content(file.minio_bucket, file.minio_object_name)
-            if not file_content:
-                raise ValueError(f"无法获取文件内容: {file.id}")
+            # 获取文件内容 - 优先使用转换后的文件
+            if file.converted_object_name and file.converted_format == 'markdown':
+                # 使用转换后的Markdown文件
+                # 注意：转换后的文件存储在datasets bucket中，而不是原始文件的bucket
+                from flask import current_app
+                converted_bucket = current_app.config.get('MINIO_DATASETS_BUCKET', 'datasets')
+                file_content = storage_service.get_file_content(converted_bucket, file.converted_object_name)
+                if not file_content:
+                    raise ValueError(f"无法获取转换后的文件内容: {file.id}")
+                logger.info(f"使用转换后的Markdown文件: bucket={converted_bucket}, object={file.converted_object_name}")
+            else:
+                # 如果没有转换后的文件，使用原始文件
+                file_content = storage_service.get_file_content(file.minio_bucket, file.minio_object_name)
+                if not file_content:
+                    raise ValueError(f"无法获取原始文件内容: {file.id}")
+                logger.warning(f"使用原始文件（未转换）: bucket={file.minio_bucket}, object={file.minio_object_name}")
+                
+                # 如果原始文件不是文本格式，应该报错
+                if file.file_type.lower() not in ['txt', 'md', 'markdown']:
+                    raise ValueError(f"文件未完成转换或不是文本格式，无法处理: {file.original_filename}")
 
             # 清理可能存在的NUL字符
             file_content = file_content.replace('\x00', '')
-
-            # 根据任务类型确定处理方式
-            pipeline_type = task.type.value
             
-            # 准备处理配置
-            process_config = {
+            # 验证文件内容不为空
+            if not file_content.strip():
+                raise ValueError(f"文件内容为空: {file.id}")
+                
+            logger.info(f"成功获取文件内容，长度: {len(file_content)} 字符")
+
+            # 使用DataFlow集成处理文件内容
+            logger.info(f"使用DataFlow处理文件: {file.filename}")
+            
+            # 直接使用传入的pipeline处理文件内容
+            processed_result = pipeline.process(file_content)
+            
+            # 格式化处理结果
+            if isinstance(processed_result, list) and len(processed_result) > 0:
+                # 如果返回的是列表，提取第一个元素的raw_content
+                if isinstance(processed_result[0], dict) and 'raw_content' in processed_result[0]:
+                    formatted_result = processed_result[0]['raw_content']
+                else:
+                    formatted_result = str(processed_result[0])
+            else:
+                formatted_result = str(processed_result)
+            
+            # 生成结果数据
+            result_data = {
+                'file_id': file.id,
+                'filename': file.filename,
+                'original_content': file_content[:200] + '...' if len(file_content) > 200 else file_content,
+                'processed_content': formatted_result,
                 'pipeline_type': pipeline_type,
-                'config': task.config or {}
+                'timestamp': datetime.now().isoformat(),
+                'status': 'success'
             }
             
-            # 调用DataFlow处理
-            processed_result = self._call_dataflow_pipeline(file_content, process_config)
-            
-            # 清理处理结果中的NUL字符
-            if isinstance(processed_result, str):
-                processed_result = processed_result.replace('\x00', '')
-            elif isinstance(processed_result, dict):
-                # 对于字典，需要递归清理所有字符串值
-                def clean_dict(d):
-                    for k, v in d.items():
-                        if isinstance(v, str):
-                            d[k] = v.replace('\x00', '')
-                        elif isinstance(v, dict):
-                            d[k] = clean_dict(v)
-                        elif isinstance(v, list):
-                            d[k] = [item.replace('\x00', '') if isinstance(item, str) else item for item in v]
-                    return d
-                processed_result = clean_dict(processed_result)
-
             # 计算质量分数
-            quality_score = self._calculate_quality_score(file_content, processed_result)
+            quality_score = self._calculate_quality_score(file_content, formatted_result)
+            result_data['quality_score'] = quality_score
             
             # 计算处理时间
-            processing_time = (datetime.utcnow() - start_time).total_seconds()
+            processing_time = (datetime.now() - start_time).total_seconds()
+            result_data['processing_time'] = processing_time
             
-            # 存储处理结果
-            result_object_name = f"dataflow_results/{task.id}/{file.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            # 准备上传
+            timestamp_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+            bucket_name = current_app.config.get('MINIO_DEFAULT_BUCKET', 'pindata-bucket')
             
-            # 将结果存储到MinIO
-            result_data = {
-                'original_file_id': file.id,
-                'processed_content': processed_result,
-                'quality_score': quality_score,
-                'processing_time': processing_time,
-                'metadata': {
-                    'pipeline_type': pipeline_type,
-                    'config': task.config
-                }
-            }
-            
+            # 1. 存储完整的JSON元数据
+            json_object_name = f"dataflow_results/{task.id}/{file.id}_{timestamp_str}.json"
             result_json = json.dumps(result_data, ensure_ascii=False, indent=2)
             storage_service.upload_content(
-                bucket=file.minio_bucket,
-                object_name=result_object_name,
                 content=result_json.encode('utf-8'),
+                bucket=bucket_name,
+                object_name=json_object_name,
                 content_type='application/json'
             )
+
+            # 2. 存储纯文本的处理结果，用于下载
+            original_filename = result_data.get('filename', 'result.txt')
+            _, extension = os.path.splitext(original_filename)
+            if extension.lower() not in ['.txt', '.md', '.json', '.html', '.xml']:
+                extension = '.txt'
+            txt_object_name = f"dataflow_results/{task.id}/{file.id}_{timestamp_str}{extension}"
             
-            # 创建结果记录
-            result = DataFlowResult(
-                task_id=_clean_nul_chars(task.id),
-                original_file_id=_clean_nul_chars(file.id),
-                library_file_id=_clean_nul_chars(file.id),
-                original_content=_clean_nul_chars(file_content),
-                processed_content=_clean_nul_chars(json.dumps(processed_result) if isinstance(processed_result, dict) else str(processed_result)),
-                quality_score=quality_score,
-                processing_time=processing_time,
-                result_metadata=_clean_nul_chars({'pipeline_type': pipeline_type, 'config': task.config}),
-                output_format=_clean_nul_chars('json'),
-                minio_bucket=_clean_nul_chars(file.minio_bucket),
-                minio_object_name=_clean_nul_chars(result_object_name),
-                file_size=len(result_json.encode('utf-8')),
-                status=_clean_nul_chars('completed'),
-                processed_at=datetime.utcnow()
-            )
-            
-            db.session.add(result)
-            db.session.commit()
-            
+            if isinstance(formatted_result, str):
+                storage_service.upload_content(
+                    content=formatted_result.encode('utf-8'),
+                    bucket=bucket_name,
+                    object_name=txt_object_name,
+                    content_type='text/plain'
+                )
+            else:
+                # 如果结果不是字符串，也存为JSON
+                storage_service.upload_content(
+                    content=json.dumps(formatted_result, ensure_ascii=False).encode('utf-8'),
+                    bucket=bucket_name,
+                    object_name=txt_object_name,
+                    content_type='application/json'
+                )
+
             logger.info(f"文件处理成功: {file.id}")
-            return result
+            
+            # 返回可序列化的字典，包含下载所需的MinIO信息
+            return {
+                'file_id': file.id,
+                'library_file_id': file.id,
+                'filename': original_filename,
+                'status': 'completed',
+                'quality_score': quality_score,
+                'processing_time': processing_time,
+                'pipeline_type': pipeline_type,
+                'timestamp': datetime.now().isoformat(),
+                'content_length': len(file_content),
+                'processed_length': len(formatted_result) if isinstance(formatted_result, str) else 0,
+                'minio_bucket': bucket_name,
+                'minio_object_name': txt_object_name,
+                'minio_json_object_name': json_object_name
+            }
             
         except Exception as e:
-            db.session.rollback()
-            logger.error(f"文件处理失败 {file.id}: {str(e)}")
+            logger.error(f"处理文件失败: {file.id}, 错误: {str(e)}")
             
-            # 创建失败记录
-            result = DataFlowResult(
-                task_id=task.id,
-                original_file_id=file.id,
-                library_file_id=file.id,
-                original_content=file_content if file_content else None,
-                status='failed',
-                error_message=str(e),
-                processing_time=(datetime.utcnow() - start_time).total_seconds(),
-                processed_at=datetime.utcnow()
-            )
-            
-            db.session.add(result)
-            db.session.commit()
-            
-            raise
+            # 返回可序列化的错误结果
+            return {
+                'file_id': file.id,
+                'filename': file.filename,
+                'status': 'failed',
+                'error': str(e),
+                'pipeline_type': pipeline_type,
+                'timestamp': datetime.now().isoformat(),
+                'processing_time': (datetime.now() - start_time).total_seconds() if 'start_time' in locals() else 0
+            }
     
     def _call_dataflow_pipeline(self, content: str, config: Dict[str, Any]) -> Any:
         """
@@ -533,8 +571,21 @@ class DataFlowPipelineService:
             任务结果列表
         """
         try:
-            results = DataFlowResult.query.filter_by(task_id=task_id).all()
-            return [result.to_dict() for result in results]
+            # 获取任务
+            task = Task.query.get(task_id)
+            if not task:
+                return []
+            
+            # 如果任务还没完成，返回空列表
+            if task.status != TaskStatus.COMPLETED:
+                return []
+            
+            # 从任务配置中获取存储的结果
+            if task.config and 'processing_results' in task.config:
+                return task.config['processing_results']
+            
+            # 如果没有存储的结果，返回空列表
+            return []
             
         except Exception as e:
             logger.error(f"获取任务结果失败: {str(e)}")

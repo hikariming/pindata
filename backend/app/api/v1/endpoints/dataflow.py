@@ -1,11 +1,16 @@
 """
 DataFlow流水线API端点
 """
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_file
 from app.services.dataflow_pipeline_service import DataFlowPipelineService
 from app.models.task import Task, TaskStatus
 from app.utils.response import success_response, error_response
 import logging
+import zipfile
+import tempfile
+import os
+from app.services.storage_service import StorageService
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -240,10 +245,16 @@ def download_task_results(task_id):
         download_links = []
         for result in results:
             if result.get('status') == 'completed' and result.get('minio_object_name'):
+                object_name = result.get('minio_object_name')
+                encoded_object_name = urllib.parse.quote(object_name, safe='/')
+                
+                # 使用处理时保存的原始文件名
+                download_filename = result.get('filename', os.path.basename(object_name))
+                
                 download_links.append({
                     'file_id': result.get('library_file_id'),
-                    'object_name': result.get('minio_object_name'),
-                    'download_url': f"/api/v1/storage/download/{result.get('minio_bucket')}/{result.get('minio_object_name')}"
+                    'object_name': download_filename,  # 使用友好的文件名
+                    'download_url': f"/api/v1/storage/download/{encoded_object_name}"
                 })
         
         return success_response({
@@ -253,6 +264,123 @@ def download_task_results(task_id):
         
     except Exception as e:
         logger.error(f"获取下载链接失败: {str(e)}")
+        return error_response(str(e))
+
+@dataflow_bp.route('/tasks/<task_id>/download-zip', methods=['GET', 'OPTIONS'])
+def download_task_results_zip(task_id):
+    """打包下载任务结果（zip格式）"""
+    if request.method == 'OPTIONS':
+        return {}, 200
+    
+    try:
+        service = DataFlowPipelineService()
+        storage_service = StorageService()
+        
+        # 获取任务信息
+        task_info = service.get_task_status(task_id)
+        if not task_info:
+            return error_response("任务不存在")
+        
+        # 获取结果
+        results = service.get_task_results(task_id)
+        if not results:
+            return error_response("没有找到结果")
+        
+        # 过滤出成功的结果
+        successful_results = [
+            result for result in results 
+            if result.get('status') == 'completed' and result.get('minio_object_name')
+        ]
+        
+        if not successful_results:
+            return error_response("没有可下载的结果文件")
+        
+        # 创建临时zip文件
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        try:
+            with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for result in successful_results:
+                    # 使用正确的bucket，DataFlow结果存储在默认bucket中
+                    minio_bucket = result.get('minio_bucket') or current_app.config.get('MINIO_DEFAULT_BUCKET', 'pindata-bucket')
+                    minio_object_name = result.get('minio_object_name')
+                    
+                    if not minio_object_name:
+                        continue
+                    
+                    try:
+                        # 从MinIO下载文件内容
+                        file_content = storage_service.get_file(
+                            minio_object_name, 
+                            bucket_name=minio_bucket
+                        )
+                        
+                        if file_content:
+                            # 生成zip内的文件名
+                            original_filename = result.get('filename', os.path.basename(minio_object_name))
+                            
+                            # 添加到zip文件
+                            zip_file.writestr(original_filename, file_content)
+                            logger.info(f"添加文件到zip: {original_filename}")
+                            
+                    except Exception as file_error:
+                        logger.error(f"下载文件失败: {minio_object_name}, 错误: {str(file_error)}")
+                        continue
+            
+            # 检查zip文件是否有内容
+            if os.path.getsize(temp_zip.name) == 0:
+                return error_response("没有成功下载到任何文件")
+            
+            # 生成下载文件名 - 使用ASCII安全的文件名
+            task_name = task_info.get('name', 'dataflow_task')
+            # 移除或替换所有非ASCII字符
+            import re
+            safe_task_name = re.sub(r'[^\w\-_\s]', '', task_name)  # 移除特殊字符
+            safe_task_name = re.sub(r'\s+', '_', safe_task_name)   # 空格替换为下划线
+            safe_task_name = safe_task_name.encode('ascii', 'ignore').decode('ascii')  # 移除非ASCII字符
+            
+            if not safe_task_name or len(safe_task_name) < 2:  # 如果文件名太短或为空
+                safe_task_name = "dataflow_results"
+            
+            download_filename = f"{safe_task_name}_{task_id[:8]}.zip"  # 只使用任务ID的前8位
+            
+            # 读取zip文件内容并直接返回响应
+            with open(temp_zip.name, 'rb') as f:
+                zip_data = f.read()
+            
+            from flask import Response
+            
+            response = Response(
+                zip_data,
+                mimetype='application/zip',
+                headers={
+                    'Content-Disposition': f'attachment; filename="{download_filename}"',
+                    'Content-Length': str(len(zip_data))
+                }
+            )
+            
+            # 立即清理临时文件
+            try:
+                if os.path.exists(temp_zip.name):
+                    os.unlink(temp_zip.name)
+            except Exception as cleanup_error:
+                logger.warning(f"清理临时文件失败: {str(cleanup_error)}")
+            
+            return response
+            
+        except Exception as zip_error:
+            logger.error(f"创建zip文件失败: {str(zip_error)}")
+            # 确保清理临时文件
+            try:
+                if os.path.exists(temp_zip.name):
+                    os.unlink(temp_zip.name)
+            except Exception as cleanup_error:
+                logger.warning(f"清理临时文件失败: {str(cleanup_error)}")
+            return error_response(f"创建压缩包失败: {str(zip_error)}")
+        
+    except Exception as e:
+        logger.error(f"打包下载失败: {str(e)}")
         return error_response(str(e))
 
 @dataflow_bp.route('/health', methods=['GET', 'OPTIONS'])

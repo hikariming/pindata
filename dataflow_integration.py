@@ -40,36 +40,37 @@ class DataFlowIntegration:
             if not self.dataflow_path_exists:
                 self.error_message = f"DataFlow目录不存在: {DATAFLOW_PATH}"
                 logger.warning(self.error_message)
-                # 即使DataFlow不存在，也允许基本功能运行
-                self.dataflow_available = True  # 设置为True以允许按钮工作
                 return
             
             # 添加DataFlow路径到sys.path
             if str(DATAFLOW_PATH) not in sys.path:
                 sys.path.insert(0, str(DATAFLOW_PATH))
             
-            # 尝试导入 DataFlow 核心模块
+            # 尝试导入 DataFlow 真实模块
             try:
-                from dataflow.core import DataFlow
-                from dataflow.operators import TextOperator, ReasoningOperator
+                # 导入预训练过滤流水线
+                from dataflow.statics.pipelines.cpu_pipelines.text_pt_filter import PTTextPipeline
+                from dataflow.statics.pipelines.cpu_pipelines.text_sft_filter import SFTTextPipeline
+                from dataflow.utils.storage import FileStorage
                 
-                self.dataflow = DataFlow
-                self.text_operator = TextOperator
-                self.reasoning_operator = ReasoningOperator
+                # 存储真实的pipeline类
+                self.PTTextPipeline = PTTextPipeline
+                self.SFTTextPipeline = SFTTextPipeline
+                self.ChineseTextPipeline = ChineseTextPipeline  # 添加中文友好的pipeline
+                self.FileStorage = FileStorage
                 self.dataflow_available = True
                 
                 logger.info("DataFlow 模块加载成功")
+                
             except ImportError as e:
                 logger.warning(f"DataFlow 模块导入失败: {e}")
-                # 即使导入失败，也设置为可用，这样按钮不会被禁用
-                self.dataflow_available = True
+                self.dataflow_available = False
                 self.error_message = f"DataFlow模块导入失败: {e}"
                 logger.warning("DataFlow功能将使用模拟模式")
                 
         except Exception as e:
             logger.error(f"初始化DataFlow失败: {e}")
-            # 即使初始化失败，也设置为可用
-            self.dataflow_available = True
+            self.dataflow_available = False
             self.error_message = f"DataFlow初始化失败: {e}"
     
     def is_available(self):
@@ -79,25 +80,17 @@ class DataFlowIntegration:
     def create_pretrain_filter_pipeline(self, config=None):
         """创建预训练数据过滤管道"""
         if not self.dataflow_available:
-            raise RuntimeError("DataFlow 未正确加载")
+            logger.info("DataFlow不可用，使用模拟模式创建预训练数据过滤管道")
+            return MockPipeline("pretrain_filter", config)
         
         try:
-            # 默认预训练数据过滤配置
-            config = config or {
-                "allowed_languages": "__label__eng_Latn",
-                "min_words": 20,
-                "max_words": 100000,
-                "min_sentences": 3,
-                "max_sentences": 7500,
-                "dedup_threshold": 0.9,
-                "quality_threshold": 0.5
-            }
-            
-            # 如果DataFlow实际可用，使用真实的pipeline
-            if hasattr(self, 'dataflow'):
-                pipeline = self.dataflow.create_pipeline("pretrain_filter", config)
-                logger.info("预训练数据过滤管道创建成功")
-                return pipeline
+            # 如果DataFlow实际可用，优先使用中文友好的pipeline
+            if hasattr(self, 'ChineseTextPipeline'):
+                logger.info("使用中文友好的DataFlow管道")
+                return DataFlowPipelineWrapper(self.ChineseTextPipeline, "chinese_pretrain_filter")
+            elif hasattr(self, 'PTTextPipeline'):
+                logger.info("使用标准DataFlow预训练过滤管道")
+                return DataFlowPipelineWrapper(self.PTTextPipeline, "pretrain_filter")
             else:
                 # 使用模拟模式
                 logger.info("使用模拟模式创建预训练数据过滤管道")
@@ -107,6 +100,27 @@ class DataFlowIntegration:
             logger.error(f"创建预训练数据过滤管道失败: {e}")
             # 返回模拟管道而不是抛出异常
             return MockPipeline("pretrain_filter", config)
+    
+    def create_sft_filter_pipeline(self, config=None):
+        """创建SFT数据过滤管道"""
+        if not self.dataflow_available:
+            logger.info("DataFlow不可用，使用模拟模式创建SFT数据过滤管道")
+            return MockPipeline("sft_filter", config)
+        
+        try:
+            # 如果DataFlow实际可用，使用真实的pipeline
+            if hasattr(self, 'SFTTextPipeline'):
+                logger.info("使用DataFlow创建SFT数据过滤管道")
+                return DataFlowPipelineWrapper(self.SFTTextPipeline, "sft_filter")
+            else:
+                # 使用模拟模式
+                logger.info("使用模拟模式创建SFT数据过滤管道")
+                return MockPipeline("sft_filter", config)
+            
+        except Exception as e:
+            logger.error(f"创建SFT数据过滤管道失败: {e}")
+            # 返回模拟管道而不是抛出异常
+            return MockPipeline("sft_filter", config)
     
     def create_pretrain_synthetic_pipeline(self, config=None):
         """创建预训练数据合成管道（类phi-4）"""
@@ -192,6 +206,8 @@ class DataFlowIntegration:
         try:
             if pipeline_type == "pretrain_filter":
                 pipeline = self.create_pretrain_filter_pipeline(config)
+            elif pipeline_type == "sft_filter":
+                pipeline = self.create_sft_filter_pipeline(config)
             elif pipeline_type == "pretrain_synthetic":
                 pipeline = self.create_pretrain_synthetic_pipeline(config)
             elif pipeline_type == "reasoning":
@@ -273,6 +289,95 @@ class DataFlowIntegration:
         return status
 
 
+class DataFlowPipelineWrapper:
+    """DataFlow管道封装器，用于适配我们的接口"""
+    
+    def __init__(self, pipeline_class, pipeline_type):
+        self.pipeline_class = pipeline_class
+        self.pipeline_type = pipeline_type
+        logger.info(f"创建DataFlow管道: {pipeline_type}")
+    
+    def process(self, text_data):
+        """处理数据，适配DataFlow的接口"""
+        import tempfile
+        import json
+        import os
+        
+        try:
+            # 创建临时目录
+            with tempfile.TemporaryDirectory() as temp_dir:
+                input_file = os.path.join(temp_dir, "input.jsonl")
+                cache_dir = os.path.join(temp_dir, "cache")
+                os.makedirs(cache_dir, exist_ok=True)
+                
+                # 准备输入数据
+                input_data = {"raw_content": text_data}
+                with open(input_file, 'w', encoding='utf-8') as f:
+                    json.dump(input_data, f, ensure_ascii=False)
+                    f.write('\n')
+                
+                # 创建自定义的pipeline实例
+                pipeline = self.pipeline_class()
+                # 修改storage配置以使用我们的临时文件
+                from dataflow.utils.storage import FileStorage
+                pipeline.storage = FileStorage(
+                    first_entry_file_name=input_file,
+                    cache_path=cache_dir,
+                    file_name_prefix="dataflow_cache_step",
+                    cache_type="jsonl",
+                )
+                
+                # 执行pipeline
+                logger.info(f"开始执行DataFlow管道: {self.pipeline_type}")
+                pipeline.forward()
+                
+                # 获取最终结果
+                result_files = [f for f in os.listdir(cache_dir) if f.endswith('.jsonl')]
+                if result_files:
+                    # 使用最新的文件
+                    latest_file = max(result_files, key=lambda x: os.path.getmtime(os.path.join(cache_dir, x)))
+                    result_file = os.path.join(cache_dir, latest_file)
+                    
+                    # 读取结果
+                    processed_data = []
+                    with open(result_file, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            if line.strip():
+                                try:
+                                    data = json.loads(line)
+                                    processed_data.append(data)
+                                except json.JSONDecodeError:
+                                    continue
+                    
+                    if processed_data:
+                        logger.info(f"DataFlow管道处理完成，处理了 {len(processed_data)} 条数据")
+                        return processed_data
+                    else:
+                        logger.warning("DataFlow管道处理后无数据保留，可能被过滤器过滤掉了")
+                        # 返回包含原始数据的结果，标记为被过滤
+                        return [{
+                            "raw_content": text_data,
+                            "filtered": True,
+                            "reason": "数据被DataFlow过滤器过滤掉"
+                        }]
+                else:
+                    logger.warning("DataFlow管道未生成结果文件")
+                    return [{
+                        "raw_content": text_data,
+                        "filtered": False,
+                        "reason": "DataFlow管道未生成结果文件"
+                    }]
+                
+        except Exception as e:
+            logger.error(f"DataFlow管道处理失败: {e}")
+            # 返回包含原始数据的结果，标记为处理失败
+            return [{
+                "raw_content": text_data,
+                "error": True,
+                "reason": f"DataFlow处理失败: {str(e)}"
+            }]
+
+
 class MockPipeline:
     """模拟DataFlow管道，用于测试和开发"""
     
@@ -296,6 +401,87 @@ class MockPipeline:
             return f"[知识库清理] {text_data}"
         else:
             return text_data
+
+
+class ChineseTextPipeline:
+    """中文友好的DataFlow管道"""
+    
+    def __init__(self):
+        self.storage = None  # 将在运行时设置
+        self._init_operators()
+    
+    def _init_operators(self):
+        """初始化操作符，使用对中文友好的参数"""
+        try:
+            from dataflow.operators.refine.GeneralText import (
+                RemoveExtraSpacesRefiner,
+                RemoveEmojiRefiner,
+                HtmlUrlRemoverRefiner
+            )
+            from dataflow.operators.process.GeneralText import (
+                ContentNullFilter,
+                CharNumberFilter,
+                SentenceNumberFilter,
+                WatermarkFilter
+            )
+            
+            # 使用基本的refine操作符
+            self.remove_extra_spaces_refiner = RemoveExtraSpacesRefiner()
+            self.remove_emoji_refiner = RemoveEmojiRefiner()
+            self.html_remove_refiner = HtmlUrlRemoverRefiner()
+            
+            # 使用对中文友好的过滤器
+            self.content_null_filter = ContentNullFilter()
+            self.char_number_filter = CharNumberFilter(threshold=50)  # 降低字符数要求
+            self.sentence_number_filter = SentenceNumberFilter(min_sentences=1, max_sentences=10000)  # 更宽松的句子数要求
+            self.watermark_filter = WatermarkFilter(watermarks=['Copyright', 'Watermark', 'Confidential', '版权', '水印'])
+            
+            logger.info("中文友好管道操作符初始化成功")
+            
+        except ImportError as e:
+            logger.error(f"无法导入DataFlow操作符: {e}")
+            raise
+    
+    def forward(self):
+        """执行管道处理"""
+        try:
+            # 清理和预处理
+            self.remove_extra_spaces_refiner.run(
+                storage=self.storage.step(),
+                input_key="raw_content"
+            )
+            self.remove_emoji_refiner.run(
+                storage=self.storage.step(),
+                input_key="raw_content"
+            )
+            self.html_remove_refiner.run(
+                storage=self.storage.step(),
+                input_key="raw_content"
+            )
+            
+            # 基本质量过滤
+            self.content_null_filter.run(
+                storage=self.storage.step(),
+                input_key='raw_content',
+            )
+            self.char_number_filter.run(
+                storage=self.storage.step(),
+                input_key='raw_content',
+            )
+            self.sentence_number_filter.run(
+                storage=self.storage.step(),
+                input_key='raw_content'
+            )
+            self.watermark_filter.run(
+                storage=self.storage.step(),
+                input_key='raw_content',
+            )
+            
+            logger.info("中文友好管道处理完成")
+            
+        except Exception as e:
+            logger.error(f"中文友好管道处理失败: {e}")
+            raise
 
 
 # 创建全局实例

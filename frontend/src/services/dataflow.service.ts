@@ -2,6 +2,7 @@
  * DataFlow流水线服务
  */
 import { apiClient } from '../lib/api-client';
+import { config } from '../lib/config';
 
 export interface PipelineType {
   type: string;
@@ -149,6 +150,56 @@ export class DataFlowService {
   async getTaskDownloadLinks(taskId: string): Promise<{ task_info: DataFlowTask; download_links: any[] }> {
     const response = await apiClient.get<{ data: { task_info: DataFlowTask; download_links: any[] } }>(`dataflow/tasks/${taskId}/download`);
     return response.data;
+  }
+
+  /**
+   * 下载任务结果打包文件
+   */
+  async downloadTaskResultsZip(taskId: string): Promise<void> {
+    // 使用专门的下载服务器地址
+    const downloadBaseUrl = config.downloadBaseUrl || config.apiBaseUrl;
+    const baseUrl = downloadBaseUrl.replace(/\/+$/, ''); // 移除结尾斜杠
+    
+    // 构建完整的下载URL，确保包含API前缀
+    const downloadUrl = `${baseUrl}/api/v1/dataflow/tasks/${taskId}/download-zip`;
+    
+    console.log('打包下载URL:', downloadUrl); // 调试日志
+    console.log('downloadBaseUrl:', downloadBaseUrl); // 调试日志
+    console.log('baseUrl:', baseUrl); // 调试日志
+    
+    const response = await fetch(downloadUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': (apiClient as any).defaultHeaders['Authorization'] || '',
+      },
+    });
+
+    console.log('响应状态:', response.status, response.statusText); // 调试日志
+
+    if (!response.ok) {
+      let errorText = `下载失败: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorText = errorData.message || errorData.error || errorText;
+      } catch {
+        // 如果不是JSON响应，使用状态码
+        errorText = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorText);
+    }
+
+    const blob = await response.blob();
+    console.log('获得blob，大小:', blob.size); // 调试日志
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dataflow_results_${taskId}.zip`;
+    link.target = '_blank'; // 在新标签页打开
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 
   /**

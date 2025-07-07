@@ -28,6 +28,9 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+// 导入config
+import { config } from '../../lib/config';
+
 interface DataFlowPanelProps {
   libraryId: string;
   libraryName: string;
@@ -201,26 +204,94 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
 
   const handleDownloadResults = async (taskId: string) => {
     try {
+      // 显示当前使用的下载配置
+      const downloadBaseUrl = config.downloadBaseUrl || config.apiBaseUrl;
+      console.log('当前下载配置:', {
+        downloadBaseUrl: config.downloadBaseUrl,
+        apiBaseUrl: config.apiBaseUrl,
+        actualUsed: downloadBaseUrl
+      });
+      
       const downloadInfo = await dataflowService.getTaskDownloadLinks(taskId);
       if (downloadInfo.download_links.length === 0) {
         toast.error('没有可下载的结果');
         return;
       }
       
-      // 下载所有结果文件
-      downloadInfo.download_links.forEach(link => {
-        const a = document.createElement('a');
-        a.href = link.download_url;
-        a.download = link.object_name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      });
+      console.log('获取到下载链接:', downloadInfo.download_links); // 调试日志
       
-      toast.success('结果下载已开始');
+      // 单独下载每个文件（但限制在3个以内，避免浏览器阻止）
+      if (downloadInfo.download_links.length <= 3) {
+        let downloadCount = 0;
+        downloadInfo.download_links.forEach((link, index) => {
+          setTimeout(async () => {
+            try {
+              // 使用专门的下载服务器地址
+              const downloadBaseUrl = config.downloadBaseUrl || config.apiBaseUrl;
+              
+              // 确保正确拼接URL - API返回的download_url通常已经包含了/api/v1前缀
+              let fullUrl;
+              if (link.download_url.startsWith('/api/v1')) {
+                // 如果download_url已经有完整的API路径，直接拼接
+                fullUrl = `${downloadBaseUrl.replace(/\/+$/, '')}${link.download_url}`;
+              } else {
+                // 如果download_url只是相对路径，添加API前缀
+                fullUrl = `${downloadBaseUrl.replace(/\/+$/, '')}/api/v1${link.download_url}`;
+              }
+              
+              console.log(`下载第${index + 1}个文件:`, fullUrl, '文件名:', link.object_name);
+              console.log('原始download_url:', link.download_url); // 调试日志
+              
+              // 使用fetch先检查文件是否存在
+              const response = await fetch(fullUrl, { method: 'HEAD' });
+              if (!response.ok) {
+                console.error(`文件${link.object_name}下载失败:`, response.status);
+                toast.error(`文件 ${link.object_name} 下载失败`);
+                return;
+              }
+              
+              // 创建下载链接
+              const a = document.createElement('a');
+              a.href = fullUrl;
+              a.download = link.object_name;
+              a.target = '_blank';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              
+              downloadCount++;
+              if (downloadCount === 1) {
+                toast.success(`开始下载 ${downloadInfo.download_links.length} 个文件`);
+              }
+            } catch (error) {
+              console.error(`下载文件 ${link.object_name} 失败:`, error);
+              toast.error(`下载文件 ${link.object_name} 失败`);
+            }
+          }, index * 500); // 延迟500ms避免浏览器阻止
+        });
+      } else {
+        // 如果文件太多，提示用户使用打包下载
+        toast.error(`文件数量较多 (${downloadInfo.download_links.length} 个)，建议使用打包下载`);
+      }
     } catch (error) {
-      console.error('下载结果失败:', error);
-      toast.error('下载结果失败');
+      console.error('获取下载链接失败:', error);
+      toast.error('获取下载链接失败');
+    }
+  };
+
+  const handleDownloadZip = async (taskId: string) => {
+    try {
+      console.log('开始打包下载，任务ID:', taskId); // 调试日志
+      toast.success('正在准备下载包，请稍候...'); // 给用户反馈
+      
+      await dataflowService.downloadTaskResultsZip(taskId);
+      
+      console.log('打包下载完成'); // 调试日志
+      toast.success('下载包已生成');
+    } catch (error) {
+      console.error('打包下载失败:', error);
+      const errorMessage = error instanceof Error ? error.message : '打包下载失败';
+      toast.error(errorMessage);
     }
   };
 
@@ -265,6 +336,16 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* 调试信息显示区域 */}
+      <div className="bg-gray-50 p-3 rounded-lg border text-sm">
+        <div className="font-medium text-gray-700 mb-2">调试信息:</div>
+        <div className="space-y-1 text-gray-600">
+          <div>API Base URL: {config.apiBaseUrl}</div>
+          <div>Download Base URL: {config.downloadBaseUrl}</div>
+          <div>实际使用的下载地址: {config.downloadBaseUrl || config.apiBaseUrl}</div>
+        </div>
+      </div>
+      
       {/* 状态卡片 */}
       <Card>
         <CardHeader>
@@ -515,14 +596,25 @@ export const DataFlowPanel: React.FC<DataFlowPanelProps> = ({
                         </Button>
                       )}
                       {task.status === 'completed' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadResults(task.id)}
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          下载
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadResults(task.id)}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            下载
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadZip(task.id)}
+                            title="打包下载所有结果文件"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            打包下载
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
